@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bloomr | Cultivating Clarity</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-container": "#9e8ec6",
+              "on-tertiary": "#ffffff",
+              "primary-fixed-dim": "#6ddd7f",
+              "surface-container-low": "#f6f3ec",
+              "on-error": "#ffffff",
+              "surface-container-highest": "#e5e2db",
+              "surface-tint": "#006e2b",
+              "on-error-container": "#93000a",
+              "on-background": "#1c1c18",
+              "on-surface": "#1c1c18",
+              "surface-variant": "#e5e2db",
+              "tertiary-fixed-dim": "#cfbdf8",
+              "tertiary": "#65568a",
+              "inverse-on-surface": "#f3f0e9",
+              "primary-container": "#39ab54",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-fixed-variant": "#881935",
+              "outline-variant": "#bdcaba",
+              "on-surface-variant": "#3e4a3d",
+              "surface": "#fcf9f2",
+              "on-secondary-container": "#720427",
+              "on-tertiary-fixed-variant": "#4d3e70",
+              "tertiary-fixed": "#e9ddff",
+              "primary": "#006e2b",
+              "on-primary-container": "#003712",
+              "inverse-primary": "#6ddd7f",
+              "secondary-fixed-dim": "#ffb2bb",
+              "error-container": "#ffdad6",
+              "on-tertiary-container": "#342657",
+              "on-primary-fixed-variant": "#00531e",
+              "on-secondary-fixed": "#400011",
+              "surface-container-high": "#ebe8e1",
+              "surface-container": "#f1eee7",
+              "on-tertiary-fixed": "#201242",
+              "secondary-fixed": "#ffd9dc",
+              "on-secondary": "#ffffff",
+              "background": "#fcf9f2",
+              "inverse-surface": "#31312c",
+              "outline": "#6e7a6c",
+              "surface-bright": "#fcf9f2",
+              "on-primary-fixed": "#002108",
+              "surface-dim": "#dcdad3",
+              "secondary": "#a9334b",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "primary-fixed": "#8afa99",
+              "secondary-container": "#fe748b"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+    }
+.grain-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.02;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDIMm5GeDktXbx5HCEiVe5pCTlGJDN_76tleH0qkwoIrYR21GCsz1icRiVBSaFyknDNzdnOsAjGnS4e8DBJNzXp8bZZV2qevT6THq1SxanoYyUutPRkJ0ufE0Gvo_fgxW4SmuIazC_HVcAVmnoKfZvhi48GCV3RkGXk7Lmm2HvdCzwBXlwxeA1U50HkiTOedQmM2TPIjSOAmrMRg5YsaM-zqsp2NURXIJFPbwIIT__AllLdvT1AX-eaZwranRrgD69gOMcj38bGz0I)
+    }
+.pebble-shadow {
+    box-shadow: 0 20px 40px rgba(28, 28, 24, 0.06)
+    }
+.glass-morphism {
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px)
+    }
+.asymmetric-shape-1 {
+    border-radius: 4rem 2rem 5rem 3rem
+    }
+.asymmetric-shape-2 {
+    border-radius: 2rem 4rem 3rem 5rem
+    }</style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="grain-overlay"></div>
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fcf9f2]/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm">
+<nav class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-black text-[#39ab54] dark:text-[#8afa99] tracking-tighter font-headline" style="">Bloomr</div>
+<div class="hidden md:flex items-center gap-8 font-headline font-bold tracking-tight">
+<a class="text-[#3e4a3d] dark:text-slate-400 hover:text-[#39ab54] transition-colors duration-300" href="#" style="">How it Works</a>
+<a class="text-[#3e4a3d] dark:text-slate-400 hover:text-[#39ab54] transition-colors duration-300" href="#" style="">How it Helps</a>
+<a class="text-[#3e4a3d] dark:text-slate-400 hover:text-[#39ab54] transition-colors duration-300" href="#" style="">My Garden</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#3e4a3d] hover:bg-[#f6f3ec] rounded-full transition-all" style="">
+<span class="material-symbols-outlined" data-icon="notifications" style="">notifications</span>
+</button>
+<button class="p-2 text-[#3e4a3d] hover:bg-[#f6f3ec] rounded-full transition-all" style="">
+<span class="material-symbols-outlined" data-icon="account_circle" style="">account_circle</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="pt-24">
+<!-- Section 1: Hero Section -->
+<section class="max-w-7xl mx-auto px-6 py-20 flex flex-col items-center text-center">
+<div class="inline-flex items-center gap-2 px-4 py-1.5 mb-8 bg-surface-container-high rounded-full border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="potted_plant" style="">potted_plant</span>
+<span class="text-on-surface-variant font-label text-sm font-semibold tracking-wide uppercase" style="">Your semester in full bloom</span>
+</div>
+<h1 class="font-headline text-5xl md:text-7xl font-extrabold text-on-surface tracking-tight leading-[1.1] mb-6" style="">
+                Learn it. Grow it. <span class="text-primary italic font-medium" style="">Own it.</span>
+</h1>
+<p class="max-w-2xl text-lg md:text-xl text-on-surface-variant mb-12 leading-relaxed" style="">
+                Transform lecture slides into interactive botanical journals. Master your semester while your digital garden flourishes.
+            </p>
+<!-- Central Upload Box (The "Seed Slot") -->
+<div class="w-full max-w-2xl p-12 bg-surface-container-low rounded-lg pebble-shadow border-2 border-dashed border-outline-variant/30 hover:border-primary/40 transition-all group relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="relative flex flex-col items-center">
+<div class="w-20 h-20 bg-surface-container-lowest rounded-xl flex items-center justify-center mb-6 pebble-shadow">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="upload_file" style="">upload_file</span>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-2 text-on-surface" style="">Deposit your seeds</h3>
+<p class="text-on-surface-variant mb-8" style="">Drag and drop your PDF/PPT or <span class="text-primary font-bold cursor-pointer underline decoration-primary/30 hover:decoration-primary" style="">Select Files</span></p>
+<div class="flex gap-4">
+<div class="px-4 py-2 bg-surface-container-high rounded-full text-xs font-bold text-on-surface-variant flex items-center gap-2" style="">
+<span class="material-symbols-outlined text-sm" data-icon="description" style="">description</span> PDF
+                        </div>
+<div class="px-4 py-2 bg-surface-container-high rounded-full text-xs font-bold text-on-surface-variant flex items-center gap-2" style="">
+<span class="material-symbols-outlined text-sm" data-icon="present_to_all" style="">present_to_all</span> PPTX
+                        </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: How it Helps Learners -->
+<section class="max-w-7xl mx-auto px-6 py-32 bg-surface-container">
+<div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+<div class="max-w-xl">
+<h2 class="font-headline text-4xl font-bold text-on-surface mb-4" style="">Nurturing every mind.</h2>
+<p class="text-on-surface-variant" style="">We believe learning isn't a one-size-fits-all process. Bloomr adapts to your unique neuro-landscape.</p>
+</div>
+<button class="px-8 py-3 bg-primary text-on-primary rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2" style="">
+                    Explore Support <span class="material-symbols-outlined" data-icon="arrow_forward" style="">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- ESL Card -->
+<div class="asymmetric-shape-1 p-10 bg-[#B09FD8]/10 flex flex-col items-start hover:scale-[1.02] transition-transform">
+<div class="w-14 h-14 bg-[#B09FD8] text-white rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-2xl" data-icon="translate" style="">language</span>
+</div>
+<h4 class="font-headline text-2xl font-bold text-[#342657] mb-4" style="">ESL Flourish</h4>
+<p class="text-on-surface-variant leading-relaxed" style="">Complex academic jargon simplified and translated into botanical metaphors that transcend language barriers.</p>
+</div>
+<!-- ADHD Card -->
+<div class="bg-[#fe748b]/10 p-10 rounded-lg flex flex-col items-start hover:scale-[1.02] transition-transform">
+<div class="w-14 h-14 bg-[#fe748b] text-white rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-2xl" data-icon="bolt" style="">bolt</span>
+</div>
+<h4 class="font-headline text-2xl font-bold text-[#720427] mb-4" style="">Focus Focus</h4>
+<p class="text-on-surface-variant leading-relaxed" style="">Gamified attention loops and micro-learning pulses designed specifically for neurodivergent momentum.</p>
+</div>
+<!-- Visual Learner Card -->
+<div class="asymmetric-shape-2 p-10 bg-[#F4A44E]/10 flex flex-col items-start hover:scale-[1.02] transition-transform">
+<div class="w-14 h-14 bg-[#F4A44E] text-white rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-2xl" data-icon="visibility" style="">account_tree</span>
+</div>
+<h4 class="font-headline text-2xl font-bold text-[#400011] mb-4" style="">Visual Rooting</h4>
+<p class="text-on-surface-variant leading-relaxed" style="">Mapping concepts into visual garden layouts, helping visual thinkers branch ideas together effortlessly.</p>
+</div>
+</div>
+</section>
+<!-- Section 3: How it Works (The Growth Cycle) -->
+<section class="max-w-7xl mx-auto px-6 py-32">
+<div class="text-center mb-20">
+<h2 class="font-headline text-4xl font-bold text-on-surface mb-4" style="">The Growth Cycle</h2>
+<p class="text-on-surface-variant max-w-lg mx-auto" style="">From scattered notes to a thriving knowledge ecosystem in four natural steps.</p>
+</div>
+<div class="relative">
+<!-- Connecting Line -->
+<div class="hidden lg:block absolute top-1/2 left-0 w-full h-px bg-outline-variant/20 -z-10"></div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+<!-- Step 1 -->
+<div class="flex flex-col items-center text-center group">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border-2 border-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary transition-all group-hover:border-primary">
+<span class="material-symbols-outlined text-primary group-hover:text-white" data-icon="filter_vintage" style="">potted_plant</span>
+</div>
+<h4 class="font-headline font-bold text-xl mb-2" style="">1. Upload (Seed)</h4>
+<p class="text-on-surface-variant text-sm px-4" style="">Plant your lecture slides or textbook chapters into our secure portal.</p>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center text-center group">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border-2 border-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary transition-all group-hover:border-primary">
+<span class="material-symbols-outlined text-primary group-hover:text-white" data-icon="auto_awesome" style="">eco</span>
+</div>
+<h4 class="font-headline font-bold text-xl mb-2" style="">2. Germination</h4>
+<p class="text-on-surface-variant text-sm px-4" style="">Our AI breaks down complex topics into digestible, nutrient-rich concepts.</p>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center text-center group">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border-2 border-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary transition-all group-hover:border-primary">
+<span class="material-symbols-outlined text-primary group-hover:text-white" data-icon="opacity" style="">water_drop</span>
+</div>
+<h4 class="font-headline font-bold text-xl mb-2" style="">3. Watering</h4>
+<p class="text-on-surface-variant text-sm px-4" style="">Engage with interactive quizzes and flashcards to nourish your memory.</p>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center text-center group">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border-2 border-primary/20 flex items-center justify-center mb-6 group-hover:bg-primary transition-all group-hover:border-primary">
+<span class="material-symbols-outlined text-primary group-hover:text-white" data-icon="garden_cart" style="">local_florist</span>
+</div>
+<h4 class="font-headline font-bold text-xl mb-2" style="">4. Mastery (Bloom)</h4>
+<p class="text-on-surface-variant text-sm px-4" style="">Watch your digital flora grow as your exam scores hit full bloom.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Social Proof / Testimonials -->
+<section class="max-w-7xl mx-auto px-6 py-32">
+<div class="bg-surface-container-lowest pebble-shadow rounded-lg overflow-hidden flex flex-col lg:flex-row">
+<div class="lg:w-1/2 p-12 lg:p-20 bg-surface-container-high/50">
+<span class="material-symbols-outlined text-primary text-5xl mb-8" data-icon="format_quote" style="">format_quote</span>
+<h3 class="font-headline text-3xl font-bold text-on-surface mb-8 leading-tight italic" style="">"Bloomr didn't just help me pass Organic Chem; it made me actually enjoy the structure of it. It feels like I'm curating a library that breathes."</h3>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-outline-variant">
+<img alt="Student testimonial" class="" data-alt="portrait of a smiling young woman with dark curly hair in a campus setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDq27vg1RYTpZRgTBTuDwcjZd8YAqglu2y0XeiRSiJu9TuDMuzscvQFhDoR47nxgps7dXkjL0irQRUXiiaxx9quzsEbvU0k1ch_T4nPAg3h0DXi0zDohs7lxWcQdO4a_iX0d1uW89csKsf8_Heuwbab2fYF1zoaUgRl60o36v-EiG0LMc7E84p1X_hx4E--W_Hsn-B4byvHVoN2tPXQhe9E__p-7Zk-GPsU1Ami5kZolvRj96iS7et00SDeY6sQDuztE0__I1133lo" style=""/>
+</div>
+<div>
+<p class="font-bold text-on-surface" style="">Elena S.</p>
+<p class="text-sm text-on-surface-variant" style="">Biology Major, Stanford</p>
+</div>
+</div>
+</div>
+<div class="lg:w-1/2 relative min-h-[400px]">
+<img alt="Botanical aesthetic" class="absolute inset-0 w-full h-full object-cover" data-alt="serene high-end greenhouse with lush tropical plants and soft morning light filtering through glass panes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA20qJ4novrvlQrj6AXYSM0oYeL6jMqtSRRTlHUV2y0ps2Oc1UG8ljvRmE8pLjRpPi4ixIyYlPToEP4XrE_7XYuBhVNrPfrHNFRTmaJr75ATB7P7bE1ZxnTL_9o4PVdfLsXAs_CHtxhTYzH7RhqghEeQv1y9xV5CuKUnXu9arClSiNvdHT-p-FXp1LyVRWxpahbtUHOlbWbcMVzNkGsbVI6k2meamb_7o8Cq-EsoBp6VUk-wBDyRYkQNWxVtWLZxkFQ8kU7OZEpvmA" style=""/>
+<div class="absolute inset-0 bg-primary/20 mix-blend-multiply"></div>
+</div>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="max-w-7xl mx-auto px-6 py-20 pb-40">
+<div class="bg-primary text-on-primary rounded-xl p-12 md:p-24 text-center relative overflow-hidden">
+<div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-primary-fixed-dim/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
+<h2 class="font-headline text-4xl md:text-6xl font-extrabold mb-8 relative z-10" style="">Start your garden today.</h2>
+<p class="text-primary-fixed text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-90 relative z-10" style="">Join over 15,000 learners who have turned their study stress into botanical mastery.</p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
+<button class="px-10 py-5 bg-on-primary text-primary rounded-full font-black text-lg hover:scale-105 transition-transform pebble-shadow" style="">
+                        Plant your first seed
+                    </button>
+<button class="px-10 py-5 bg-primary-container text-on-primary-container rounded-full font-bold text-lg hover:bg-primary-container/90 transition-all border border-white/20" style="">
+                        View Demo Garden
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full rounded-t-[3rem] mt-20 bg-[#f6f3ec] dark:bg-slate-950">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 py-12 w-full gap-6 max-w-7xl mx-auto">
+<div class="flex flex-col items-center md:items-start gap-2">
+<div class="font-bold text-[#39ab54] text-2xl font-headline tracking-tighter" style="">Bloomr</div>
+<p class="font-['Manrope'] text-sm text-[#3e4a3d] dark:text-slate-400" style="">© 2024 Bloomr. Cultivating clarity.</p>
+</div>
+<div class="flex gap-8">
+<a class="font-['Manrope'] text-sm text-[#3e4a3d] dark:text-slate-500 hover:text-[#39ab54] transition-all" href="#" style="">Privacy</a>
+<a class="font-['Manrope'] text-sm text-[#3e4a3d] dark:text-slate-500 hover:text-[#39ab54] transition-all" href="#" style="">Terms</a>
+<a class="font-['Manrope'] text-sm text-[#3e4a3d] dark:text-slate-500 hover:text-[#39ab54] transition-all" href="#" style="">Contact</a>
+<a class="font-['Manrope'] text-sm text-[#3e4a3d] dark:text-slate-500 hover:text-[#39ab54] transition-all" href="#" style="">Support</a>
+</div>
+</div>
+</footer>
+</body></html>
