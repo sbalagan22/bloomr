@@ -23,12 +23,20 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
   const [flower, setFlower] = useState<Flower | null>(null);
 
   useEffect(() => {
-    async function loadFlower() {
-      const supabase = createClient();
-      const { data } = await supabase.from("flowers").select("flower_type, growth_stage, pattern_offset_x, pattern_offset_y").eq("id", flowerId).single();
-      if (data) setFlower(data);
-    }
-    loadFlower();
+    const supabase = createClient();
+    
+    // Initial fetch
+    supabase.from("flowers").select("flower_type, growth_stage, pattern_offset_x, pattern_offset_y").eq("id", flowerId).single()
+      .then(({ data }) => { if (data) setFlower(data); });
+
+    // Live update subscription
+    const channel = supabase.channel(`layout_flower_${flowerId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'flowers', filter: `id=eq.${flowerId}` }, (payload) => {
+        setFlower(payload.new as Flower);
+      })
+      .subscribe();
+      
+    return () => { supabase.removeChannel(channel); };
   }, [flowerId]);
 
   return (

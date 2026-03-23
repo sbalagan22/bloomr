@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { PiBookOpenBold, PiLightningBold, PiArrowLeftBold } from "react-icons/pi";
+import { PiBookOpenBold, PiLightningBold, PiArrowLeftBold, PiTrashBold } from "react-icons/pi";
 
 interface Flower {
   id: string;
@@ -39,19 +39,42 @@ export default function FlowerDetailPage() {
   const [flower, setFlower] = useState<Flower | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    async function loadFlower() {
-      const supabase = createClient();
+    const supabase = createClient();
+    
+    async function loadData() {
       const { data: flowerData } = await supabase.from("flowers").select("id, topic_name, flower_type, growth_stage, status").eq("id", flowerId).single();
       if (!flowerData) { router.push("/garden"); return; }
       setFlower(flowerData);
+      
       const { data: unitsData } = await supabase.from("units").select("id, title, order_index, completed").eq("flower_id", flowerId).order("order_index");
       setUnits(unitsData || []);
       setLoading(false);
     }
-    loadFlower();
+    loadData();
+
+    // Live updates for both Flower and Units tables
+    const channel = supabase.channel(`page_flower_${flowerId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'flowers', filter: `id=eq.${flowerId}` }, (payload) => {
+        setFlower(payload.new as Flower);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'units', filter: `flower_id=eq.${flowerId}` }, (payload) => {
+        setUnits((current) => current.map(u => u.id === payload.new.id ? payload.new as Unit : u).sort((a,b) => a.order_index - b.order_index));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [flowerId, router]);
+
+  async function handleDelete() {
+    if (!confirm(`Are you sure you want to delete "${flower?.topic_name}"? All study units and quiz history will be permanently lost.`)) return;
+    setIsDeleting(true);
+    const supabase = createClient();
+    await supabase.from("flowers").delete().eq("id", flowerId);
+    router.push("/garden");
+  }
 
   if (loading || !flower) return null;
 
@@ -66,9 +89,19 @@ export default function FlowerDetailPage() {
       <div className="w-full md:w-[450px] flex flex-col gap-6 animate-fade-in-up pointer-events-auto h-full overflow-y-auto pb-12 scrollbar-hide pr-4">
         
         {/* Navigation / Back */}
-        <Link href="/garden" className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-primary-deep transition-colors bg-white/70 backdrop-blur-xl px-5 py-2.5 rounded-full w-fit shadow-sm border border-white/40">
-          <PiArrowLeftBold /> Back to Garden
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/garden" className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-primary-deep transition-colors bg-white/70 backdrop-blur-xl px-5 py-2.5 rounded-full shadow-sm border border-white/40">
+            <PiArrowLeftBold /> Back to Garden
+          </Link>
+          <button 
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-2.5 rounded-full bg-white/70 backdrop-blur-xl border border-white/40 text-[#E8637A] hover:bg-[#E8637A]/10 transition-colors pebble-shadow"
+            title="Delete this flower"
+          >
+            <PiTrashBold className="text-lg" />
+          </button>
+        </div>
 
         {/* Info Card */}
         <div className="bg-surface/85 backdrop-blur-xl pebble-shadow rounded-3xl p-8 border border-white/20">
@@ -86,7 +119,7 @@ export default function FlowerDetailPage() {
               <span className="text-sm font-bold text-on-surface flex items-center gap-2">Growth Progress</span>
               <span className="font-bold text-primary-deep bg-primary-deep/10 px-2 py-0.5 rounded-md text-xs">{completedCount}/{units.length} Units</span>
             </div>
-            <div className="h-4 w-full rounded-full bg-surface-container-high overflow-hidden shadow-inner">
+            <div className="h-4 w-full rounded-full bg-surface-container-high overflow-hidden shadow-inner relative">
               <div className="h-full rounded-full transition-all duration-1000 ease-out gradient-cta" style={{ width: `${(Math.max(0.05, flower.growth_stage / 4)) * 100}%` }} />
             </div>
           </div>
@@ -123,7 +156,7 @@ export default function FlowerDetailPage() {
                     <PiBookOpenBold /> Study
                   </button>
                 </Link>
-                <Link href={`/flower/${flowerId}/quiz/${unit.id}`} className="flex-1">
+                <Link href={`/flower/${flowerId}/quiz/${unit.id}`} className="flex-1" target="_blank">
                   <button className="w-full h-10 rounded-xl gradient-cta text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
                     <PiLightningBold /> Quiz
                   </button>
@@ -136,7 +169,7 @@ export default function FlowerDetailPage() {
             <div className="mt-2 rounded-[1.5rem] bg-surface/90 backdrop-blur-md pebble-shadow p-6 border-2 border-primary-deep/50 flex flex-col gap-3 text-center items-center animate-fade-in-up">
               <h3 className="font-heading text-lg font-bold text-on-surface">Ready for Full Bloom?</h3>
               <p className="text-xs text-on-surface-variant">Pass the Mastery Test across all units to reach Stage 4!</p>
-              <Link href={`/flower/${flowerId}/mastery`} className="w-full mt-2">
+              <Link href={`/flower/${flowerId}/mastery`} className="w-full mt-2" target="_blank">
                 <button className="w-full h-12 rounded-xl gradient-cta text-white font-bold text-base shadow-lg hover:shadow-xl transition-all">
                   Take Mastery Test 🌸
                 </button>
