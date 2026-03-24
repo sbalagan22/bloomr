@@ -130,60 +130,6 @@ function createDripTexture(
   return tex;
 }
 
-function createFlamesTexture(
-  ox: number,
-  oy: number
-): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext("2d")!;
-  // Dark base
-  ctx.fillStyle = "#1A0A00";
-  ctx.fillRect(0, 0, 512, 512);
-  const seed = (n: number) => ((Math.sin(n * 78.233 + oy * 143.3) * 43758.5453) % 1 + 1) % 1;
-  const flameCount = 10 + Math.floor(ox * 8);
-  for (let i = 0; i < flameCount; i++) {
-    const cx = seed(i) * 512;
-    const baseY = 480 + seed(i + 30) * 32;
-    const h = 120 + seed(i + 60) * 280;
-    const w = 20 + seed(i + 90) * 40;
-    // Flame gradient
-    const grad = ctx.createLinearGradient(cx, baseY, cx, baseY - h);
-    grad.addColorStop(0, "#FF4500");
-    grad.addColorStop(0.3, "#FF8C00");
-    grad.addColorStop(0.6, "#FFD700");
-    grad.addColorStop(0.85, "#FBBF24");
-    grad.addColorStop(1, "rgba(251,191,36,0)");
-    ctx.fillStyle = grad;
-    // Organic flame shape with bezier curves
-    ctx.beginPath();
-    ctx.moveTo(cx - w / 2, baseY);
-    const tipX = cx + (seed(i + 120) - 0.5) * w * 0.8;
-    ctx.bezierCurveTo(
-      cx - w * 0.6, baseY - h * 0.4,
-      cx - w * 0.2, baseY - h * 0.8,
-      tipX, baseY - h
-    );
-    ctx.bezierCurveTo(
-      cx + w * 0.2, baseY - h * 0.8,
-      cx + w * 0.6, baseY - h * 0.4,
-      cx + w / 2, baseY
-    );
-    ctx.closePath();
-    ctx.fill();
-  }
-  // Hot glow at bottom
-  const glow = ctx.createLinearGradient(0, 512, 0, 300);
-  glow.addColorStop(0, "rgba(255,100,0,0.35)");
-  glow.addColorStop(1, "rgba(255,100,0,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, 512, 512);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  return tex;
-}
-
 /* --- The Stage 4 Exclusive Rarity Pot --- */
 function RarityPot({ offsetX, offsetY }: { offsetX: number; offsetY: number }) {
   const rarity = getRarityFromOffsets(offsetX, offsetY);
@@ -196,62 +142,93 @@ function RarityPot({ offsetX, offsetY }: { offsetX: number; offsetY: number }) {
 
     switch (camo) {
       case "flames": {
-        // "Golden Chalice" — trophy-like, narrow pedestal flaring to wide cup
+        // "Golden Pagoda" — stacked tiered temple pot with decreasing platforms
+        // Tier 1 (base) — widest
         pts.push(
-          new THREE.Vector2(0.3, -0.55),
-          new THREE.Vector2(0.15, -0.45),
-          new THREE.Vector2(0.1, -0.2),
-          new THREE.Vector2(0.12, -0.05),
-          new THREE.Vector2(0.25, 0.1),
-          new THREE.Vector2(0.45, 0.3),
-          new THREE.Vector2(0.52, 0.45),
-          new THREE.Vector2(0.5, 0.55),
+          new THREE.Vector2(0.55, -0.55),  // base floor
+          new THREE.Vector2(0.55, -0.45),  // tier 1 wall
+          new THREE.Vector2(0.48, -0.42),  // tier 1 roof overhang inward
         );
-        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.55, rimRadius: 0.5, soilRadius: 0.48 };
+        // Tier 2 (middle)
+        pts.push(
+          new THREE.Vector2(0.48, -0.35),  // tier 2 step
+          new THREE.Vector2(0.42, -0.35),  // tier 2 base
+          new THREE.Vector2(0.42, -0.18),  // tier 2 wall
+          new THREE.Vector2(0.36, -0.15),  // tier 2 roof overhang
+        );
+        // Tier 3 (top)
+        pts.push(
+          new THREE.Vector2(0.36, -0.08),  // tier 3 step
+          new THREE.Vector2(0.30, -0.08),  // tier 3 base
+          new THREE.Vector2(0.30, 0.1),    // tier 3 wall
+          new THREE.Vector2(0.35, 0.12),   // tier 3 roof overhang
+        );
+        // Bowl opening
+        pts.push(
+          new THREE.Vector2(0.35, 0.2),    // inner rise
+          new THREE.Vector2(0.42, 0.35),   // flared opening
+          new THREE.Vector2(0.45, 0.4),    // rim lip
+        );
+        return { potGeometry: new THREE.LatheGeometry(pts, 8), rimY: 0.4, rimRadius: 0.45, soilRadius: 0.40 };
       }
       case "drip": {
-        // "Slumped Jar" — wide belly, narrow neck
+        // "Crater" — wide, shallow, rocky/irregular basin
+        // Matches CSS: wide (140px) but short (60px), irregular polygon edges
         pts.push(
-          new THREE.Vector2(0.15, -0.5),
-          new THREE.Vector2(0.45, -0.4),
-          new THREE.Vector2(0.55, -0.1),
-          new THREE.Vector2(0.5, 0.15),
-          new THREE.Vector2(0.35, 0.35),
-          new THREE.Vector2(0.3, 0.5),
+          new THREE.Vector2(0.2, -0.3),    // narrow base
+          new THREE.Vector2(0.5, -0.28),   // base flare outward
+          new THREE.Vector2(0.6, -0.15),   // wide lower wall (rocky slope)
+          new THREE.Vector2(0.65, 0.0),    // maximum width — crater rim zone
+          new THREE.Vector2(0.6, 0.08),    // slight inward lip
+          new THREE.Vector2(0.55, 0.12),   // inner crater edge
+          new THREE.Vector2(0.5, 0.15),    // crater opening
         );
-        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.5, rimRadius: 0.3, soilRadius: 0.28 };
+        // 7 segments for irregular rocky feel
+        return { potGeometry: new THREE.LatheGeometry(pts, 7), rimY: 0.15, rimRadius: 0.5, soilRadius: 0.48 };
       }
       case "stripes": {
-        // "Tactical Beaker" — angular, straight-walled with flared lip
+        // "Crystal Prism" — faceted geometric prism with slight taper
+        // 4 segments = square cross-section, creating a prism/crystal look
         pts.push(
-          new THREE.Vector2(0.2, -0.5),
-          new THREE.Vector2(0.35, -0.45),
-          new THREE.Vector2(0.4, -0.1),
-          new THREE.Vector2(0.4, 0.3),
-          new THREE.Vector2(0.45, 0.4),
-          new THREE.Vector2(0.5, 0.5),
+          new THREE.Vector2(0.05, -0.6),   // narrow base point
+          new THREE.Vector2(0.3, -0.55),    // base flare
+          new THREE.Vector2(0.42, -0.3),    // lower body
+          new THREE.Vector2(0.45, 0.0),     // mid body — widest
+          new THREE.Vector2(0.42, 0.25),    // upper taper
+          new THREE.Vector2(0.38, 0.45),    // near-top
+          new THREE.Vector2(0.4, 0.5),      // slight lip flare
         );
-        return { potGeometry: new THREE.LatheGeometry(pts, 6), rimY: 0.5, rimRadius: 0.5, soilRadius: 0.43 };
+        return { potGeometry: new THREE.LatheGeometry(pts, 5), rimY: 0.5, rimRadius: 0.4, soilRadius: 0.36 };
       }
       case "polkadots": {
-        // "Royal Urn" — elegant S-curve silhouette (same shape as legendary)
-        for (let i = 0; i <= 12; i++) {
-          const t = i / 12;
-          const r = 0.25 + Math.sin(t * Math.PI) * 0.28;
-          pts.push(new THREE.Vector2(r, t * 1.0 - 0.5));
-        }
-        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.5, rimRadius: pts[pts.length - 1].x, soilRadius: pts[pts.length - 1].x - 0.02 };
+        // "Crystal Hexagon" — faceted diamond/crystal shape (hex clip-path)
+        // Matches CSS polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
+        // Sharp diamond silhouette: point at bottom, widens, then tapers to opening
+        pts.push(
+          new THREE.Vector2(0.02, -0.6),   // bottom point (near-vertex)
+          new THREE.Vector2(0.15, -0.5),   // start flare
+          new THREE.Vector2(0.45, -0.3),   // lower 25% — widest section begins
+          new THREE.Vector2(0.5, -0.1),    // maximum width
+          new THREE.Vector2(0.5, 0.15),    // hold width (75% zone)
+          new THREE.Vector2(0.42, 0.35),   // upper taper begins
+          new THREE.Vector2(0.3, 0.5),     // narrowed opening top
+          new THREE.Vector2(0.32, 0.55),   // slight rim lip
+        );
+        return { potGeometry: new THREE.LatheGeometry(pts, 6), rimY: 0.55, rimRadius: 0.32, soilRadius: 0.28 };
       }
       default: {
-        // "Classic Terracotta" — simple tapered cylinder
-        pts.push(
-          new THREE.Vector2(0.2, -0.5),
-          new THREE.Vector2(0.38, -0.45),
-          new THREE.Vector2(0.42, 0.3),
-          new THREE.Vector2(0.48, 0.4),
-          new THREE.Vector2(0.5, 0.45),
-        );
-        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.45, rimRadius: 0.5, soilRadius: 0.46 };
+        // "Glass Orb" — spherical terrarium with cutout opening at top
+        // Generate a sphere profile via LatheGeometry, trimmed at the top for the planting hole
+        const segments = 24;
+        const radius = 0.5;
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          // Sweep from bottom (-PI/2) up to ~80% of the top (stop before full top to leave opening)
+          const angle = -Math.PI / 2 + t * (Math.PI * 0.82);
+          pts.push(new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius));
+        }
+        const topR = pts[pts.length - 1].x;
+        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: pts[pts.length - 1].y, rimRadius: topR, soilRadius: topR - 0.02 };
       }
     }
   }, [camo]);
@@ -262,11 +239,11 @@ function RarityPot({ offsetX, offsetY }: { offsetX: number; offsetY: number }) {
       case "solid":
         return createSolidTexture(getCommonColor(offsetX));
       case "stripes":
-        return createStripesTexture("#1E3A5F", "#60A5FA", offsetX, offsetY);
+        return createStripesTexture("#1A1A2E", "#7B8CDE", offsetX, offsetY);
       case "polkadots":
-        return createFlamesTexture(offsetX, offsetY);
+        return null; // Crystal — no texture, pure refractive material
       case "drip":
-        return createDripTexture("#1F1F1F", "#F472B6", offsetX, offsetY);
+        return createDripTexture("#3A3A3A", "#FF6B35", offsetX, offsetY);
       case "flames":
         return null;
     }
@@ -288,23 +265,73 @@ function RarityPot({ offsetX, offsetY }: { offsetX: number; offsetY: number }) {
       mat.emissiveIntensity = 0.25;
       return mat;
     }
+    if (camo === "solid") {
+      // Glass Orb — transparent, refractive glass look
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: getCommonColor(offsetX),
+        roughness: 0.05,
+        metalness: 0.0,
+        transmission: 0.85,
+        thickness: 0.5,
+        ior: 1.5,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.05,
+        transparent: true,
+        opacity: 0.4,
+      });
+      return mat;
+    }
+    if (camo === "polkadots") {
+      // Crystal Hexagon — frosted diamond, refractive with inner glow
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: "#A8D8FF",
+        roughness: 0.02,
+        metalness: 0.1,
+        transmission: 0.6,
+        thickness: 0.8,
+        ior: 2.0,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.01,
+        transparent: true,
+        opacity: 0.55,
+      });
+      mat.emissive = new THREE.Color(config.glowColor);
+      mat.emissiveIntensity = 0.35;
+      return mat;
+    }
+    if (camo === "drip") {
+      // Crater — rough volcanic rock with lava drip accents
+      const mat = new THREE.MeshPhysicalMaterial({
+        map: potTexture,
+        roughness: 0.85,
+        metalness: 0.15,
+        clearcoat: 0.1,
+        clearcoatRoughness: 0.8,
+      });
+      mat.emissive = new THREE.Color("#FF4500");
+      mat.emissiveIntensity = 0.15;
+      return mat;
+    }
+    // Stripes (uncommon) — crystal prism
     const mat = new THREE.MeshPhysicalMaterial({
       map: potTexture,
-      roughness: camo === "polkadots" ? 0.1 : camo === "drip" ? 0.15 : camo === "solid" ? 0.7 : 0.3,
-      metalness: camo === "polkadots" ? 0.8 : camo === "drip" ? 0.5 : camo === "solid" ? 0.05 : 0.3,
-      clearcoat: camo === "polkadots" ? 1.0 : camo === "drip" ? 0.6 : 0,
-      clearcoatRoughness: 0.1,
+      roughness: 0.08,
+      metalness: 0.15,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.02,
+      transmission: 0.4,
+      thickness: 0.3,
+      ior: 1.8,
+      transparent: true,
+      opacity: 0.75,
     });
-    if (camo === "polkadots" || camo === "drip") {
-      mat.emissive = new THREE.Color(config.glowColor);
-      mat.emissiveIntensity = camo === "polkadots" ? 0.4 : 0.2;
-    }
     return mat;
   }, [potTexture, camo, config.glowColor]);
 
   const rimMaterial = useMemo(() => {
     if (camo === "solid") {
-      return new THREE.MeshStandardMaterial({ color: "#D4A574", roughness: 0.4, metalness: 0.1 });
+      // Frosted glass rim for the orb
+      return new THREE.MeshStandardMaterial({ color: "#FFFFFF", roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.6 });
     }
     if (camo === "flames") {
       // Legendary — polished gold rim

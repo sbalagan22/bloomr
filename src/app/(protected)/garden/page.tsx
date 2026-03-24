@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Text, DragControls, Grid } from "@react-three/drei";
+import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
 import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold } from "react-icons/pi";
 import * as THREE from "three";
@@ -120,12 +120,16 @@ function DraggableFlower({
         isEditorMode={isEditorMode}
       />
 
-      <Text position={[0, 4.3, 0]} fontSize={0.4} color="white" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#2B1A0E">
-        {flower.topic_name}
-      </Text>
-      <Text position={[0, 3.8, 0]} fontSize={0.25} color={flowerColor} anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#2B1A0E">
-        {GROWTH_LABELS[flower.growth_stage]}
-      </Text>
+      <Billboard position={[0, 4.3, 0]} follow lockX={false} lockY={false} lockZ={false}>
+        <Text fontSize={0.4} color="white" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#2B1A0E">
+          {flower.topic_name}
+        </Text>
+      </Billboard>
+      <Billboard position={[0, 3.8, 0]} follow lockX={false} lockY={false} lockZ={false}>
+        <Text fontSize={0.25} color={flowerColor} anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#2B1A0E">
+          {GROWTH_LABELS[flower.growth_stage]}
+        </Text>
+      </Billboard>
       {isEditorMode && (
         <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
            <planeGeometry args={[2.5, 2.5]} />
@@ -209,12 +213,10 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
         );
       })}
 
-      {isEditorMode ? (
-        <OrbitControls makeDefault enabled={false} target={[0, 0, centerZ]} />
-      ) : (
-        <OrbitControls 
+      {!isEditorMode && (
+        <OrbitControls
           makeDefault
-          minPolarAngle={0} 
+          minPolarAngle={0}
           maxPolarAngle={Math.PI / 2 - 0.05}
           minDistance={3}
           maxDistance={35}

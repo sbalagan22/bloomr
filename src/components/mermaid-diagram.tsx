@@ -30,7 +30,7 @@ export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
             secondaryColor: "#EDE8DE",
             tertiaryColor: "#F7F2EA",
             fontFamily: "DM Sans, system-ui, sans-serif",
-            fontSize: "14px",
+            fontSize: "16px",
           },
         });
 
@@ -68,7 +68,7 @@ export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
   return (
     <div
       ref={containerRef}
-      className={`overflow-x-auto rounded-2xl border border-[#C4BAA8] bg-white p-4 [&_svg]:mx-auto [&_svg]:max-w-full ${className}`}
+      className={`overflow-x-auto rounded-2xl border border-[#C4BAA8] bg-white p-4 [&_svg]:mx-auto [&_svg]:min-w-[600px] ${className}`}
     />
   );
 }
