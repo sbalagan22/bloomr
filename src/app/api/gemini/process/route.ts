@@ -230,7 +230,32 @@ Rules:
       gardenId = newGarden.id;
     }
 
-    // 7b. Create flower with random pattern
+    // 7b. Assign to first empty grid spot (center outward)
+    const { data: existingFlowers } = await supabase
+      .from("flowers")
+      .select("pos_x, pos_z")
+      .eq("garden_id", gardenId)
+      .not("pos_x", "is", null);
+
+    const occupied = new Set(existingFlowers?.map(f => `${f.pos_x},${f.pos_z}`) || []);
+    let spawnX = 0;
+    let spawnZ = 0;
+    let found = false;
+    
+    const gridSearch = [0, 3, -3, 6, -6, 9, -9, 12, -12];
+    for (const x of gridSearch) {
+      for (const z of gridSearch) {
+        if (!occupied.has(`${x},${z}`)) {
+          spawnX = x;
+          spawnZ = z;
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    // 7c. Create flower with random pattern and new coords
     const patternId = Math.floor(Math.random() * 5) + 1; // 1-5
     const patternOffsetX = Math.random(); // 0.0-1.0
     const patternOffsetY = Math.random(); // 0.0-1.0
@@ -245,6 +270,8 @@ Rules:
         pattern_id: patternId,
         pattern_offset_x: patternOffsetX,
         pattern_offset_y: patternOffsetY,
+        pos_x: spawnX,
+        pos_z: spawnZ,
         growth_stage: 0,
         status: "growing",
       })

@@ -76,7 +76,7 @@ export default function FlowerDetailPage() {
     // Multi-step cascading deletion fallback 
     if (units.length > 0) {
       const unitIds = units.map(u => u.id);
-      await supabase.from("questions").delete().in("unit_id", unitIds);
+      await supabase.from("quizzes").delete().in("unit_id", unitIds);
       await supabase.from("units").delete().eq("flower_id", flowerId);
     }
     

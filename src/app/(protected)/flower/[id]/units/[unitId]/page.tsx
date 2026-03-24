@@ -152,46 +152,39 @@ export default function UnitViewerPage() {
 
       <Separator className="bg-black/10 mb-8" />
 
-      {/* Main Study Area */}
-      <div className="flex flex-col lg:flex-row gap-10">
+      {/* Main Study Area - Top to Bottom Vertical Sequence */}
+      <div className="flex flex-col gap-12 max-w-5xl mx-auto">
         
-        {/* Left Column: Audio & Text Content */}
-        <div className="flex-1 min-w-0 order-2 lg:order-1">
-          <div className="mb-10 sticky top-4 z-20">
-            <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-2 shadow-sm border border-white/60">
+        {/* Top: Notes & Audio */}
+        <div className="w-full">
+          <div className="mb-8 sticky top-4 z-20">
+            <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-2 shadow-sm border border-white/60 pebble-shadow pointer-events-auto">
               <AudioPlayer unitId={unit.id} text={unit.content_json.content} />
             </div>
           </div>
 
-          <div className="prose prose-lg max-w-none">
+          <div className="prose prose-lg max-w-none px-2">
             {renderContent()}
           </div>
-
-
         </div>
 
-        {/* Right Column: Visuals (only) */}
-        <div className="lg:w-[480px] shrink-0 flex flex-col gap-6 order-1 lg:order-2">
-          
-          {/* Diagrams Pane */}
-          {unit.diagram_mermaid && (
-            <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/60 pebble-shadow sticky top-24">
-              <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-4 flex items-center gap-2">
-                <div className="p-2 bg-[#39AB54]/10 rounded-xl"><PiGraphBold className="text-[#39AB54] text-xl" /></div>
-                Concept Map
-              </h3>
-              <div className="bg-white rounded-2xl p-5 overflow-x-auto shadow-inner border border-black/5 min-h-[300px] flex items-center justify-center">
-                <MermaidDiagram chart={unit.diagram_mermaid} />
-              </div>
+        {/* Middle: Visual Diagram Span */}
+        {unit.diagram_mermaid && (
+          <div className="w-full bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/60 pebble-shadow">
+            <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-6 flex items-center gap-2">
+              <div className="p-2 bg-[#39AB54]/10 rounded-xl"><PiGraphBold className="text-[#39AB54] text-xl" /></div>
+              Concept Map
+            </h3>
+            <div className="bg-white rounded-2xl p-6 overflow-x-auto shadow-inner border border-black/5 min-h-[400px] flex items-center justify-center">
+              <MermaidDiagram chart={unit.diagram_mermaid} />
             </div>
-          )}
-
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Full-Width Horizontal Key Terms */}
+      {/* Bottom: Study Vocabulary */}
       {unit.content_json.key_terms && unit.content_json.key_terms.length > 0 && (
-        <div className="mt-16 bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/60 pebble-shadow">
+        <div className="mt-12 max-w-5xl mx-auto bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/60 pebble-shadow">
           <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-6 flex items-center gap-2">
             <div className="p-2 bg-[#F5D03B]/20 rounded-xl"><PiBookmarksBold className="text-[#D4722A] text-xl" /></div>
             Study Vocabulary
@@ -210,7 +203,7 @@ export default function UnitViewerPage() {
       )}
 
       {/* Navigation Buttons */}
-      <div className="mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-black/10 pt-8">
+      <div className="mt-16 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-black/10 pt-8">
         {prevUnit ? (
           <Link href={`/flower/${flowerId}/units/${prevUnit.id}`} className="w-full sm:w-auto">
             <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">

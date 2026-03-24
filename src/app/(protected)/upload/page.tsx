@@ -37,8 +37,23 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Pattern offset seeds for the preview (randomized on mount)
-  const [previewOffset] = useState({ x: Math.random(), y: Math.random() });
+  // Pattern preview states
+  const [previewStage, setPreviewStage] = useState(3); // 3 = Base bloom (no pot)
+  const [previewOffset, setPreviewOffset] = useState({ x: 0.5, y: 0.5 });
+  const [activePreviewId, setActivePreviewId] = useState<'base'|'common'|'uncommon'|'rare'|'legendary'>('base');
+
+  const handlePreviewRarity = (rarity: 'base'|'common'|'uncommon'|'rare'|'legendary') => {
+    setActivePreviewId(rarity);
+    if (rarity === 'base') {
+      setPreviewStage(3); // Hide pot
+    } else {
+      setPreviewStage(4); // Show pot
+      if (rarity === 'legendary') setPreviewOffset({ x: 0.15, y: 0.85 });
+      else if (rarity === 'rare') setPreviewOffset({ x: 0.77, y: 0.33 });
+      else if (rarity === 'uncommon') setPreviewOffset({ x: 0.40, y: 0.60 });
+      else setPreviewOffset({ x: 0.99, y: 0.11 }); // Common
+    }
+  };
 
   useEffect(() => {
     if (!isSubmitting) {
@@ -262,7 +277,7 @@ export default function UploadPage() {
             <Suspense fallback={<div className="h-full w-full animate-pulse bg-primary-fixed/20" />}>
               <Flower3D 
                 flowerType={flowerType} 
-                growthStage={4} // Always show full bloom preview
+                growthStage={previewStage}
                 patternOffsetX={previewOffset.x}
                 patternOffsetY={previewOffset.y}
                 size="full"
@@ -270,19 +285,35 @@ export default function UploadPage() {
               />
             </Suspense>
             
-            <div className="absolute top-10 right-10 bg-white/70 backdrop-blur-xl p-5 rounded-3xl shadow-lg border border-white/40 w-64 pointer-events-none animate-fade-in-down">
-              <h3 className="text-sm font-bold text-[#3D2B1F] mb-3 flex items-center gap-2"><PiGiftBold className="text-[#D4722A] text-lg" /> Possible Pot Drops</h3>
-              <div className="space-y-2.5">
-                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-gray-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-gray-400"></div> Common Wrap</span><span>60%</span></div>
-                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-blue-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-400"></div> Uncommon Wrap</span><span>25%</span></div>
-                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-purple-600 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Rare Variant</span><span>10%</span></div>
-                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-orange-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]"></div> Legendary Case Pattern</span><span>5%</span></div>
+            <div className="absolute top-10 right-10 bg-white/70 backdrop-blur-xl p-5 rounded-3xl shadow-lg border border-white/40 w-64 animate-fade-in-down pointer-events-auto">
+              <h3 className="text-sm font-bold text-[#3D2B1F] mb-3 flex items-center gap-2"><PiGiftBold className="text-[#D4722A] text-lg" /> Pot Drops Preview</h3>
+              <div className="space-y-2">
+                 <button onClick={() => handlePreviewRarity('base')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'base' ? 'bg-[#39AB54]/10 border border-[#39AB54]/30 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
+                   <span className="text-gray-600">Base Preview</span>
+                   <span className="text-[#8B6E59] opacity-60">-</span>
+                 </button>
+                 <button onClick={() => handlePreviewRarity('common')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'common' ? 'bg-gray-100 border border-gray-300 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
+                   <span className="text-gray-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-gray-400"></div> Common</span>
+                   <span>60%</span>
+                 </button>
+                 <button onClick={() => handlePreviewRarity('uncommon')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'uncommon' ? 'bg-blue-50 border border-blue-200 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
+                   <span className="text-blue-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-400"></div> Uncommon</span>
+                   <span>25%</span>
+                 </button>
+                 <button onClick={() => handlePreviewRarity('rare')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'rare' ? 'bg-purple-50 border border-purple-200 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
+                   <span className="text-purple-600 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Rare Variant</span>
+                   <span>10%</span>
+                 </button>
+                 <button onClick={() => handlePreviewRarity('legendary')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'legendary' ? 'bg-orange-50 border border-orange-200 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
+                   <span className="text-orange-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)] animate-pulse"></div> Legendary CSGO</span>
+                   <span>5%</span>
+                 </button>
               </div>
-              <p className="text-[10px] text-[#8B6E59] mt-3.5 leading-tight font-medium">Pots unlock upon reaching Stage 4 (Full Bloom). Your unique CS:GO pattern offset drops dynamically on spawn.</p>
+              <p className="text-[10px] text-[#8B6E59] mt-3.5 leading-tight font-medium text-center opacity-80">Click rarities to demo 3D textures.</p>
             </div>
 
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white/70 backdrop-blur-xl px-6 py-3 rounded-full shadow-lg border border-white/40 pointer-events-none text-center">
-              <p className="text-sm font-bold text-[#3D2B1F]">Full Bloom Preview</p>
+              <p className="text-sm font-bold text-[#3D2B1F]">{activePreviewId === 'base' ? "Full Bloom (Stage 3)" : "Reward Pot (Stage 4)"}</p>
               <p className="text-xs font-medium text-[#6B4C35] mt-0.5">Drag to inspect geometry</p>
             </div>
           </div>
