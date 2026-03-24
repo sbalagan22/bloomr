@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,43 +25,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Call Gemini to grade the short answer
-    const prompt = `You are a fair and encouraging teacher grading a short answer question.
+    // Call OpenAI to grade the short answer
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a fair and encouraging teacher grading a short answer question. Respond with JSON: {"score": <number 0.0-1.0>, "feedback": "<2-3 sentence encouraging feedback>"}
 
-Question: ${question}
-
-Correct/Reference Answer: ${correctAnswer}
-
-Student's Answer: ${answer}
-
-Grade the student's answer on a scale of 0.0 to 1.0, where:
+Scoring guide:
 - 1.0 = Perfect or near-perfect answer covering all key points
 - 0.7-0.9 = Good answer, covers most key points
 - 0.4-0.6 = Partial understanding, missing some key aspects
 - 0.1-0.3 = Shows minimal understanding
-- 0.0 = Completely wrong or irrelevant
+- 0.0 = Completely wrong or irrelevant`,
+        },
+        {
+          role: "user",
+          content: `Question: ${question}\n\nCorrect/Reference Answer: ${correctAnswer}\n\nStudent's Answer: ${answer}`,
+        },
+      ],
+    });
 
-Also provide brief, encouraging feedback (2-3 sentences max).
-
-Respond ONLY with this JSON format, no other text:
-{"score": 0.8, "feedback": "Your feedback here."}`;
-
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    const responseText = completion.choices[0]?.message?.content;
 
     let score = 0.5;
     let feedback = "Your answer has been recorded.";
 
-    try {
-      // Parse JSON from response
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+    if (responseText) {
+      try {
+        const parsed = JSON.parse(responseText);
         score = Math.max(0, Math.min(1, parsed.score));
         feedback = parsed.feedback || feedback;
+      } catch {
+        console.error("Failed to parse grading response:", responseText);
       }
-    } catch {
-      console.error("Failed to parse Gemini grading response:", responseText);
     }
 
     // Save quiz attempt

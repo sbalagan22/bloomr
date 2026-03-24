@@ -69,30 +69,36 @@ function FencePerimeter() {
 }
 
 // --- Draggable Flower ---
-function DraggableFlower({ 
-  flower, isEditorMode, onSave, onNavigate, defaultX, defaultZ 
-}: { 
-  flower: Flower; isEditorMode: boolean; onSave: (id: string, x: number, z: number) => void; onNavigate: () => void; defaultX: number; defaultZ: number 
+function DraggableFlower({
+  flower, isEditorMode, onSave, onNavigate, defaultX, defaultZ
+}: {
+  flower: Flower; isEditorMode: boolean; onSave: (id: string, x: number, z: number) => void; onNavigate: () => void; defaultX: number; defaultZ: number
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  
+
   // Use DB positions if available, otherwise structural grid fallback
   const startX = flower.pos_x ?? defaultX;
   const startZ = flower.pos_z ?? defaultZ;
 
   const flowerColor = FLOWER_COLORS[flower.flower_type] || "#39AB54";
 
-  // Force position sync explicitly so snapping renders dynamically
+  // Force position sync — reset matrix to identity so DragControls offset is cleared
   useEffect(() => {
-    if (groupRef.current && !isEditorMode) {
-      groupRef.current.position.set(startX, 0, startZ);
+    if (groupRef.current) {
+      groupRef.current.matrix.identity();
+      groupRef.current.matrix.setPosition(startX, 0, startZ);
+      groupRef.current.matrix.decompose(
+        groupRef.current.position,
+        groupRef.current.quaternion,
+        groupRef.current.scale
+      );
     }
-  }, [startX, startZ, isEditorMode]);
+  }, [startX, startZ]);
 
   const content = (
-    <group 
+    <group
       ref={groupRef}
-      position={[startX, 0, startZ]} 
+      position={[startX, 0, startZ]}
       onClick={(e) => {
         if (isEditorMode) return;
         e.stopPropagation();
@@ -105,8 +111,8 @@ function DraggableFlower({
         <cylinderGeometry args={[1.5, 1.5, 4, 8]} />
         <meshBasicMaterial opacity={0} transparent />
       </mesh>
-      
-      <FlowerModel 
+
+      <FlowerModel
         flowerType={flower.flower_type}
         growthStage={flower.growth_stage}
         patternOffsetX={flower.pattern_offset_x}
@@ -131,14 +137,17 @@ function DraggableFlower({
 
   if (isEditorMode) {
     return (
-      <DragControls 
-        axisLock="y" 
+      <DragControls
+        axisLock="y"
         dragLimits={[[-14, 14], [-10, 10], [-14, 14]]}
         onDragStart={() => { document.body.style.cursor = 'grabbing'; }}
-        onDragEnd={() => { 
+        onDragEnd={() => {
           document.body.style.cursor = 'auto';
           if (groupRef.current) {
-             onSave(flower.id, groupRef.current.position.x, groupRef.current.position.z);
+            // Read the world position (accounts for DragControls matrix offset)
+            const worldPos = new THREE.Vector3();
+            groupRef.current.getWorldPosition(worldPos);
+            onSave(flower.id, worldPos.x, worldPos.z);
           }
         }}
       >
@@ -175,7 +184,7 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
       </mesh>
 
       {isEditorMode && (
-         <Grid position={[0, -0.59, 0]} cellColor="#ffffff" sectionColor="#ffffff" sectionSize={GRID_SPACING} cellSize={GRID_SPACING} args={[30, 30]} />
+         <Grid position={[1.5, -0.59, 1.5]} cellColor="#ffffff" sectionColor="#ffffff" sectionSize={GRID_SPACING} cellSize={GRID_SPACING} args={[30, 30]} />
       )}
 
       <FencePerimeter />

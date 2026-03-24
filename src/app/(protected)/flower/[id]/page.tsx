@@ -72,16 +72,39 @@ export default function FlowerDetailPage() {
     if (!confirm(`Are you sure you want to delete "${flower?.topic_name}"? All study units and quiz history will be permanently lost.`)) return;
     setIsDeleting(true);
     const supabase = createClient();
-    
-    // Multi-step cascading deletion fallback 
-    if (units.length > 0) {
-      const unitIds = units.map(u => u.id);
-      await supabase.from("quizzes").delete().in("unit_id", unitIds);
-      await supabase.from("units").delete().eq("flower_id", flowerId);
+
+    try {
+      // Full cascade: quiz_attempts → quizzes → units → flower
+      const { data: dbUnits } = await supabase.from("units").select("id").eq("flower_id", flowerId);
+
+      if (dbUnits && dbUnits.length > 0) {
+        const unitIds = dbUnits.map(u => u.id);
+
+        // Get all quiz IDs for these units
+        const { data: dbQuizzes } = await supabase.from("quizzes").select("id").in("unit_id", unitIds);
+
+        if (dbQuizzes && dbQuizzes.length > 0) {
+          const quizIds = dbQuizzes.map(q => q.id);
+          // Delete quiz_attempts first (FK → quizzes)
+          await supabase.from("quiz_attempts").delete().in("quiz_id", quizIds);
+        }
+
+        // Then delete quizzes (FK → units)
+        await supabase.from("quizzes").delete().in("unit_id", unitIds);
+        // Then delete units (FK → flowers)
+        await supabase.from("units").delete().in("id", unitIds);
+      }
+
+      // Finally delete the flower itself
+      const { error } = await supabase.from("flowers").delete().eq("id", flowerId);
+      if (error) throw error;
+
+      router.push("/garden");
+    } catch (err) {
+      console.error("Delete failed:", err);
+      setIsDeleting(false);
+      alert("Failed to delete flower. Please try again.");
     }
-    
-    await supabase.from("flowers").delete().eq("id", flowerId);
-    router.push("/garden");
   }
 
   if (loading || !flower) return null;

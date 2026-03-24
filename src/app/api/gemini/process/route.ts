@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-// Types for Gemini response
-interface GeminiUnit {
+// Types for AI response
+interface AIUnit {
   title: string;
   content: string;
   key_terms: { term: string; definition: string }[];
@@ -27,8 +26,8 @@ interface GeminiUnit {
   };
 }
 
-interface GeminiResponse {
-  units: GeminiUnit[];
+interface AIResponse {
+  units: AIUnit[];
 }
 
 export async function POST(request: NextRequest) {
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    // Build learner context for Gemini prompt
+    // Build learner context for prompt
     const learnerContext = profile
       ? `
 Student profile: primary_language=${profile.primary_language}, learning_style=${profile.learning_style}.
@@ -95,27 +94,38 @@ ${profile.learning_style === "ADHD" ? "Break content into max 5-minute chunks. U
       );
     }
 
-    // Convert to base64 for Gemini inline data
+    // Convert PDF to base64 for OpenAI file input
     const arrayBuffer = await fileData.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString("base64");
 
-    // 5. Call Gemini API
-    const prompt = `You are an expert educational content creator. Analyze the following PDF document about "${topicName}" and create structured study units.
+    // 5. Call OpenAI API with PDF as file input
+    const systemPrompt = `You are a world-class university professor and educational content designer. Your job is to transform the provided PDF document into a complete, self-contained study guide that a student could use to master the material without needing the original document.
 
 ${learnerContext}
 
-IMPORTANT: You must return ONLY valid JSON, with no markdown formatting, no code fences, and no extra text. The response must be parseable by JSON.parse().
+UNIT STRUCTURE: Split the material into units by topic or logical section.
+- Minimum: 2 units
+- Maximum: 5 units
+- Each unit should cover one distinct topic, concept, or chapter section.
+- If the document covers only one topic, create 2 units: one for core concepts and one for applications/deeper analysis.
 
-DYNAMIC UNIT COUNT: Create a number of units proportional to the content length and complexity:
-- Very short/simple content: 1-2 units
-- Medium content: 3-5 units
-- Large/complex content: 6-7 units
-- Maximum: 10 units
-Each unit should cover a distinct concept or section.
+CONTENT DEPTH — THIS IS CRITICAL:
+Each unit's "content" field must be a thorough, textbook-quality explanation:
+- Write 5-8 detailed paragraphs per unit minimum.
+- Explain concepts from first principles. Don't assume prior knowledge.
+- Include concrete examples, analogies, and real-world applications.
+- Walk through problem-solving steps if applicable.
+- Explain WHY things work, not just WHAT they are.
+- If there are formulas or processes, break them down step by step.
+- Use transition sentences between paragraphs to build a clear narrative.
+- The content should read like a well-written textbook chapter, not bullet points.
 
-DYNAMIC QUIZ COUNT: Each unit should have a proportional number of questions:
-- 2-5 multiple choice questions depending on unit complexity
-- 1-2 short answer questions depending on unit complexity
+QUESTIONS PER UNIT — dynamic based on unit complexity:
+- Multiple choice: minimum 5, maximum 8 questions per unit (exactly 4 options each)
+- Short answer: minimum 2, maximum 3 questions per unit
+- Questions should progress from recall → understanding → application → analysis
+- Include at least 2 application-level questions that test real understanding, not just memorization
+- Wrong MC options should be plausible — avoid obviously silly distractors
 
 MATH SUPPORT: If the content involves math, use LaTeX notation wrapped in $...$ for inline math or $$...$$ for display math in questions, options, and content. For example: $x^2 + y^2 = r^2$ or $$\\int_0^1 f(x) dx$$
 
@@ -124,9 +134,9 @@ Return this exact JSON structure:
   "units": [
     {
       "title": "Unit title here",
-      "content": "Detailed explanation of the concept. Use clear paragraphs. Include examples where helpful. This should be comprehensive enough for a student to learn the concept from this text alone. Use $LaTeX$ for any math expressions.",
+      "content": "Thorough textbook-quality explanation. Multiple detailed paragraphs covering the concept from first principles with examples, analogies, and step-by-step breakdowns. Use $LaTeX$ for any math.",
       "key_terms": [
-        { "term": "Term name", "definition": "Clear definition" }
+        { "term": "Term name", "definition": "Clear, complete definition with context" }
       ],
       "diagram_mermaid": "graph TD\\n    A[Concept A] --> B[Concept B]\\n    B --> C[Concept C]",
       "mc_questions": [
@@ -147,51 +157,61 @@ Return this exact JSON structure:
 }
 
 Rules:
-- Each unit must have 2-5 multiple choice questions with exactly 4 options each
-- Each unit must have 1-2 short answer questions
+- 2-5 units total, separated by topic
+- 5-8 multiple choice questions per unit with exactly 4 options each
+- 2-3 short answer questions per unit
 - The correct_answer for MC questions must exactly match one of the options
 - Mermaid diagrams must use valid mermaid.js syntax (graph TD, flowchart LR, etc.)
 - IMPORTANT: Any node text containing spaces or special characters (like parentheses) MUST be wrapped with double quotes, e.g., A["Node description (info)"] --> B["Another Node"]. Failure to do this will crash the layout.
-- Content should be thorough — at least 3-4 paragraphs per unit
-- Key terms should include 3-8 terms per unit
-- Make questions progressively harder within each unit
-- Return ONLY the JSON object, nothing else`;
+- Content MUST be thorough — minimum 5 paragraphs per unit, written like a textbook
+- Key terms should include 4-10 terms per unit with complete definitions
+- Make questions progressively harder within each unit (recall → application → analysis)`;
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: base64Data,
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      response_format: { type: "json_object" },
+      max_tokens: 16384,
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            {
+              type: "file",
+              file: {
+                filename: "document.pdf",
+                file_data: `data:application/pdf;base64,${base64Data}`,
+              },
+            },
+            {
+              type: "text",
+              text: `Analyze this PDF about "${topicName}" and create structured study units.`,
+            },
+          ],
         },
-      },
-      { text: prompt },
-    ]);
+      ],
+    });
 
-    const responseText = result.response.text();
+    const responseText = completion.choices[0]?.message?.content;
 
-    // 6. Parse the JSON response
-    let parsedResponse: GeminiResponse;
+    if (!responseText) {
+      return NextResponse.json(
+        { error: "AI returned an empty response. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    // 6. Parse the JSON response (OpenAI JSON mode guarantees valid JSON)
+    let parsedResponse: AIResponse;
+
     try {
-      // Try direct parse first
       parsedResponse = JSON.parse(responseText);
     } catch {
-      // Try to extract JSON from markdown code fences
-      const jsonMatch = responseText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
-      if (jsonMatch) {
-        parsedResponse = JSON.parse(jsonMatch[1]);
-      } else {
-        // Try to find JSON object in the response
-        const objectMatch = responseText.match(/\{[\s\S]*\}/);
-        if (objectMatch) {
-          parsedResponse = JSON.parse(objectMatch[0]);
-        } else {
-          console.error("Failed to parse Gemini response:", responseText.slice(0, 500));
-          return NextResponse.json(
-            { error: "Failed to parse AI response. Please try again." },
-            { status: 500 }
-          );
-        }
-      }
+      console.error("Failed to parse OpenAI response:", responseText.slice(0, 500));
+      return NextResponse.json(
+        { error: "Failed to parse AI response. Please try again." },
+        { status: 500 }
+      );
     }
 
     // Validate the response structure
@@ -241,7 +261,7 @@ Rules:
     let spawnX = 0;
     let spawnZ = 0;
     let found = false;
-    
+
     const gridSearch = [0, 3, -3, 6, -6, 9, -9, 12, -12];
     for (const x of gridSearch) {
       for (const z of gridSearch) {
@@ -285,7 +305,7 @@ Rules:
       );
     }
 
-    // 7c. Create units and quizzes
+    // 7d. Create units and quizzes
     for (let i = 0; i < parsedResponse.units.length; i++) {
       const unit = parsedResponse.units[i];
 
@@ -307,7 +327,7 @@ Rules:
 
       if (unitError || !unitRecord) {
         console.error(`Failed to create unit ${i}:`, unitError);
-        continue; // Skip this unit but continue with others
+        continue;
       }
 
       // Create MC quizzes for this unit
@@ -345,18 +365,10 @@ Rules:
     // 8. Return the flower ID
     return NextResponse.json({ flowerId: flower.id }, { status: 201 });
   } catch (err) {
-    console.error("Gemini process error:", err);
-
-    // Handle specific error types
-    if (err instanceof SyntaxError) {
-      return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 }
-      );
-    }
+    console.error("PDF process error:", err);
 
     return NextResponse.json(
-      { error: "Internal server error. Please try again." },
+      { error: "Something went wrong processing your PDF. Please try again." },
       { status: 500 }
     );
   }

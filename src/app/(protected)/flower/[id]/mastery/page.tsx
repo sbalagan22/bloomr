@@ -80,8 +80,10 @@ export default function MasteryTestPage() {
       const { data: allQuizzes } = await supabase.from("quizzes").select("*").in("unit_id", unitIds);
       
       let selectedQuizzes = allQuizzes || [];
-      // Shuffle and pick 10 max
-      selectedQuizzes = selectedQuizzes.sort(() => Math.random() - 0.5).slice(0, 10);
+      // Shuffle and pick 7-10 questions for mastery test
+      selectedQuizzes = selectedQuizzes.sort(() => Math.random() - 0.5);
+      const masteryCount = Math.max(7, Math.min(10, selectedQuizzes.length));
+      selectedQuizzes = selectedQuizzes.slice(0, masteryCount);
       
       setQuizzes(selectedQuizzes);
       setLoading(false);
