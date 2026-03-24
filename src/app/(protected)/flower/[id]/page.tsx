@@ -156,7 +156,7 @@ export default function FlowerDetailPage() {
                     <PiBookOpenBold /> Study
                   </button>
                 </Link>
-                <Link href={`/flower/${flowerId}/quiz/${unit.id}`} className="flex-1" target="_blank">
+                <Link href={`/flower/${flowerId}/quiz/${unit.id}`} className="flex-1">
                   <button className="w-full h-10 rounded-xl gradient-cta text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
                     <PiLightningBold /> Quiz
                   </button>
@@ -169,7 +169,7 @@ export default function FlowerDetailPage() {
             <div className="mt-2 rounded-[1.5rem] bg-surface/90 backdrop-blur-md pebble-shadow p-6 border-2 border-primary-deep/50 flex flex-col gap-3 text-center items-center animate-fade-in-up">
               <h3 className="font-heading text-lg font-bold text-on-surface">Ready for Full Bloom?</h3>
               <p className="text-xs text-on-surface-variant">Pass the Mastery Test across all units to reach Stage 4!</p>
-              <Link href={`/flower/${flowerId}/mastery`} className="w-full mt-2" target="_blank">
+              <Link href={`/flower/${flowerId}/mastery`} className="w-full mt-2">
                 <button className="w-full h-12 rounded-xl gradient-cta text-white font-bold text-base shadow-lg hover:shadow-xl transition-all">
                   Take Mastery Test 🌸
                 </button>

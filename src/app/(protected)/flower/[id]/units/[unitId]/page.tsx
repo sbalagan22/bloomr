@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { AudioPlayer } from "@/components/audio-player";
+import { PiGraphBold, PiBookmarksBold, PiArrowLeftBold, PiArrowRightBold } from "react-icons/pi";
 
 interface UnitData {
   id: string;
@@ -32,7 +33,7 @@ interface FlowerData {
 
 export default function UnitViewerPage() {
   const params = useParams();
-  const router = useRouter();
+  const router = useRouter(); // Used for missing data redirects
   const flowerId = params.id as string;
   const unitId = params.unitId as string;
 
@@ -44,15 +45,10 @@ export default function UnitViewerPage() {
   useEffect(() => {
     async function loadUnit() {
       const supabase = createClient();
-
       const [unitResult, flowerResult, allUnitsResult] = await Promise.all([
         supabase.from("units").select("*").eq("id", unitId).single(),
         supabase.from("flowers").select("id, topic_name, flower_type").eq("id", flowerId).single(),
-        supabase
-          .from("units")
-          .select("id, title, order_index")
-          .eq("flower_id", flowerId)
-          .order("order_index"),
+        supabase.from("units").select("id, title, order_index").eq("flower_id", flowerId).order("order_index"),
       ]);
 
       if (!unitResult.data || !flowerResult.data) {
@@ -65,7 +61,6 @@ export default function UnitViewerPage() {
       setAllUnits(allUnitsResult.data || []);
       setLoading(false);
     }
-
     loadUnit();
   }, [flowerId, unitId, router]);
 
@@ -73,8 +68,8 @@ export default function UnitViewerPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-[#C8EDCF]" />
-          <p className="mt-4 text-sm text-[#6B4C35]">Loading unit...</p>
+          <div className="mx-auto h-16 w-16 animate-pulse rounded-full bg-[#C8EDCF]" />
+          <p className="mt-4 text-sm font-bold text-[#6B4C35] animate-pulse">Gathering unit notes...</p>
         </div>
       </div>
     );
@@ -86,18 +81,13 @@ export default function UnitViewerPage() {
   const prevUnit = currentIndex > 0 ? allUnits[currentIndex - 1] : null;
   const nextUnit = currentIndex < allUnits.length - 1 ? allUnits[currentIndex + 1] : null;
 
-  // Render content with highlighted key terms
   const renderContent = () => {
-    let content = unit.content_json.content;
+    const content = unit.content_json.content;
     const keyTerms = unit.content_json.key_terms || [];
-
-    // Split content into paragraphs
     const paragraphs = content.split("\n").filter((p) => p.trim());
 
     return paragraphs.map((paragraph, i) => {
-      // Check if any key terms appear in this paragraph
       let parts: (string | { term: string; definition: string })[] = [paragraph];
-
       for (const kt of keyTerms) {
         const newParts: (string | { term: string; definition: string })[] = [];
         for (const part of parts) {
@@ -119,18 +109,16 @@ export default function UnitViewerPage() {
       }
 
       return (
-        <p key={i} className="text-[#3D2B1F] leading-relaxed mb-4">
+        <p key={i} className="text-[#3D2B1F] leading-[1.8] mb-6 text-lg">
           {parts.map((part, j) => {
-            if (typeof part === "string") {
-              return <span key={j}>{part}</span>;
-            }
+            if (typeof part === "string") return <span key={j}>{part}</span>;
             return (
               <Tooltip key={j}>
-                <TooltipTrigger className="cursor-help rounded bg-[#C8EDCF] px-1 py-0.5 text-[#2A8040] font-medium decoration-dotted underline underline-offset-2 inline">
+                <TooltipTrigger className="cursor-help rounded-md bg-[#39AB54]/10 px-1.5 py-0.5 text-[#2A8040] font-bold decoration-dotted underline underline-offset-4 inline transition-colors hover:bg-[#39AB54]/20">
                   {part.term}
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs bg-[#3D2B1F] text-white">
-                  <p className="text-sm">{part.definition}</p>
+                <TooltipContent className="max-w-sm bg-[#3D2B1F] text-white p-3 rounded-xl shadow-xl">
+                  <p className="text-sm font-medium leading-relaxed">{part.definition}</p>
                 </TooltipContent>
               </Tooltip>
             );
@@ -141,116 +129,107 @@ export default function UnitViewerPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-8 py-8 animate-fade-in-up bg-surface/80 backdrop-blur-xl rounded-[3rem] mt-4 lg:mt-8 border border-white/20 pebble-shadow pointer-events-auto mb-12">
-      {/* Breadcrumb + progress */}
-      <div className="mb-6">
-        <Link
-          href={`/flower/${flowerId}`}
-          className="inline-flex items-center gap-1 text-sm text-[#6B4C35] hover:text-[#3D2B1F] transition-colors"
-        >
-          ← {flower.topic_name}
-        </Link>
-
-        {/* Unit progress bar */}
-        <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs text-[#6B4C35]">
-            Unit {currentIndex + 1} of {allUnits.length}
-          </span>
-          <div className="flex-1 h-1.5 bg-[#EDE8DE] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#39AB54] rounded-full transition-all"
-              style={{ width: `${((currentIndex + 1) / allUnits.length) * 100}%` }}
-            />
+    <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 animate-fade-in-up bg-surface/90 backdrop-blur-2xl rounded-[3rem] mt-6 lg:mt-10 border border-white/40 pebble-shadow pointer-events-auto mb-12">
+      {/* Header & Breadcrumb */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <Link href={`/flower/${flowerId}`} className="inline-flex items-center gap-2 text-sm font-bold text-[#6B4C35] hover:text-[#39AB54] transition-colors mb-2 bg-white/50 px-3 py-1 rounded-full w-fit">
+            <PiArrowLeftBold /> {flower.topic_name}
+          </Link>
+          <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-[#3D2B1F] tracking-tight">
+            {unit.title}
+          </h1>
+        </div>
+        
+        {/* Progress Badge */}
+        <div className="flex flex-col items-end shrink-0 bg-white/50 p-4 rounded-2xl border border-white/50">
+          <span className="text-xs font-bold text-[#6B4C35] mb-2">Lesson {currentIndex + 1} of {allUnits.length}</span>
+          <div className="w-32 h-2.5 bg-[#C4BAA8]/30 rounded-full overflow-hidden shadow-inner">
+            <div className="h-full bg-[#39AB54] rounded-full transition-all duration-700" style={{ width: `${((currentIndex + 1) / allUnits.length) * 100}%` }} />
           </div>
         </div>
       </div>
 
-      {/* Unit Title */}
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[#3D2B1F] sm:text-3xl mb-2">
-        {unit.title}
-      </h1>
+      <Separator className="bg-black/10 mb-8" />
 
-      {/* Audio player */}
-      <div className="mb-6">
-        <AudioPlayer unitId={unit.id} text={unit.content_json.content} />
-      </div>
+      {/* Main Study Area */}
+      <div className="flex flex-col lg:flex-row gap-10">
+        
+        {/* Left Column: Audio & Text Content */}
+        <div className="flex-1 min-w-0 order-2 lg:order-1">
+          <div className="mb-10 sticky top-4 z-20">
+            <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-2 shadow-sm border border-white/60">
+              <AudioPlayer unitId={unit.id} text={unit.content_json.content} />
+            </div>
+          </div>
 
-      <Separator className="bg-[#C4BAA8] mb-6" />
-
-      {/* Content area */}
-      <div className="lg:flex lg:gap-8">
-        {/* Main content */}
-        <div className="flex-1 min-w-0">
           <div className="prose prose-lg max-w-none">
             {renderContent()}
           </div>
 
-          {/* Mermaid Diagram */}
-          {unit.diagram_mermaid && (
-            <div className="mt-8">
-              <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[#3D2B1F] mb-3">
-                Concept Diagram
-              </h3>
-              <MermaidDiagram chart={unit.diagram_mermaid} />
-            </div>
-          )}
+          {/* Navigation Buttons (Bottom of left col) */}
+          <div className="mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-black/10 pt-8">
+            {prevUnit ? (
+              <Link href={`/flower/${flowerId}/units/${prevUnit.id}`} className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
+                  <PiArrowLeftBold className="mr-2" /> {prevUnit.title}
+                </Button>
+              </Link>
+            ) : <div className="hidden sm:block" />}
+
+            <Link href={`/flower/${flowerId}/quiz/${unit.id}`} className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto h-14 rounded-full gradient-cta text-white shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all px-10 text-lg font-extrabold tracking-wide">
+                Start Lesson Quiz <PiArrowRightBold className="ml-2" />
+              </Button>
+            </Link>
+
+            {nextUnit ? (
+              <Link href={`/flower/${flowerId}/units/${nextUnit.id}`} className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
+                  {nextUnit.title} <PiArrowRightBold className="ml-2" />
+                </Button>
+              </Link>
+            ) : <div className="hidden sm:block" />}
+          </div>
         </div>
 
-        {/* Sidebar — Key Terms */}
-        {unit.content_json.key_terms && unit.content_json.key_terms.length > 0 && (
-          <aside className="mt-8 lg:mt-0 lg:w-72 flex-shrink-0">
-            <div className="sticky top-20 rounded-2xl border border-[#C4BAA8] bg-[#EDE8DE] p-5">
-              <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-[#3D2B1F] mb-3">
-                Key Terms
+        {/* Right Column: Visuals & Key Terms */}
+        <div className="lg:w-[480px] shrink-0 flex flex-col gap-6 order-1 lg:order-2">
+          
+          {/* Diagrams Pane */}
+          {unit.diagram_mermaid && (
+            <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/60 pebble-shadow">
+              <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-4 flex items-center gap-2">
+                <div className="p-2 bg-[#39AB54]/10 rounded-xl"><PiGraphBold className="text-[#39AB54] text-xl" /></div>
+                Concept Map
               </h3>
-              <ul className="space-y-3">
+              <div className="bg-white rounded-2xl p-5 overflow-x-auto shadow-inner border border-black/5 min-h-[300px] flex items-center justify-center">
+                <MermaidDiagram chart={unit.diagram_mermaid} />
+              </div>
+            </div>
+          )}
+
+          {/* Key Terms Pane */}
+          {unit.content_json.key_terms && unit.content_json.key_terms.length > 0 && (
+            <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/60 pebble-shadow lg:sticky lg:top-24">
+              <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-5 flex items-center gap-2">
+                <div className="p-2 bg-[#F5D03B]/20 rounded-xl"><PiBookmarksBold className="text-[#D4722A] text-xl" /></div>
+                Study Vocabulary
+              </h3>
+              <ul className="space-y-4">
                 {unit.content_json.key_terms.map((kt, i) => (
-                  <li key={i}>
-                    <Badge className="bg-[#C8EDCF] text-[#2A8040] hover:bg-[#C8EDCF] rounded-md font-medium mb-1">
+                  <li key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-black/5 hover:border-[#39AB54]/30 transition-colors">
+                    <Badge className="bg-[#C8EDCF] text-[#2A8040] hover:bg-[#C8EDCF] rounded-md font-bold mb-2 text-sm px-2.5 py-0.5">
                       {kt.term}
                     </Badge>
-                    <p className="text-sm text-[#6B4C35] leading-snug">{kt.definition}</p>
+                    <p className="text-[15px] font-medium text-[#6B4C35] leading-snug">{kt.definition}</p>
                   </li>
                 ))}
               </ul>
             </div>
-          </aside>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Navigation */}
-      <div className="mt-12 flex items-center justify-between gap-4">
-        {prevUnit ? (
-          <Link href={`/flower/${flowerId}/units/${prevUnit.id}`}>
-            <Button
-              variant="outline"
-              className="rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE]"
-            >
-              ← {prevUnit.title}
-            </Button>
-          </Link>
-        ) : (
-          <div />
-        )}
-
-        <Link href={`/flower/${flowerId}/quiz/${unit.id}`}>
-          <Button className="rounded-full bg-[#39AB54] text-white hover:bg-[#2A8040] px-6 font-semibold shadow-sm">
-            Start Quiz →
-          </Button>
-        </Link>
-
-        {nextUnit ? (
-          <Link href={`/flower/${flowerId}/units/${nextUnit.id}`}>
-            <Button
-              variant="outline"
-              className="rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE]"
-            >
-              {nextUnit.title} →
-            </Button>
-          </Link>
-        ) : (
-          <div />
-        )}
       </div>
     </div>
   );

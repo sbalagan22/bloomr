@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
-import { PiUploadSimpleBold, PiPlantBold } from "react-icons/pi";
+import { PiUploadSimpleBold, PiPlantBold, PiGiftBold } from "react-icons/pi";
 
 const Flower3D = dynamic(
   () => import("@/components/flower-3d").then((mod) => ({ default: mod.Flower3D })),
@@ -269,6 +269,18 @@ export default function UploadPage() {
                 interactive={true}
               />
             </Suspense>
+            
+            <div className="absolute top-10 right-10 bg-white/70 backdrop-blur-xl p-5 rounded-3xl shadow-lg border border-white/40 w-64 pointer-events-none animate-fade-in-down">
+              <h3 className="text-sm font-bold text-[#3D2B1F] mb-3 flex items-center gap-2"><PiGiftBold className="text-[#D4722A] text-lg" /> Possible Pot Drops</h3>
+              <div className="space-y-2.5">
+                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-gray-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-gray-400"></div> Common Wrap</span><span>60%</span></div>
+                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-blue-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-400"></div> Uncommon Wrap</span><span>25%</span></div>
+                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-purple-600 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Rare Variant</span><span>10%</span></div>
+                 <div className="flex justify-between items-center text-xs font-bold"><span className="text-orange-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]"></div> Legendary Case Pattern</span><span>5%</span></div>
+              </div>
+              <p className="text-[10px] text-[#8B6E59] mt-3.5 leading-tight font-medium">Pots unlock upon reaching Stage 4 (Full Bloom). Your unique CS:GO pattern offset drops dynamically on spawn.</p>
+            </div>
+
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white/70 backdrop-blur-xl px-6 py-3 rounded-full shadow-lg border border-white/40 pointer-events-none text-center">
               <p className="text-sm font-bold text-[#3D2B1F]">Full Bloom Preview</p>
               <p className="text-xs font-medium text-[#6B4C35] mt-0.5">Drag to inspect geometry</p>
