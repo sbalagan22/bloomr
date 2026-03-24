@@ -2,9 +2,14 @@
 
 import { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, TransformControls } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { createClient } from "@/lib/supabase/client";
+import {
+  type CamoType,
+  getRarityFromOffsets,
+  getCommonColor,
+  RARITIES,
+} from "@/lib/rarity";
 
 interface Flower3DProps {
   flowerType: string;
@@ -23,42 +28,332 @@ const FLOWER_COLORS: Record<string, { petal: string; accent: string }> = {
   lavender: { petal: "#B09FD8", accent: "#7B6CB5" },
 };
 
-/* --- The Stage 4 Exclusive CS:GO Pot --- */
-function CSGOPot({ offsetX, offsetY }: { offsetX: number, offsetY: number }) {
-  // A sleek, stylized pot. The shader material uses offset values to slide across a vibrant color spectrum,
-  // representing the unique CSGO-style "drop" wrapping the pot.
-  const potMaterial = useMemo(() => {
-    // Generate a unique color tint based on the offsets
-    const hue = (offsetX + offsetY) % 1; // 0 to 1
-    const saturation = 0.6 + (offsetX * 0.4); // 0.6 to 1.0
-    const lightness = 0.4 + (offsetY * 0.4); // 0.4 to 0.8
-    const baseColor = new THREE.Color().setHSL(hue, saturation, lightness);
-    
-    // In the future, this is where the `useTexture` map would go for a custom image wrapper.
-    return new THREE.MeshStandardMaterial({
-      color: baseColor,
-      roughness: 0.2,
-      metalness: 0.6,
-      envMapIntensity: 1.5,
-    });
-  }, [offsetX, offsetY]);
+/* ═══════════════════════════════════════════════════════
+   PROCEDURAL CAMO TEXTURE GENERATORS  (Canvas 2D → Three.js)
+   ═══════════════════════════════════════════════════════ */
 
-  const innerSoilMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#2B1A0E", roughness: 1 }), []);
+function createSolidTexture(color: string): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 256, 256);
+  // Subtle ceramic sheen gradient
+  const grad = ctx.createLinearGradient(0, 0, 256, 256);
+  grad.addColorStop(0, "rgba(255,255,255,0.12)");
+  grad.addColorStop(0.5, "rgba(0,0,0,0.05)");
+  grad.addColorStop(1, "rgba(255,255,255,0.08)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function createStripesTexture(
+  primary: string,
+  secondary: string,
+  ox: number,
+  oy: number
+): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = primary;
+  ctx.fillRect(0, 0, 512, 512);
+  const stripeWidth = 18 + Math.floor(ox * 20);
+  const angle = -35 + oy * 30; // slight rotation variance
+  ctx.save();
+  ctx.translate(256, 256);
+  ctx.rotate((angle * Math.PI) / 180);
+  ctx.translate(-256, -256);
+  ctx.fillStyle = secondary;
+  for (let i = -512; i < 1024; i += stripeWidth * 2) {
+    ctx.fillRect(i, -100, stripeWidth, 1200);
+  }
+  ctx.restore();
+  // Soft vignette overlay
+  const vig = ctx.createRadialGradient(256, 256, 80, 256, 256, 360);
+  vig.addColorStop(0, "rgba(255,255,255,0.1)");
+  vig.addColorStop(1, "rgba(0,0,0,0.15)");
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, 512, 512);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function createDripTexture(
+  bg: string,
+  dripColor: string,
+  ox: number,
+  oy: number
+): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 512, 512);
+  // Seeded pseudo-random from offsets
+  const seed = (n: number) => ((Math.sin(n * 127.1 + ox * 311.7) * 43758.5453) % 1 + 1) % 1;
+  const dripCount = 8 + Math.floor(oy * 8);
+  ctx.fillStyle = dripColor;
+  for (let i = 0; i < dripCount; i++) {
+    const x = seed(i) * 512;
+    const w = 14 + seed(i + 50) * 24;
+    const h = 60 + seed(i + 100) * 200;
+    const topY = seed(i + 200) * 180;
+    // Rounded drip shape
+    ctx.beginPath();
+    ctx.moveTo(x - w / 2, topY);
+    ctx.quadraticCurveTo(x - w / 2, topY + h * 0.7, x, topY + h);
+    ctx.quadraticCurveTo(x + w / 2, topY + h * 0.7, x + w / 2, topY);
+    ctx.closePath();
+    ctx.fill();
+    // Paint splatter at drip origin
+    ctx.beginPath();
+    ctx.arc(x, topY, w * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Glossy overlay
+  const gloss = ctx.createLinearGradient(0, 0, 0, 512);
+  gloss.addColorStop(0, "rgba(255,255,255,0.18)");
+  gloss.addColorStop(0.4, "rgba(255,255,255,0)");
+  gloss.addColorStop(1, "rgba(0,0,0,0.1)");
+  ctx.fillStyle = gloss;
+  ctx.fillRect(0, 0, 512, 512);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function createFlamesTexture(
+  ox: number,
+  oy: number
+): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d")!;
+  // Dark base
+  ctx.fillStyle = "#1A0A00";
+  ctx.fillRect(0, 0, 512, 512);
+  const seed = (n: number) => ((Math.sin(n * 78.233 + oy * 143.3) * 43758.5453) % 1 + 1) % 1;
+  const flameCount = 10 + Math.floor(ox * 8);
+  for (let i = 0; i < flameCount; i++) {
+    const cx = seed(i) * 512;
+    const baseY = 480 + seed(i + 30) * 32;
+    const h = 120 + seed(i + 60) * 280;
+    const w = 20 + seed(i + 90) * 40;
+    // Flame gradient
+    const grad = ctx.createLinearGradient(cx, baseY, cx, baseY - h);
+    grad.addColorStop(0, "#FF4500");
+    grad.addColorStop(0.3, "#FF8C00");
+    grad.addColorStop(0.6, "#FFD700");
+    grad.addColorStop(0.85, "#FBBF24");
+    grad.addColorStop(1, "rgba(251,191,36,0)");
+    ctx.fillStyle = grad;
+    // Organic flame shape with bezier curves
+    ctx.beginPath();
+    ctx.moveTo(cx - w / 2, baseY);
+    const tipX = cx + (seed(i + 120) - 0.5) * w * 0.8;
+    ctx.bezierCurveTo(
+      cx - w * 0.6, baseY - h * 0.4,
+      cx - w * 0.2, baseY - h * 0.8,
+      tipX, baseY - h
+    );
+    ctx.bezierCurveTo(
+      cx + w * 0.2, baseY - h * 0.8,
+      cx + w * 0.6, baseY - h * 0.4,
+      cx + w / 2, baseY
+    );
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Hot glow at bottom
+  const glow = ctx.createLinearGradient(0, 512, 0, 300);
+  glow.addColorStop(0, "rgba(255,100,0,0.35)");
+  glow.addColorStop(1, "rgba(255,100,0,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 512, 512);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+/* --- The Stage 4 Exclusive Rarity Pot --- */
+function RarityPot({ offsetX, offsetY }: { offsetX: number; offsetY: number }) {
+  const rarity = getRarityFromOffsets(offsetX, offsetY);
+  const config = RARITIES[rarity];
+  const camo: CamoType = config.camo;
+
+  /* ── 1. UNIQUE SHAPE PER RARITY (LatheGeometry) ── */
+  const { potGeometry, rimY, rimRadius, soilRadius } = useMemo(() => {
+    const pts: THREE.Vector2[] = [];
+
+    switch (camo) {
+      case "flames": {
+        // "Golden Chalice" — trophy-like, narrow pedestal flaring to wide cup
+        pts.push(
+          new THREE.Vector2(0.3, -0.55),
+          new THREE.Vector2(0.15, -0.45),
+          new THREE.Vector2(0.1, -0.2),
+          new THREE.Vector2(0.12, -0.05),
+          new THREE.Vector2(0.25, 0.1),
+          new THREE.Vector2(0.45, 0.3),
+          new THREE.Vector2(0.52, 0.45),
+          new THREE.Vector2(0.5, 0.55),
+        );
+        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.55, rimRadius: 0.5, soilRadius: 0.48 };
+      }
+      case "drip": {
+        // "Slumped Jar" — wide belly, narrow neck
+        pts.push(
+          new THREE.Vector2(0.15, -0.5),
+          new THREE.Vector2(0.45, -0.4),
+          new THREE.Vector2(0.55, -0.1),
+          new THREE.Vector2(0.5, 0.15),
+          new THREE.Vector2(0.35, 0.35),
+          new THREE.Vector2(0.3, 0.5),
+        );
+        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.5, rimRadius: 0.3, soilRadius: 0.28 };
+      }
+      case "stripes": {
+        // "Tactical Beaker" — angular, straight-walled with flared lip
+        pts.push(
+          new THREE.Vector2(0.2, -0.5),
+          new THREE.Vector2(0.35, -0.45),
+          new THREE.Vector2(0.4, -0.1),
+          new THREE.Vector2(0.4, 0.3),
+          new THREE.Vector2(0.45, 0.4),
+          new THREE.Vector2(0.5, 0.5),
+        );
+        return { potGeometry: new THREE.LatheGeometry(pts, 6), rimY: 0.5, rimRadius: 0.5, soilRadius: 0.43 };
+      }
+      case "polkadots": {
+        // "Royal Urn" — elegant S-curve silhouette (same shape as legendary)
+        for (let i = 0; i <= 12; i++) {
+          const t = i / 12;
+          const r = 0.25 + Math.sin(t * Math.PI) * 0.28;
+          pts.push(new THREE.Vector2(r, t * 1.0 - 0.5));
+        }
+        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.5, rimRadius: pts[pts.length - 1].x, soilRadius: pts[pts.length - 1].x - 0.02 };
+      }
+      default: {
+        // "Classic Terracotta" — simple tapered cylinder
+        pts.push(
+          new THREE.Vector2(0.2, -0.5),
+          new THREE.Vector2(0.38, -0.45),
+          new THREE.Vector2(0.42, 0.3),
+          new THREE.Vector2(0.48, 0.4),
+          new THREE.Vector2(0.5, 0.45),
+        );
+        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: 0.45, rimRadius: 0.5, soilRadius: 0.46 };
+      }
+    }
+  }, [camo]);
+
+  /* ── 2. PROCEDURAL TEXTURE (null for legendary — pure gold) ── */
+  const potTexture = useMemo(() => {
+    switch (camo) {
+      case "solid":
+        return createSolidTexture(getCommonColor(offsetX));
+      case "stripes":
+        return createStripesTexture("#1E3A5F", "#60A5FA", offsetX, offsetY);
+      case "polkadots":
+        return createFlamesTexture(offsetX, offsetY);
+      case "drip":
+        return createDripTexture("#1F1F1F", "#F472B6", offsetX, offsetY);
+      case "flames":
+        return null;
+    }
+  }, [camo, offsetX, offsetY]);
+
+  /* ── 3. MATERIAL ── */
+  const potMaterial = useMemo(() => {
+    if (camo === "flames") {
+      // Legendary — pure polished gold, no texture
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: "#FFD700",
+        roughness: 0.05,
+        metalness: 1.0,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.05,
+        reflectivity: 1.0,
+      });
+      mat.emissive = new THREE.Color("#B8860B");
+      mat.emissiveIntensity = 0.25;
+      return mat;
+    }
+    const mat = new THREE.MeshPhysicalMaterial({
+      map: potTexture,
+      roughness: camo === "polkadots" ? 0.1 : camo === "drip" ? 0.15 : camo === "solid" ? 0.7 : 0.3,
+      metalness: camo === "polkadots" ? 0.8 : camo === "drip" ? 0.5 : camo === "solid" ? 0.05 : 0.3,
+      clearcoat: camo === "polkadots" ? 1.0 : camo === "drip" ? 0.6 : 0,
+      clearcoatRoughness: 0.1,
+    });
+    if (camo === "polkadots" || camo === "drip") {
+      mat.emissive = new THREE.Color(config.glowColor);
+      mat.emissiveIntensity = camo === "polkadots" ? 0.4 : 0.2;
+    }
+    return mat;
+  }, [potTexture, camo, config.glowColor]);
+
+  const rimMaterial = useMemo(() => {
+    if (camo === "solid") {
+      return new THREE.MeshStandardMaterial({ color: "#D4A574", roughness: 0.4, metalness: 0.1 });
+    }
+    if (camo === "flames") {
+      // Legendary — polished gold rim
+      const mat = new THREE.MeshStandardMaterial({ color: "#FFD700", roughness: 0.05, metalness: 1.0 });
+      mat.emissive = new THREE.Color("#B8860B");
+      mat.emissiveIntensity = 0.2;
+      return mat;
+    }
+    const mat = new THREE.MeshStandardMaterial({
+      color: config.color,
+      roughness: 0.1,
+      metalness: 0.8,
+    });
+    if (camo === "polkadots") {
+      mat.emissive = new THREE.Color(config.glowColor);
+      mat.emissiveIntensity = 0.3;
+    }
+    return mat;
+  }, [camo, config.color, config.glowColor]);
+
+  const soilMaterial = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: "#2B1A0E", roughness: 1 }),
+    []
+  );
 
   return (
     <group position={[0, -0.4, 0]}>
-      {/* Outer Ceramic Pot */}
-      <mesh material={potMaterial} castShadow receiveShadow>
-        <cylinderGeometry args={[0.5, 0.4, 0.7, 32, 1, false]} />
-      </mesh>
-      {/* Pot Rim */}
-      <mesh material={potMaterial} position={[0, 0.35, 0]} castShadow>
-        <torusGeometry args={[0.5, 0.05, 16, 32]} />
+      {/* Pot body — unique LatheGeometry per rarity */}
+      <mesh geometry={potGeometry} material={potMaterial} castShadow receiveShadow />
+      {/* Pot Rim — metallic ring color-coded to rarity */}
+      <mesh material={rimMaterial} position={[0, rimY, 0]} castShadow>
+        <torusGeometry args={[rimRadius, 0.04, 16, 32]} />
       </mesh>
       {/* Top Soil Layer */}
-      <mesh material={innerSoilMaterial} position={[0, 0.32, 0]} receiveShadow>
-        <cylinderGeometry args={[0.48, 0.48, 0.02, 32]} />
+      <mesh material={soilMaterial} position={[0, rimY - 0.03, 0]} receiveShadow>
+        <cylinderGeometry args={[soilRadius, soilRadius, 0.02, 32]} />
       </mesh>
+      {/* Rarity glow ring (rare + epic + legendary) */}
+      {(camo === "polkadots" || camo === "drip" || camo === "flames") && (
+        <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.18, 0.35, 32]} />
+          <meshBasicMaterial
+            color={camo === "flames" ? "#FFD700" : config.glowColor}
+            transparent
+            opacity={camo === "flames" ? 0.7 : 0.5}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -214,7 +509,7 @@ export function FlowerModel({
     <group ref={groupRef} scale={scale} position={[0, growthStage >= 4 ? 0 : -0.8, 0]}>
       {/* Unique Pot only drops at Stage 4! Otherwise generic soil mound. */}
       {growthStage >= 4 ? (
-        <CSGOPot offsetX={patternOffsetX} offsetY={patternOffsetY} />
+        <RarityPot offsetX={patternOffsetX} offsetY={patternOffsetY} />
       ) : (
         <mesh position={[0, -0.5, 0]} material={soilMaterial} receiveShadow>
           <sphereGeometry args={[0.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
@@ -255,17 +550,21 @@ export function FlowerModel({
       {flowerType === "daisy" && <DaisyBloom growthStage={growthStage} />}
       {flowerType === "lavender" && <LavenderBloom growthStage={growthStage} color={colors.petal} />}
 
-      {/* Stage 4 Particles */}
+      {/* Stage 4 Particles — color matches pot rarity */}
       {growthStage >= 4 &&
-        Array.from({ length: 6 }).map((_, i) => {
-          const angle = (i / 6) * Math.PI * 2;
-          return (
-            <mesh key={`particle-${i}`} position={[Math.cos(angle) * 0.8, 1.5 + Math.sin(i * 0.7) * 0.3, Math.sin(angle) * 0.8]}>
-              <sphereGeometry args={[0.03, 8, 8]} />
-              <meshStandardMaterial color="#F5D03B" emissive="#F5D03B" emissiveIntensity={1.0} />
-            </mesh>
-          );
-        })}
+        (() => {
+          const r = getRarityFromOffsets(patternOffsetX, patternOffsetY);
+          const glowColor = RARITIES[r].glowColor;
+          return Array.from({ length: 6 }).map((_, i) => {
+            const angle = (i / 6) * Math.PI * 2;
+            return (
+              <mesh key={`particle-${i}`} position={[Math.cos(angle) * 0.8, 1.5 + Math.sin(i * 0.7) * 0.3, Math.sin(angle) * 0.8]}>
+                <sphereGeometry args={[0.03, 8, 8]} />
+                <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={1.0} />
+              </mesh>
+            );
+          });
+        })()}
     </group>
   );
 }

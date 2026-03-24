@@ -67,7 +67,7 @@
 
   /* Primary palette */
   --color-primary-deep: #006e2b;
-  --color-primary-container: #39ab54;
+  --color-primary-container: #3BAB55;
   --color-primary-fixed: #8afa99;
   --color-primary-fixed-dim: #6ddd7f;
   --color-on-primary-fixed: #002108;
@@ -78,9 +78,9 @@
 }
 
 :root {
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-body: 'Manrope', system-ui, sans-serif;
-  --font-mono: 'DM Mono', monospace;
+  --font-display: var(--font-poppins), 'Poppins', system-ui, sans-serif;
+  --font-body: var(--font-poppins), 'Poppins', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
 
   --background: #fcf9f2;
   --foreground: #1c1c18;
@@ -129,7 +129,15 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
+    font-weight: 600;
   }
+}
+
+/* Logo text: Poppins Light */
+.font-logo {
+  font-family: var(--font-poppins-light), var(--font-poppins), 'Poppins', sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.02em;
 }
 
 /* Editorial Organicism Utilities */
@@ -160,7 +168,10 @@
 }
 
 .gradient-cta {
-  background: linear-gradient(135deg, #006e2b, #39ab54);
+  background: #3BAB55;
+}
+.gradient-cta:hover {
+  background: #339A4C;
 }
 
 /* Smooth page transitions */
@@ -192,4 +203,28 @@
 .animate-fade-in-up-delay-3 {
   animation: fadeInUp 0.6s ease-out 0.3s forwards;
   opacity: 0;
+}
+
+/* Gacha / Pot drop animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+.animate-fade-in-down {
+  animation: fadeInDown 0.5s ease-out forwards;
+}
+.animate-scale-in {
+  animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }

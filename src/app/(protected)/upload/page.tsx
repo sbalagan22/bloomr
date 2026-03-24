@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
 import { PiUploadSimpleBold, PiPlantBold, PiGiftBold } from "react-icons/pi";
+import { FLOWER_ICON_MAP } from "@/components/flower-icons";
+import { RARITIES, RARITY_ORDER, type Rarity, getRarityFromOffsets } from "@/lib/rarity";
 
 const Flower3D = dynamic(
   () => import("@/components/flower-3d").then((mod) => ({ default: mod.Flower3D })),
@@ -16,14 +18,24 @@ const Flower3D = dynamic(
 );
 
 const FLOWER_TYPES = [
-  { name: "rose", color: "#E8637A", label: "Rose" },
-  { name: "tulip", color: "#F4A44E", label: "Tulip" },
   { name: "sunflower", color: "#F5D03B", label: "Sunflower" },
-  { name: "daisy", color: "#A8D8EA", label: "Daisy" },
-  { name: "lavender", color: "#B09FD8", label: "Lavender" },
+  { name: "tulip", color: "#E8637A", label: "Tulip" },
+  { name: "lily", color: "#FFF5E6", label: "Lily" },
+  { name: "hydrangea", color: "#7C6CC4", label: "Hydrangea" },
+  { name: "magnolia", color: "#FDF8EF", label: "Magnolia" },
 ] as const;
 
 type FlowerType = (typeof FLOWER_TYPES)[number]["name"];
+
+/** Preset offsets per rarity for the preview panel */
+const PREVIEW_OFFSETS: Record<string, { x: number; y: number }> = {
+  base:      { x: 0.5, y: 0.5 },
+  common:    { x: 0.12, y: 0.08 },   // getRarityFromOffsets → common
+  uncommon:  { x: 0.85, y: 0.30 },   // → uncommon
+  rare:      { x: 0.72, y: 0.50 },   // → rare
+  epic:      { x: 0.95, y: 0.92 },   // → epic
+  legendary: { x: 0.88, y: 0.95 },   // → legendary
+};
 
 export default function UploadPage() {
   const router = useRouter();
@@ -38,28 +50,22 @@ export default function UploadPage() {
   const [currentStep, setCurrentStep] = useState(0);
 
   // Pattern preview states
-  const [previewStage, setPreviewStage] = useState(3); // 3 = Base bloom (no pot)
+  const [previewStage, setPreviewStage] = useState(3);
   const [previewOffset, setPreviewOffset] = useState({ x: 0.5, y: 0.5 });
-  const [activePreviewId, setActivePreviewId] = useState<'base'|'common'|'uncommon'|'rare'|'legendary'>('base');
+  const [activePreviewId, setActivePreviewId] = useState<string>("base");
 
-  const handlePreviewRarity = (rarity: 'base'|'common'|'uncommon'|'rare'|'legendary') => {
+  const handlePreviewRarity = (rarity: string) => {
     setActivePreviewId(rarity);
-    if (rarity === 'base') {
-      setPreviewStage(3); // Hide pot
+    if (rarity === "base") {
+      setPreviewStage(3);
     } else {
-      setPreviewStage(4); // Show pot
-      if (rarity === 'legendary') setPreviewOffset({ x: 0.15, y: 0.85 });
-      else if (rarity === 'rare') setPreviewOffset({ x: 0.77, y: 0.33 });
-      else if (rarity === 'uncommon') setPreviewOffset({ x: 0.40, y: 0.60 });
-      else setPreviewOffset({ x: 0.99, y: 0.11 }); // Common
+      setPreviewStage(4);
+      setPreviewOffset(PREVIEW_OFFSETS[rarity] || { x: 0.5, y: 0.5 });
     }
   };
 
   useEffect(() => {
-    if (!isSubmitting) {
-      setCurrentStep(0);
-      return;
-    }
+    if (!isSubmitting) { setCurrentStep(0); return; }
     const timers = [
       setTimeout(() => setCurrentStep(1), 3500),
       setTimeout(() => setCurrentStep(2), 8000),
@@ -68,37 +74,25 @@ export default function UploadPage() {
     return () => timers.forEach(clearTimeout);
   }, [isSubmitting]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation(); setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation(); setIsDragging(false);
-  }, []);
+  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }, []);
+  const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation(); setIsDragging(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "application/pdf") {
-      setFile(droppedFile); setError(null);
-    } else {
-      setError("Only PDF files are supported right now.");
-    }
+    if (droppedFile && droppedFile.type === "application/pdf") { setFile(droppedFile); setError(null); }
+    else { setError("Only PDF files are supported right now."); }
   }, []);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === "application/pdf") {
-      setFile(selectedFile); setError(null);
-    } else if (selectedFile) {
-      setError("Only PDF files are supported right now.");
-    }
+    if (selectedFile && selectedFile.type === "application/pdf") { setFile(selectedFile); setError(null); }
+    else if (selectedFile) { setError("Only PDF files are supported right now."); }
   }, []);
 
   const handleSubmit = async () => {
     if (!file || !topicName.trim() || !flowerType) return;
     setIsSubmitting(true); setError(null);
-
     try {
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -133,32 +127,82 @@ export default function UploadPage() {
 
   // Fullscreen Loading Overlay
   if (isSubmitting) {
-    const GERMINATION_STEPS = ["Uploading your file •", "Reading your content •", "Building study units •", "Growing your flower •"];
+    const GERMINATION_STEPS = ["Uploading your file", "Reading your content", "Building study units", "Growing your flower"];
     return (
-      <div className="flex h-[calc(100vh-64px)] w-full items-center justify-center bg-surface-container-lowest px-4">
-        <div className="flex w-full max-w-sm flex-col items-center gap-10 text-center bg-white/70 backdrop-blur-xl p-10 rounded-3xl pebble-shadow border border-white/50">
-          <div className="relative flex h-24 w-24 items-center justify-center">
-            <svg className="absolute left-0 top-0 h-full w-full animate-spin" style={{ animationDuration: "2s", animationTimingFunction: "linear" }} viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="54" fill="none" stroke="#C8EDCF" strokeWidth="4" />
-              <circle cx="60" cy="60" r="54" fill="none" stroke="#39AB54" strokeWidth="4" strokeDasharray="80 260" strokeLinecap="round" />
+      <div className="flex h-[calc(100vh-64px)] w-full items-center justify-center bg-surface px-4">
+        <div className="flex w-full max-w-sm flex-col items-center gap-8 text-center bg-white/80 backdrop-blur-xl p-10 rounded-3xl pebble-shadow border border-white/50">
+          
+          {/* Bloomr icon with spinning ring */}
+          <div className="relative flex h-32 w-32 items-center justify-center">
+            {/* Outer spinning ring */}
+            <svg
+              className="absolute inset-0 h-full w-full animate-spin"
+              style={{ animationDuration: "2.5s", animationTimingFunction: "linear" }}
+              viewBox="0 0 128 128"
+            >
+              <circle cx="64" cy="64" r="58" fill="none" stroke="#E8F5E9" strokeWidth="3" />
+              <circle
+                cx="64" cy="64" r="58" fill="none"
+                stroke="#3BAB55" strokeWidth="3"
+                strokeDasharray="80 290"
+                strokeLinecap="round"
+              />
             </svg>
-            <PiPlantBold className="text-4xl text-primary-deep animate-pulse" />
+            {/* Inner pulsing glow */}
+            <div className="absolute inset-4 rounded-full bg-[#3BAB55]/5 animate-pulse" />
+            {/* Bloomr Icon */}
+            <img
+              src="/bloomr_icon.png"
+              alt="Bloomr"
+              className="relative z-10 h-14 w-14 rounded-xl drop-shadow-sm"
+            />
           </div>
+
+          {/* Title */}
           <div>
-            <h2 className="font-heading text-2xl font-bold text-[#3D2B1F]">Germinating...</h2>
-            <p className="mt-2 text-sm text-[#6B4C35]">AI is analyzing your lecture content.</p>
+            <h2 className="text-2xl font-semibold text-[#3D2B1F]">Germinating...</h2>
+            <p className="mt-2 text-sm text-[#6B4C35]/80">AI is analyzing your lecture content</p>
           </div>
+
+          {/* Step Indicators */}
           <div className="flex w-full flex-col gap-3">
             {GERMINATION_STEPS.map((step, index) => {
               const isCompleted = index < currentStep;
               const isActive = index === currentStep;
               return (
-                <div key={step} className={`flex items-center gap-3 transition-opacity duration-500 ${isActive ? "opacity-100" : isCompleted ? "opacity-40" : "opacity-10"}`}>
-                  <span className={`text-sm font-bold ${isActive ? "text-[#39AB54]" : "text-[#3D2B1F]"}`}>{step}</span>
-                  {isActive && <span className="flex h-2 w-2 rounded-full bg-[#39AB54] animate-ping" />}
+                <div
+                  key={step}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all duration-500
+                    ${isActive ? "bg-[#3BAB55]/8 border border-[#3BAB55]/20" : ""}
+                    ${isCompleted ? "opacity-50" : !isActive ? "opacity-20" : "opacity-100"}
+                  `}
+                >
+                  {/* Step indicator */}
+                  <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold shrink-0 transition-all
+                    ${isCompleted ? "bg-[#3BAB55] text-white" : isActive ? "bg-[#3BAB55]/15 text-[#3BAB55] border border-[#3BAB55]/30" : "bg-black/5 text-black/30"}
+                  `}>
+                    {isCompleted ? "✓" : index + 1}
+                  </div>
+                  <span className={`text-sm font-medium ${isActive ? "text-[#3BAB55]" : "text-[#3D2B1F]"}`}>{step}</span>
+                  {isActive && <span className="ml-auto flex h-2 w-2 rounded-full bg-[#3BAB55] animate-ping" />}
                 </div>
               );
             })}
+          </div>
+
+          {/* Loading dots */}
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-1.5 w-1.5 rounded-full bg-[#3BAB55]"
+                style={{
+                  animation: "pulse 1.4s ease-in-out infinite",
+                  animationDelay: `${i * 0.2}s`,
+                  opacity: 0.3,
+                }}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -167,7 +211,7 @@ export default function UploadPage() {
 
   return (
     <div className="flex h-[calc(100vh-64px)] w-full bg-[#FAFAFA] overflow-hidden">
-      
+
       {/* Left Panel: Form */}
       <div className="w-full lg:w-1/2 h-full overflow-y-auto px-6 py-10 lg:px-16 lg:py-16 scrollbar-hide flex flex-col justify-center animate-fade-in-up">
         <div className="max-w-xl mx-auto w-full">
@@ -223,29 +267,38 @@ export default function UploadPage() {
               />
             </div>
 
-            {/* Flower Type Selector */}
+            {/* Flower Type Selector — Icons instead of solid circles */}
             <div className="bg-white/70 backdrop-blur-md p-6 rounded-3xl pebble-shadow border border-white/40">
               <label className="mb-4 block text-sm font-bold text-[#3D2B1F] flex justify-between items-center">
                 <span>Choose your flower species</span>
                 <span className="text-xs font-medium text-black/40">Visual preview on right</span>
               </label>
               <div className="grid grid-cols-5 gap-3">
-                {FLOWER_TYPES.map((flower) => (
-                  <button
-                    key={flower.name}
-                    type="button"
-                    onClick={() => setFlowerType(flower.name)}
-                    className={`
-                      relative group flex flex-col items-center gap-3 rounded-2xl p-4 transition-all duration-300
-                      ${flowerType === flower.name ? "bg-[#39AB54]/10 shadow-sm border border-[#39AB54]/30 scale-105" : "hover:bg-black/5 border border-transparent"}
-                    `}
-                  >
-                    <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full transition-transform shadow-inner border-2 border-white`} style={{ backgroundColor: flower.color }} />
-                    <span className={`text-[11px] sm:text-xs font-bold ${flowerType === flower.name ? "text-[#39AB54]" : "text-[#8B6E59]"}`}>
-                      {flower.label}
-                    </span>
-                  </button>
-                ))}
+                {FLOWER_TYPES.map((flower) => {
+                  const IconComponent = FLOWER_ICON_MAP[flower.name];
+                  return (
+                    <button
+                      key={flower.name}
+                      type="button"
+                      onClick={() => setFlowerType(flower.name)}
+                      className={`
+                        relative group flex flex-col items-center gap-2 rounded-2xl p-3 transition-all duration-300
+                        ${flowerType === flower.name ? "bg-[#39AB54]/10 shadow-sm border border-[#39AB54]/30 scale-105" : "hover:bg-black/5 border border-transparent"}
+                      `}
+                    >
+                      {IconComponent ? (
+                        <div className="h-12 w-12 flex items-center justify-center">
+                          <IconComponent className="w-11 h-11" />
+                        </div>
+                      ) : (
+                        <div className="h-12 w-12 rounded-full shadow-inner border-2 border-white" style={{ backgroundColor: flower.color }} />
+                      )}
+                      <span className={`text-[11px] sm:text-xs font-bold ${flowerType === flower.name ? "text-[#39AB54]" : "text-[#8B6E59]"}`}>
+                        {flower.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -269,14 +322,13 @@ export default function UploadPage() {
 
       {/* Right Panel: 3D Preview */}
       <div className="hidden lg:block lg:w-1/2 h-full relative bg-[#E6F4EA] overflow-hidden rounded-l-[3rem] shadow-[inset_10px_0_30px_rgba(0,0,0,0.05)]">
-        {/* Soft decorative background elements */}
         <div className="absolute top-10 left-10 text-4xl font-heading font-extrabold text-[#39AB54]/20 tracking-tighter mix-blend-multiply">Bloomr Setup</div>
-        
+
         {flowerType ? (
           <div className="w-full h-full cursor-grab active:cursor-grabbing animate-fade-in">
             <Suspense fallback={<div className="h-full w-full animate-pulse bg-primary-fixed/20" />}>
-              <Flower3D 
-                flowerType={flowerType} 
+              <Flower3D
+                flowerType={flowerType}
                 growthStage={previewStage}
                 patternOffsetX={previewOffset.x}
                 patternOffsetY={previewOffset.y}
@@ -284,36 +336,51 @@ export default function UploadPage() {
                 interactive={true}
               />
             </Suspense>
-            
+
+            {/* Pot Drops Preview Panel */}
             <div className="absolute top-10 right-10 bg-white/70 backdrop-blur-xl p-5 rounded-3xl shadow-lg border border-white/40 w-64 animate-fade-in-down pointer-events-auto">
-              <h3 className="text-sm font-bold text-[#3D2B1F] mb-3 flex items-center gap-2"><PiGiftBold className="text-[#D4722A] text-lg" /> Pot Drops Preview</h3>
+              <h3 className="text-sm font-bold text-[#3D2B1F] mb-3 flex items-center gap-2">
+                <PiGiftBold className="text-[#D4722A] text-lg" /> Pot Drops Preview
+              </h3>
               <div className="space-y-2">
-                 <button onClick={() => handlePreviewRarity('base')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'base' ? 'bg-[#39AB54]/10 border border-[#39AB54]/30 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
-                   <span className="text-gray-600">Base Preview</span>
-                   <span className="text-[#8B6E59] opacity-60">-</span>
-                 </button>
-                 <button onClick={() => handlePreviewRarity('common')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'common' ? 'bg-gray-100 border border-gray-300 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
-                   <span className="text-gray-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-gray-400"></div> Common</span>
-                   <span>60%</span>
-                 </button>
-                 <button onClick={() => handlePreviewRarity('uncommon')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'uncommon' ? 'bg-blue-50 border border-blue-200 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
-                   <span className="text-blue-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-400"></div> Uncommon</span>
-                   <span>25%</span>
-                 </button>
-                 <button onClick={() => handlePreviewRarity('rare')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'rare' ? 'bg-purple-50 border border-purple-200 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
-                   <span className="text-purple-600 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Rare Variant</span>
-                   <span>10%</span>
-                 </button>
-                 <button onClick={() => handlePreviewRarity('legendary')} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === 'legendary' ? 'bg-orange-50 border border-orange-200 shadow-sm' : 'hover:bg-black/5 border border-transparent'}`}>
-                   <span className="text-orange-500 flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)] animate-pulse"></div> Legendary CSGO</span>
-                   <span>5%</span>
-                 </button>
+                <button onClick={() => handlePreviewRarity("base")} className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${activePreviewId === "base" ? "bg-[#39AB54]/10 border border-[#39AB54]/30 shadow-sm" : "hover:bg-black/5 border border-transparent"}`}>
+                  <span className="text-gray-600">Base Preview</span>
+                  <span className="text-[#8B6E59] opacity-60">-</span>
+                </button>
+                {RARITY_ORDER.map((rarity) => {
+                  const config = RARITIES[rarity];
+                  return (
+                    <button
+                      key={rarity}
+                      onClick={() => handlePreviewRarity(rarity)}
+                      className={`w-full flex justify-between items-center text-xs font-bold px-3 py-2 rounded-xl transition-all ${
+                        activePreviewId === rarity
+                          ? `${config.bgClass} ${config.borderClass} border shadow-sm`
+                          : "hover:bg-black/5 border border-transparent"
+                      }`}
+                    >
+                      <span className={`${config.textClass} flex items-center gap-1.5`}>
+                        <div
+                          className={`w-2.5 h-2.5 rounded-full ${rarity === "legendary" ? "shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse" : ""}`}
+                          style={{ backgroundColor: config.color }}
+                        />
+                        {config.name}
+                        {rarity === "legendary" && " CSGO"}
+                      </span>
+                      <span>{config.dropRate}%</span>
+                    </button>
+                  );
+                })}
               </div>
-              <p className="text-[10px] text-[#8B6E59] mt-3.5 leading-tight font-medium text-center opacity-80">Click rarities to demo 3D textures.</p>
+              <p className="text-[10px] text-[#8B6E59] mt-3.5 leading-tight font-medium text-center opacity-80">
+                Click rarities to preview pot camos.
+              </p>
             </div>
 
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white/70 backdrop-blur-xl px-6 py-3 rounded-full shadow-lg border border-white/40 pointer-events-none text-center">
-              <p className="text-sm font-bold text-[#3D2B1F]">{activePreviewId === 'base' ? "Full Bloom (Stage 3)" : "Reward Pot (Stage 4)"}</p>
+              <p className="text-sm font-bold text-[#3D2B1F]">
+                {activePreviewId === "base" ? "Full Bloom (Stage 3)" : `${RARITIES[activePreviewId as Rarity]?.name ?? ""} Pot (Stage 4)`}
+              </p>
               <p className="text-xs font-medium text-[#6B4C35] mt-0.5">Drag to inspect geometry</p>
             </div>
           </div>
@@ -324,7 +391,6 @@ export default function UploadPage() {
           </div>
         )}
       </div>
-
     </div>
   );
 }

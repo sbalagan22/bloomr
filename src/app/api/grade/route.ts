@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,37 +25,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Call OpenAI to grade the short answer
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: `You are a fair and encouraging teacher grading a short answer question. Respond with JSON: {"score": <number 0.0-1.0>, "feedback": "<2-3 sentence encouraging feedback>"}
+    // Call Gemini to grade the short answer
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `You are a fair and encouraging teacher grading a short answer question. Respond with ONLY valid JSON (no markdown, no code fences): {"score": <number 0.0-1.0>, "feedback": "<2-3 sentence encouraging feedback>"}
 
 Scoring guide:
 - 1.0 = Perfect or near-perfect answer covering all key points
 - 0.7-0.9 = Good answer, covers most key points
 - 0.4-0.6 = Partial understanding, missing some key aspects
 - 0.1-0.3 = Shows minimal understanding
-- 0.0 = Completely wrong or irrelevant`,
-        },
-        {
-          role: "user",
-          content: `Question: ${question}\n\nCorrect/Reference Answer: ${correctAnswer}\n\nStudent's Answer: ${answer}`,
-        },
-      ],
-    });
+- 0.0 = Completely wrong or irrelevant
 
-    const responseText = completion.choices[0]?.message?.content;
+Question: ${question}
+
+Correct/Reference Answer: ${correctAnswer}
+
+Student's Answer: ${answer}`;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
 
     let score = 0.5;
     let feedback = "Your answer has been recorded.";
 
     if (responseText) {
       try {
-        const parsed = JSON.parse(responseText);
+        // Strip markdown code fences if present
+        let cleaned = responseText.trim();
+        if (cleaned.startsWith("```")) {
+          cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+        }
+        const parsed = JSON.parse(cleaned);
         score = Math.max(0, Math.min(1, parsed.score));
         feedback = parsed.feedback || feedback;
       } catch {

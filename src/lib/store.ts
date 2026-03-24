@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type FlowerType = "rose" | "tulip" | "sunflower" | "daisy" | "lavender";
+export type FlowerType = "sunflower" | "tulip" | "lily" | "hydrangea" | "magnolia";
 
 export interface Flower {
   id: string;

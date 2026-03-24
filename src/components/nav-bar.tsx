@@ -27,7 +27,7 @@ export function NavBar() {
         {/* Logo */}
         <Link href="/garden" className="flex items-center gap-2">
           <Image src="/bloomr_icon.png" alt="Bloomr" width={28} height={28} className="rounded-md" />
-          <span className="text-2xl font-black text-primary-container tracking-tighter font-heading">
+          <span className="text-2xl text-primary-container tracking-tighter font-logo">
             Bloomr
           </span>
         </Link>

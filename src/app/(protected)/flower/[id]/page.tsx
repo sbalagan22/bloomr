@@ -24,11 +24,11 @@ interface Unit {
 
 const GROWTH_LABELS = ["Seed", "Sprout", "Bud", "Opening", "Full Bloom"];
 const FLOWER_COLORS: Record<string, string> = {
-  rose: "#E8637A",
-  tulip: "#F4A44E",
   sunflower: "#F5D03B",
-  daisy: "#A8D8EA",
-  lavender: "#B09FD8",
+  tulip: "#E8637A",
+  lily: "#FFF5E6",
+  hydrangea: "#7C6CC4",
+  magnolia: "#FDF8EF",
 };
 
 export default function FlowerDetailPage() {

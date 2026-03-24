@@ -26,11 +26,11 @@ interface Flower {
 
 const GROWTH_LABELS = ["Seed", "Sprout", "Bud", "Opening", "Full Bloom"];
 const FLOWER_COLORS: Record<string, string> = {
-  rose: "#E8637A",
-  tulip: "#F4A44E",
   sunflower: "#F5D03B",
-  daisy: "#A8D8EA",
-  lavender: "#B09FD8",
+  tulip: "#E8637A",
+  lily: "#FFF5E6",
+  hydrangea: "#7C6CC4",
+  magnolia: "#FDF8EF",
 };
 
 const GRID_SPACING = 3;
@@ -276,10 +276,20 @@ export default function GardenPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-[#A4D5EA]">
-        <div className="mx-auto flex flex-col items-center gap-4">
-          <div className="h-16 w-16 animate-pulse rounded-full bg-white/50" />
-          <p className="text-[#3D2B1F] font-bold animate-pulse">Loading your garden...</p>
+      <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-surface">
+        <div className="mx-auto flex flex-col items-center gap-5">
+          <div className="relative flex h-24 w-24 items-center justify-center">
+            <svg
+              className="absolute inset-0 h-full w-full animate-spin"
+              style={{ animationDuration: "2.5s", animationTimingFunction: "linear" }}
+              viewBox="0 0 96 96"
+            >
+              <circle cx="48" cy="48" r="44" fill="none" stroke="#E8F5E9" strokeWidth="3" />
+              <circle cx="48" cy="48" r="44" fill="none" stroke="#3BAB55" strokeWidth="3" strokeDasharray="60 220" strokeLinecap="round" />
+            </svg>
+            <img src="/bloomr_icon.png" alt="Bloomr" className="relative z-10 h-10 w-10 rounded-lg" />
+          </div>
+          <p className="text-[#3D2B1F] font-medium text-sm">Loading your garden...</p>
         </div>
       </div>
     );

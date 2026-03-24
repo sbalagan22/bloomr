@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // Types for AI response
 interface AIUnit {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate flower type
-    const validFlowerTypes = ["rose", "tulip", "sunflower", "daisy", "lavender"];
+    const validFlowerTypes = ["sunflower", "tulip", "lily", "hydrangea", "magnolia"];
     if (!validFlowerTypes.includes(flowerType)) {
       return NextResponse.json(
         { error: "Invalid flower type" },
@@ -94,11 +94,11 @@ ${profile.learning_style === "ADHD" ? "Break content into max 5-minute chunks. U
       );
     }
 
-    // Convert PDF to base64 for OpenAI file input
+    // Convert PDF to base64 for Gemini inline data
     const arrayBuffer = await fileData.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString("base64");
 
-    // 5. Call OpenAI API with PDF as file input
+    // 5. Call Gemini API with PDF as inline data
     const systemPrompt = `You are a world-class university professor and educational content designer. Your job is to transform the provided PDF document into a complete, self-contained study guide that a student could use to master the material without needing the original document.
 
 ${learnerContext}
@@ -127,7 +127,7 @@ QUESTIONS PER UNIT — dynamic based on unit complexity:
 - Include at least 2 application-level questions that test real understanding, not just memorization
 - Wrong MC options should be plausible — avoid obviously silly distractors
 
-MATH SUPPORT: If the content involves math, use LaTeX notation wrapped in $...$ for inline math or $$...$$ for display math in questions, options, and content. For example: $x^2 + y^2 = r^2$ or $$\\int_0^1 f(x) dx$$
+MATH SUPPORT: If the content involves math, use LaTeX notation wrapped in $...$ for inline math or $$...$$ for display math in questions, options, and content. For example: $x^2 + y^2 = r^2$ or $$\\\\int_0^1 f(x) dx$$
 
 Return this exact JSON structure:
 {
@@ -165,34 +165,23 @@ Rules:
 - IMPORTANT: Any node text containing spaces or special characters (like parentheses) MUST be wrapped with double quotes, e.g., A["Node description (info)"] --> B["Another Node"]. Failure to do this will crash the layout.
 - Content MUST be thorough — minimum 5 paragraphs per unit, written like a textbook
 - Key terms should include 4-10 terms per unit with complete definitions
-- Make questions progressively harder within each unit (recall → application → analysis)`;
+- Make questions progressively harder within each unit (recall → application → analysis)
+- Return ONLY valid JSON. No markdown, no code fences — just the JSON object.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      response_format: { type: "json_object" },
-      max_tokens: 16384,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: [
-            {
-              type: "file",
-              file: {
-                filename: "document.pdf",
-                file_data: `data:application/pdf;base64,${base64Data}`,
-              },
-            },
-            {
-              type: "text",
-              text: `Analyze this PDF about "${topicName}" and create structured study units.`,
-            },
-          ],
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const result = await model.generateContent([
+      { text: systemPrompt },
+      {
+        inlineData: {
+          mimeType: "application/pdf",
+          data: base64Data,
         },
-      ],
-    });
+      },
+      { text: `Analyze this PDF about "${topicName}" and create structured study units. Return ONLY raw JSON.` },
+    ]);
 
-    const responseText = completion.choices[0]?.message?.content;
+    const responseText = result.response.text();
 
     if (!responseText) {
       return NextResponse.json(
@@ -201,13 +190,18 @@ Rules:
       );
     }
 
-    // 6. Parse the JSON response (OpenAI JSON mode guarantees valid JSON)
+    // 6. Parse the JSON response
     let parsedResponse: AIResponse;
 
     try {
-      parsedResponse = JSON.parse(responseText);
+      // Gemini may wrap JSON in markdown code fences — strip them
+      let cleaned = responseText.trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+      }
+      parsedResponse = JSON.parse(cleaned);
     } catch {
-      console.error("Failed to parse OpenAI response:", responseText.slice(0, 500));
+      console.error("Failed to parse Gemini response:", responseText.slice(0, 500));
       return NextResponse.json(
         { error: "Failed to parse AI response. Please try again." },
         { status: 500 }

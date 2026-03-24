@@ -6,7 +6,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PiArrowLeftBold, PiCheckCircleBold, PiXCircleBold, PiLightningBold, PiFlowerBold, PiArrowRightBold } from "react-icons/pi";
+import dynamic from "next/dynamic";
+import { getRarityFromOffsets, RARITIES, type Rarity } from "@/lib/rarity";
 import "katex/dist/katex.min.css";
+
+const GachaOpener = dynamic(
+  () => import("@/components/gacha-opener").then((mod) => ({ default: mod.GachaOpener })),
+  { ssr: false }
+);
 
 // Render text with LaTeX math
 function MathText({ text }: { text: string }) {
@@ -59,13 +66,21 @@ export default function MasteryTestPage() {
   const [loading, setLoading] = useState(true);
   const [flowerTopic, setFlowerTopic] = useState("");
   const [flowerProgressed, setFlowerProgressed] = useState(false);
+  const [showGacha, setShowGacha] = useState(false);
+  const [gachaRarity, setGachaRarity] = useState<Rarity>("common");
+  const [gachaComplete, setGachaComplete] = useState(false);
+  const [patternOffsets, setPatternOffsets] = useState({ x: 0.5, y: 0.5 });
 
   useEffect(() => {
     async function loadMastery() {
       const supabase = createClient();
       
-      const { data: flower } = await supabase.from("flowers").select("topic_name").eq("id", flowerId).single();
-      if (flower) setFlowerTopic(flower.topic_name);
+      const { data: flower } = await supabase.from("flowers").select("topic_name, pattern_offset_x, pattern_offset_y").eq("id", flowerId).single();
+      if (flower) {
+        setFlowerTopic(flower.topic_name);
+        setPatternOffsets({ x: flower.pattern_offset_x ?? 0.5, y: flower.pattern_offset_y ?? 0.5 });
+        setGachaRarity(getRarityFromOffsets(flower.pattern_offset_x ?? 0.5, flower.pattern_offset_y ?? 0.5));
+      }
 
       // Load all units for flower
       const { data: units } = await supabase.from("units").select("id").eq("flower_id", flowerId);
@@ -133,7 +148,6 @@ export default function MasteryTestPage() {
   }, [answers, currentQuiz]);
 
   const handleFinish = useCallback(async () => {
-    // Calculate overall score
     const totalScore = Object.values(results).reduce((sum, r) => sum + r.score, 0);
     const maxScore = quizzes.length;
     const percentage = maxScore > 0 ? totalScore / maxScore : 0;
@@ -143,10 +157,21 @@ export default function MasteryTestPage() {
       const supabase = createClient();
       await supabase.from("flowers").update({ growth_stage: 4, status: "bloomed" }).eq("id", flowerId);
       setFlowerProgressed(true);
+      // Trigger gacha pot drop animation before showing results
+      setShowGacha(true);
+    } else {
+      setShowResults(true);
     }
-
-    setShowResults(true);
   }, [results, quizzes, flowerId]);
+
+  const handleGachaComplete = useCallback(() => {
+    setGachaComplete(true);
+    // Short delay then show results
+    setTimeout(() => {
+      setShowGacha(false);
+      setShowResults(true);
+    }, 2500);
+  }, []);
 
   const handleAutoPass = useCallback(() => {
     if (!quizzes.length) return;
@@ -163,6 +188,17 @@ export default function MasteryTestPage() {
   const canAdvance = currentQuiz && results[currentQuiz.id] !== undefined;
   const isLastQuestion = currentIndex === quizzes.length - 1;
   const allAnswered = quizzes.every((q) => results[q.id] !== undefined);
+
+  // Gacha pot drop overlay
+  if (showGacha) {
+    return (
+      <GachaOpener
+        open={true}
+        fixedRarity={gachaRarity}
+        onComplete={handleGachaComplete}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -200,9 +236,18 @@ export default function MasteryTestPage() {
           </div>
 
           {flowerProgressed && (
-            <div className="gradient-cta text-white rounded-xl p-4 mb-6 shadow-md">
-              <PiFlowerBold className="text-2xl mx-auto mb-1" />
-              <p className="font-bold">Your flower reached Full Bloom!</p>
+            <div
+              className="rounded-xl p-4 mb-6 shadow-md border-2"
+              style={{
+                background: `linear-gradient(135deg, ${RARITIES[gachaRarity].color}20, ${RARITIES[gachaRarity].glowColor}30)`,
+                borderColor: `${RARITIES[gachaRarity].color}50`,
+              }}
+            >
+              <PiFlowerBold className="text-2xl mx-auto mb-1" style={{ color: RARITIES[gachaRarity].color }} />
+              <p className="font-bold text-on-surface">Full Bloom + {RARITIES[gachaRarity].name} Pot Drop!</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {gachaRarity === "legendary" ? "Flames camo" : gachaRarity === "epic" ? "Drip gradient camo" : gachaRarity === "rare" ? "Polka dot camo" : gachaRarity === "uncommon" ? "Striped camo" : "Solid color pot"}
+              </p>
             </div>
           )}
 

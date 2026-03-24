@@ -12,7 +12,7 @@ export default function LandingPage() {
         <nav className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/bloomr_icon.png" alt="Bloomr" width={28} height={28} className="rounded-md" />
-            <span className="text-2xl font-black text-primary-container tracking-tighter font-heading">Bloomr</span>
+            <span className="text-2xl text-primary-container tracking-tighter font-logo">Bloomr</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 font-heading font-bold tracking-tight">
             <a href="#how-it-works" className="text-on-surface-variant hover:text-primary-container transition-colors duration-300">How it Works</a>
@@ -81,7 +81,7 @@ export default function LandingPage() {
             </div>
             <Link
               href="/signup"
-              className="px-8 py-3 bg-primary-deep text-white rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2"
+              className="px-8 py-3 gradient-cta text-white rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2"
             >
               Explore Support <HiArrowRight className="text-lg" />
             </Link>
@@ -206,7 +206,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center md:items-start gap-2">
             <div className="flex items-center gap-2">
               <Image src="/bloomr_icon.png" alt="Bloomr" width={24} height={24} className="rounded-md" />
-              <span className="font-bold text-primary-container text-2xl font-heading tracking-tighter">Bloomr</span>
+              <span className="text-primary-container text-2xl tracking-tighter font-logo">Bloomr</span>
             </div>
             <p className="text-sm text-on-surface-variant">© 2026 Bloomr. Cultivating clarity.</p>
           </div>
