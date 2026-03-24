@@ -167,38 +167,15 @@ export default function UnitViewerPage() {
             {renderContent()}
           </div>
 
-          {/* Navigation Buttons (Bottom of left col) */}
-          <div className="mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-black/10 pt-8">
-            {prevUnit ? (
-              <Link href={`/flower/${flowerId}/units/${prevUnit.id}`} className="w-full sm:w-auto">
-                <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
-                  <PiArrowLeftBold className="mr-2" /> {prevUnit.title}
-                </Button>
-              </Link>
-            ) : <div className="hidden sm:block" />}
 
-            <Link href={`/flower/${flowerId}/quiz/${unit.id}`} className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto h-14 rounded-full gradient-cta text-white shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all px-10 text-lg font-extrabold tracking-wide">
-                Start Lesson Quiz <PiArrowRightBold className="ml-2" />
-              </Button>
-            </Link>
-
-            {nextUnit ? (
-              <Link href={`/flower/${flowerId}/units/${nextUnit.id}`} className="w-full sm:w-auto">
-                <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
-                  {nextUnit.title} <PiArrowRightBold className="ml-2" />
-                </Button>
-              </Link>
-            ) : <div className="hidden sm:block" />}
-          </div>
         </div>
 
-        {/* Right Column: Visuals & Key Terms */}
+        {/* Right Column: Visuals (only) */}
         <div className="lg:w-[480px] shrink-0 flex flex-col gap-6 order-1 lg:order-2">
           
           {/* Diagrams Pane */}
           {unit.diagram_mermaid && (
-            <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/60 pebble-shadow">
+            <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/60 pebble-shadow sticky top-24">
               <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-4 flex items-center gap-2">
                 <div className="p-2 bg-[#39AB54]/10 rounded-xl"><PiGraphBold className="text-[#39AB54] text-xl" /></div>
                 Concept Map
@@ -209,27 +186,52 @@ export default function UnitViewerPage() {
             </div>
           )}
 
-          {/* Key Terms Pane */}
-          {unit.content_json.key_terms && unit.content_json.key_terms.length > 0 && (
-            <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/60 pebble-shadow lg:sticky lg:top-24">
-              <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-5 flex items-center gap-2">
-                <div className="p-2 bg-[#F5D03B]/20 rounded-xl"><PiBookmarksBold className="text-[#D4722A] text-xl" /></div>
-                Study Vocabulary
-              </h3>
-              <ul className="space-y-4">
-                {unit.content_json.key_terms.map((kt, i) => (
-                  <li key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-black/5 hover:border-[#39AB54]/30 transition-colors">
-                    <Badge className="bg-[#C8EDCF] text-[#2A8040] hover:bg-[#C8EDCF] rounded-md font-bold mb-2 text-sm px-2.5 py-0.5">
-                      {kt.term}
-                    </Badge>
-                    <p className="text-[15px] font-medium text-[#6B4C35] leading-snug">{kt.definition}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
+      </div>
 
+      {/* Full-Width Horizontal Key Terms */}
+      {unit.content_json.key_terms && unit.content_json.key_terms.length > 0 && (
+        <div className="mt-16 bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/60 pebble-shadow">
+          <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-6 flex items-center gap-2">
+            <div className="p-2 bg-[#F5D03B]/20 rounded-xl"><PiBookmarksBold className="text-[#D4722A] text-xl" /></div>
+            Study Vocabulary
+          </h3>
+          <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {unit.content_json.key_terms.map((kt, i) => (
+              <li key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-black/5 hover:border-[#39AB54]/30 transition-colors flex flex-col justify-start">
+                <Badge className="bg-[#C8EDCF] text-[#2A8040] hover:bg-[#C8EDCF] rounded-md font-bold mb-3 text-sm px-3 py-1 w-fit">
+                  {kt.term}
+                </Badge>
+                <p className="text-[15px] font-medium text-[#6B4C35] leading-relaxed">{kt.definition}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Navigation Buttons */}
+      <div className="mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-black/10 pt-8">
+        {prevUnit ? (
+          <Link href={`/flower/${flowerId}/units/${prevUnit.id}`} className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
+              <PiArrowLeftBold className="mr-2" /> {prevUnit.title}
+            </Button>
+          </Link>
+        ) : <div className="hidden sm:block" />}
+
+        <Link href={`/flower/${flowerId}/quiz/${unitId}`} className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto h-14 rounded-full gradient-cta text-white shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all px-10 text-lg font-extrabold tracking-wide">
+            Start Lesson Quiz <PiArrowRightBold className="ml-2" />
+          </Button>
+        </Link>
+
+        {nextUnit ? (
+          <Link href={`/flower/${flowerId}/units/${nextUnit.id}`} className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
+              {nextUnit.title} <PiArrowRightBold className="ml-2" />
+            </Button>
+          </Link>
+        ) : <div className="hidden sm:block" />}
       </div>
     </div>
   );

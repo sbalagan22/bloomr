@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Text, DragControls } from "@react-three/drei";
+import { OrbitControls, Text, DragControls, Grid } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
 import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold } from "react-icons/pi";
 import * as THREE from "three";
@@ -32,6 +32,8 @@ const FLOWER_COLORS: Record<string, string> = {
   daisy: "#A8D8EA",
   lavender: "#B09FD8",
 };
+
+const GRID_SPACING = 3;
 
 // --- Fences ---
 function FencePerimeter() {
@@ -80,6 +82,13 @@ function DraggableFlower({
 
   const flowerColor = FLOWER_COLORS[flower.flower_type] || "#39AB54";
 
+  // Force position sync explicitly so snapping renders dynamically
+  useEffect(() => {
+    if (groupRef.current && !isEditorMode) {
+      groupRef.current.position.set(startX, 0, startZ);
+    }
+  }, [startX, startZ, isEditorMode]);
+
   const content = (
     <group 
       ref={groupRef}
@@ -102,7 +111,7 @@ function DraggableFlower({
         growthStage={flower.growth_stage}
         patternOffsetX={flower.pattern_offset_x}
         patternOffsetY={flower.pattern_offset_y}
-        isEditorMode={isEditorMode} // stops the spinning animation during edit
+        isEditorMode={isEditorMode}
       />
 
       <Text position={[0, 4.3, 0]} fontSize={0.4} color="white" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#2B1A0E">
@@ -112,9 +121,10 @@ function DraggableFlower({
         {GROWTH_LABELS[flower.growth_stage]}
       </Text>
       {isEditorMode && (
-        <Text position={[0, -0.4, 1.5]} fontSize={0.2} color="#FFFF00" rotation={[-Math.PI / 2, 0, 0]} outlineWidth={0.02} outlineColor="#000000">
-          DRAG ME
-        </Text>
+        <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+           <planeGeometry args={[2.5, 2.5]} />
+           <meshBasicMaterial color="#FFFF00" transparent opacity={0.3} />
+        </mesh>
       )}
     </group>
   );
@@ -143,9 +153,8 @@ function DraggableFlower({
 
 function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flower[], isEditorMode: boolean, onSavePosition: (id: string, x: number, z: number) => void }) {
   const router = useRouter();
-  const cols = Math.max(1, Math.ceil(Math.sqrt(flowers.length))); 
-  const spacing = 4;
-  const centerZ = -((Math.ceil(flowers.length / cols) - 1) * spacing) / 2;
+  const cols = 9; // Grid limits
+  const centerZ = 0;
 
   return (
     <>
@@ -153,19 +162,30 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
       <directionalLight position={[10, 15, 10]} intensity={1.2} castShadow />
       <pointLight position={[-5, 5, -5]} intensity={0.5} color="#C8EDCF" />
       
-      {/* Massive Grass Ground */}
+      {/* Massive Outer Pavement */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, 0]} receiveShadow>
+        <planeGeometry args={[120, 120]} />
+        <meshStandardMaterial color="#9CA3AF" roughness={0.9} />
+      </mesh>
+
+      {/* Inner Grass Ground (10x10 squares mapped to 30x30 plane) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]} receiveShadow>
-        <planeGeometry args={[200, 200]} />
+        <planeGeometry args={[30, 30]} />
         <meshStandardMaterial color="#39AB54" roughness={1} />
       </mesh>
+
+      {isEditorMode && (
+         <Grid position={[0, -0.59, 0]} cellColor="#ffffff" sectionColor="#ffffff" sectionSize={GRID_SPACING} cellSize={GRID_SPACING} args={[30, 30]} />
+      )}
 
       <FencePerimeter />
 
       {flowers.map((flower, index) => {
+        // Fallback default coordinates if pos_x/z are missing
         const row = Math.floor(index / cols);
         const col = index % cols;
-        const defaultX = (col - (cols - 1) / 2) * spacing;
-        const defaultZ = -row * spacing;
+        const defaultX = (col - 4) * GRID_SPACING;
+        const defaultZ = (row - 4) * GRID_SPACING;
 
         return (
           <DraggableFlower
@@ -180,7 +200,6 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
         );
       })}
 
-      {/* When editing, strictly lock the camera so dragging flowers doesn't drag the screen. */}
       {isEditorMode ? (
         <OrbitControls makeDefault enabled={false} target={[0, 0, centerZ]} />
       ) : (
@@ -189,7 +208,7 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
           minPolarAngle={0} 
           maxPolarAngle={Math.PI / 2 - 0.05}
           minDistance={3}
-          maxDistance={30}
+          maxDistance={35}
           target={[0, 0, centerZ]}
         />
       )}
@@ -201,6 +220,7 @@ export default function GardenPage() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditorMode, setIsEditorMode] = useState(false);
+  const [dragRejectId, setDragRejectId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadGarden() {
@@ -218,14 +238,31 @@ export default function GardenPage() {
     loadGarden();
   }, []);
 
-  const handleSavePosition = async (id: string, x: number, z: number) => {
-    // Optimistic UI update
-    setFlowers(prev => prev.map(f => f.id === id ? { ...f, pos_x: x, pos_z: z } : f));
+  const handleSavePosition = async (id: string, rawX: number, rawZ: number) => {
+    // 10x10 Grid Snap Math
+    const snapX = Math.round(rawX / GRID_SPACING) * GRID_SPACING;
+    const snapZ = Math.round(rawZ / GRID_SPACING) * GRID_SPACING;
     
-    // DB persist — will silently fail if user hasn't run the migration yet, but UI works.
+    // Bounds clamping (-12 to 12 limits to exactly 9x9 inner spots fitting within fence)
+    const clampX = Math.max(-12, Math.min(12, snapX));
+    const clampZ = Math.max(-12, Math.min(12, snapZ));
+
+    // Collision Detection: Only 1 flower per grid square
+    const isOccupied = flowers.some(f => f.id !== id && (f.pos_x ?? 0) === clampX && (f.pos_z ?? 0) === clampZ);
+    if (isOccupied) {
+      // Reject coordinates, trigger a force re-render back to original state
+      setDragRejectId(id);
+      setTimeout(() => setDragRejectId(null), 100);
+      return; // Abort save
+    }
+
+    // Optimistic UI update
+    setFlowers(prev => prev.map(f => f.id === id ? { ...f, pos_x: clampX, pos_z: clampZ } : f));
+    
+    // DB persist
     const supabase = createClient();
-    const { error } = await supabase.from("flowers").update({ pos_x: x, pos_z: z }).eq("id", id);
-    if (error) console.error("Failed to save position:", error);
+    const { error } = await supabase.from("flowers").update({ pos_x: clampX, pos_z: clampZ }).eq("id", id);
+    if (error) console.error("Failed to save collision-free position:", error);
   };
 
   if (loading) {
@@ -255,6 +292,9 @@ export default function GardenPage() {
       </div>
     );
   }
+
+  // Pass dummy state to forcefully unmount/remount DragControls on reject so it resets visually
+  const renderFlowers = dragRejectId ? flowers.map(f => ({...f, _refresh: Date.now()})) : flowers;
 
   return (
     <div className="w-full h-[calc(100vh-64px)] relative bg-[#A4D5EA]">
@@ -291,16 +331,16 @@ export default function GardenPage() {
       {isEditorMode && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none animate-fade-in-down z-10">
           <div className="bg-[#FFF9C4]/90 backdrop-blur-md text-[#D4722A] px-6 py-3 rounded-full text-sm font-extrabold tracking-wide border-2 border-[#D4722A]/30 shadow-xl flex items-center gap-2">
-            <PiPencilBold className="text-lg animate-pulse" /> EDITING MODE ACTIVE: Drag flowers to move them.
+            <PiPencilBold className="text-lg animate-pulse" /> EDITOR MODE: Snap flowers to grid squares. Avoid overlaps.
           </div>
         </div>
       )}
 
       {/* 3D Scene */}
       <div className={`w-full h-full ${isEditorMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"}`}>
-        <Canvas camera={{ position: [0, 8, 16], fov: 45 }} shadows dpr={[1, 1.5]}>
+        <Canvas camera={{ position: [0, 10, 20], fov: 45 }} shadows dpr={[1, 1.5]}>
           <Suspense fallback={null}>
-            <GardenScene flowers={flowers} isEditorMode={isEditorMode} onSavePosition={handleSavePosition} />
+            <GardenScene flowers={renderFlowers} isEditorMode={isEditorMode} onSavePosition={handleSavePosition} />
           </Suspense>
         </Canvas>
       </div>

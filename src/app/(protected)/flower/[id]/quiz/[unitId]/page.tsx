@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PiArrowLeftBold, PiCheckCircleBold, PiXCircleBold, PiLightningBold, PiFlowerBold, PiArrowRightBold } from "react-icons/pi";
+import { PiArrowLeftBold, PiCheckCircleBold, PiXCircleBold, PiLightningBold, PiFlowerBold, PiArrowRightBold, PiFunctionBold } from "react-icons/pi";
 import "katex/dist/katex.min.css";
 
 // Render text with LaTeX math
@@ -64,6 +64,7 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(true);
   const [unitTitle, setUnitTitle] = useState("");
   const [flowerProgressed, setFlowerProgressed] = useState(false);
+  const [mathMode, setMathMode] = useState(false);
 
   useEffect(() => {
     async function loadQuizzes() {
@@ -327,7 +328,21 @@ export default function QuizPage() {
 
         {/* Short Answer */}
         {currentQuiz.type === "short" && (
-          <div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-bold text-on-surface-variant flex items-center gap-1.5">
+                Your Answer
+              </span>
+              <button 
+                onClick={() => setMathMode(!mathMode)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 border ${
+                  mathMode ? "bg-[#B09FD8]/20 text-[#7150B5] border-[#B09FD8]/30 shadow-sm" : "bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high"
+                }`}
+              >
+                 <PiFunctionBold className="text-sm" /> Math Mode {mathMode ? "ON" : "OFF"}
+              </button>
+            </div>
+            
             <textarea
               value={answers[currentQuiz.id] || ""}
               onChange={(e) => setAnswers((prev) => ({ ...prev, [currentQuiz.id]: e.target.value }))}
@@ -335,16 +350,29 @@ export default function QuizPage() {
               placeholder="Type your answer here... You can use $LaTeX$ for math"
               className="w-full min-h-[140px] rounded-xl bg-surface-container-highest text-on-surface p-4 placeholder:text-on-surface-variant/50 focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-deep/20 transition-all resize-y disabled:opacity-70"
             />
+            
+            {mathMode && answers[currentQuiz.id] && (
+              <div className="p-5 mt-2 bg-surface-container-lowest border-2 border-[#B09FD8]/20 rounded-xl min-h-[80px] shadow-sm animate-fade-in-up">
+                 <p className="text-[10px] font-extrabold text-[#7150B5] uppercase tracking-wider mb-3 flex items-center gap-1">
+                   <PiFunctionBold /> Live Preview
+                 </p>
+                 <div className="text-lg text-on-surface font-medium overflow-x-auto pb-2">
+                   {/* Automatically wrap their raw typing in full display $$ block so it previews properly natively */}
+                   <MathText text={answers[currentQuiz.id].includes("$") ? answers[currentQuiz.id] : `$$${answers[currentQuiz.id]}$$`} />
+                 </div>
+              </div>
+            )}
+
             {!results[currentQuiz.id] && (
               <Button
                 onClick={handleShortAnswerGrade}
                 disabled={grading || !answers[currentQuiz.id]?.trim()}
-                className="mt-3 rounded-full gradient-cta text-white border-0"
+                className="mt-4 rounded-full gradient-cta text-white border-0 py-6 text-lg font-bold shadow-md hover:shadow-lg transition-all"
               >
                 {grading ? (
                   <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Grading...
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Grading Answer...
                   </span>
                 ) : (
                   "Submit Answer"

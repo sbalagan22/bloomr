@@ -72,6 +72,14 @@ export default function FlowerDetailPage() {
     if (!confirm(`Are you sure you want to delete "${flower?.topic_name}"? All study units and quiz history will be permanently lost.`)) return;
     setIsDeleting(true);
     const supabase = createClient();
+    
+    // Multi-step cascading deletion fallback 
+    if (units.length > 0) {
+      const unitIds = units.map(u => u.id);
+      await supabase.from("questions").delete().in("unit_id", unitIds);
+      await supabase.from("units").delete().eq("flower_id", flowerId);
+    }
+    
     await supabase.from("flowers").delete().eq("id", flowerId);
     router.push("/garden");
   }
@@ -145,8 +153,9 @@ export default function FlowerDetailPage() {
                 }`}>
                   {unit.completed ? "✓" : index + 1}
                 </div>
-                <div className="flex-1 mt-0.5">
-                  <h3 className="font-heading font-bold text-on-surface text-[15px] leading-snug">{unit.title}</h3>
+                <div className="flex-1 mt-0.5 flex flex-col">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39AB54] mb-1">Chapter {index + 1}</span>
+                  <h3 className="font-heading font-extrabold text-[#3D2B1F] text-[16px] leading-snug">{unit.title}</h3>
                 </div>
               </div>
 
