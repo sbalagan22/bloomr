@@ -1,24 +1,10 @@
-<div align="center">
 
-<img src="/design/logo.svg" alt="Bloomr" width="120" />
 
 # Bloomr
 
 **AI-powered adaptive study companion with a 3D gamified garden.**
 
 *Learn it. Grow it. Own it.*
-
-[![Next.js](https://img.shields.io/badge/Next.js_16-black?style=flat-square&logo=next.js)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
-[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
-[![Vercel](https://img.shields.io/badge/Vercel-black?style=flat-square&logo=vercel)](https://vercel.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-
-[**Live Demo**](https://bloomr.vercel.app) · [**Video Pitch**](#) · [**GDG UTSC Build With AI 2026**](#)
-
-</div>
-
----
 
 ## What is Bloomr?
 
