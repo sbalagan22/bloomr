@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type FlowerType = "sunflower" | "tulip" | "lily" | "hydrangea" | "magnolia";
+export type FlowerType = "rose" | "tulip" | "sunflower" | "daisy" | "lily";
 
 export interface Flower {
   id: string;
@@ -11,6 +11,8 @@ export interface Flower {
   pattern_id: number;
   pattern_offset_x: number;
   pattern_offset_y: number;
+  pot_rarity: string | null;
+  pot_color: string | null;
   growth_stage: number;
   status: "growing" | "bloomed";
   created_at: string;

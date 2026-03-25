@@ -13,8 +13,8 @@ const Flower3D = dynamic(
 interface Flower {
   flower_type: string;
   growth_stage: number;
-  pattern_offset_x: number;
-  pattern_offset_y: number;
+  pot_rarity: string | null;
+  pot_color: string | null;
 }
 
 export default function FlowerLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +26,7 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
     const supabase = createClient();
     
     // Initial fetch
-    supabase.from("flowers").select("flower_type, growth_stage, pattern_offset_x, pattern_offset_y").eq("id", flowerId).single()
+    supabase.from("flowers").select("flower_type, growth_stage, pot_rarity, pot_color").eq("id", flowerId).single()
       .then(({ data }) => { if (data) setFlower(data); });
 
     // Live update subscription
@@ -36,7 +36,16 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
       })
       .subscribe();
       
-    return () => { supabase.removeChannel(channel); };
+    const handleOptimisticUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.id === flowerId) setFlower((prev) => prev ? { ...prev, ...detail } : prev);
+    };
+    window.addEventListener("flowerUpdated", handleOptimisticUpdate);
+
+    return () => { 
+      supabase.removeChannel(channel); 
+      window.removeEventListener("flowerUpdated", handleOptimisticUpdate);
+    };
   }, [flowerId]);
 
   return (
@@ -50,8 +59,8 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
               <Flower3D
                 flowerType={flower.flower_type}
                 growthStage={flower.growth_stage}
-                patternOffsetX={flower.pattern_offset_x}
-                patternOffsetY={flower.pattern_offset_y}
+                rarity={(flower.pot_rarity as "common" | "uncommon" | "rare" | "epic" | "legendary") ?? "common"}
+                potColor={flower.pot_color ?? undefined}
                 size="full"
                 interactive={true}
               />

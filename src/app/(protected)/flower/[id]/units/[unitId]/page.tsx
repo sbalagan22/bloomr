@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { AudioPlayer } from "@/components/audio-player";
 import { PiGraphBold, PiBookmarksBold, PiArrowLeftBold, PiArrowRightBold } from "react-icons/pi";
+import { FlowerLoader } from "@/components/ui/flower-loader";
 
 interface UnitData {
   id: string;
@@ -67,10 +68,7 @@ export default function UnitViewerPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 animate-pulse rounded-full bg-[#C8EDCF]" />
-          <p className="mt-4 text-sm font-bold text-[#6B4C35] animate-pulse">Gathering unit notes...</p>
-        </div>
+        <FlowerLoader text="Gathering notes..." subtext="Assembling the unit topic knowledge" />
       </div>
     );
   }

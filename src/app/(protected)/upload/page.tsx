@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
 import { PiUploadSimpleBold, PiPlantBold, PiGiftBold } from "react-icons/pi";
 import { FLOWER_ICON_MAP } from "@/components/flower-icons";
-import { RARITIES, RARITY_ORDER, type Rarity, getRarityFromOffsets } from "@/lib/rarity";
+import { RARITIES, RARITY_ORDER, type Rarity } from "@/lib/rarity";
+import { FlowerLoader } from "@/components/ui/flower-loader";
 
 const Flower3D = dynamic(
   () => import("@/components/flower-3d").then((mod) => ({ default: mod.Flower3D })),
@@ -18,24 +19,15 @@ const Flower3D = dynamic(
 );
 
 const FLOWER_TYPES = [
-  { name: "sunflower", color: "#F5D03B", label: "Sunflower" },
-  { name: "tulip", color: "#E8637A", label: "Tulip" },
-  { name: "lily", color: "#FFF5E6", label: "Lily" },
-  { name: "hydrangea", color: "#7C6CC4", label: "Hydrangea" },
-  { name: "magnolia", color: "#FDF8EF", label: "Magnolia" },
+  { name: "rose",      color: "#CC2A1A", label: "Rose" },
+  { name: "tulip",     color: "#3D5EE0", label: "Tulip" },
+  { name: "sunflower", color: "#F5C518", label: "Sunflower" },
+  { name: "daisy",     color: "#F5C518", label: "Daisy" },
+  { name: "lily",      color: "#E8709A", label: "Lily" },
 ] as const;
 
 type FlowerType = (typeof FLOWER_TYPES)[number]["name"];
 
-/** Preset offsets per rarity for the preview panel */
-const PREVIEW_OFFSETS: Record<string, { x: number; y: number }> = {
-  base:      { x: 0.5, y: 0.5 },
-  common:    { x: 0.12, y: 0.08 },   // getRarityFromOffsets → common
-  uncommon:  { x: 0.85, y: 0.30 },   // → uncommon
-  rare:      { x: 0.72, y: 0.50 },   // → rare
-  epic:      { x: 0.95, y: 0.92 },   // → epic
-  legendary: { x: 0.88, y: 0.95 },   // → legendary
-};
 
 export default function UploadPage() {
   const router = useRouter();
@@ -49,18 +41,19 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Pattern preview states
+  // Preview states
   const [previewStage, setPreviewStage] = useState(3);
-  const [previewOffset, setPreviewOffset] = useState({ x: 0.5, y: 0.5 });
+  const [previewRarity, setPreviewRarity] = useState<Rarity>("common");
   const [activePreviewId, setActivePreviewId] = useState<string>("base");
+  const [customPotColor, setCustomPotColor] = useState<string>("#C8682B");
 
-  const handlePreviewRarity = (rarity: string) => {
-    setActivePreviewId(rarity);
-    if (rarity === "base") {
+  const handlePreviewRarity = (id: string) => {
+    setActivePreviewId(id);
+    if (id === "base") {
       setPreviewStage(3);
     } else {
       setPreviewStage(4);
-      setPreviewOffset(PREVIEW_OFFSETS[rarity] || { x: 0.5, y: 0.5 });
+      setPreviewRarity(id as Rarity);
     }
   };
 
@@ -73,6 +66,20 @@ export default function UploadPage() {
     ];
     return () => timers.forEach(clearTimeout);
   }, [isSubmitting]);
+
+  useEffect(() => {
+    async function checkProfile() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from("learner_profiles").select("id").eq("user_id", user.id).maybeSingle();
+        if (!profile) {
+          router.push("/onboarding");
+        }
+      }
+    }
+    checkProfile();
+  }, [router]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }, []);
   const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }, []);
@@ -104,7 +111,7 @@ export default function UploadPage() {
       const { error: uploadError } = await supabase.storage.from("uploads").upload(fileName, file, { contentType: file.type });
       if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-      const response = await fetch("/api/gemini/process", {
+      const response = await fetch("/api/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fileUrl: fileName, topicName: topicName.trim(), flowerType }),
@@ -130,40 +137,7 @@ export default function UploadPage() {
     const GERMINATION_STEPS = ["Uploading your file", "Reading your content", "Building study units", "Growing your flower"];
     return (
       <div className="flex h-[calc(100vh-64px)] w-full items-center justify-center bg-surface px-4">
-        <div className="flex w-full max-w-sm flex-col items-center gap-8 text-center bg-white/80 backdrop-blur-xl p-10 rounded-3xl pebble-shadow border border-white/50">
-          
-          {/* Bloomr icon with spinning ring */}
-          <div className="relative flex h-32 w-32 items-center justify-center">
-            {/* Outer spinning ring */}
-            <svg
-              className="absolute inset-0 h-full w-full animate-spin"
-              style={{ animationDuration: "2.5s", animationTimingFunction: "linear" }}
-              viewBox="0 0 128 128"
-            >
-              <circle cx="64" cy="64" r="58" fill="none" stroke="#E8F5E9" strokeWidth="3" />
-              <circle
-                cx="64" cy="64" r="58" fill="none"
-                stroke="#3BAB55" strokeWidth="3"
-                strokeDasharray="80 290"
-                strokeLinecap="round"
-              />
-            </svg>
-            {/* Inner pulsing glow */}
-            <div className="absolute inset-4 rounded-full bg-[#3BAB55]/5 animate-pulse" />
-            {/* Bloomr Icon */}
-            <img
-              src="/bloomr_icon.png"
-              alt="Bloomr"
-              className="relative z-10 h-14 w-14 rounded-xl drop-shadow-sm"
-            />
-          </div>
-
-          {/* Title */}
-          <div>
-            <h2 className="text-2xl font-semibold text-[#3D2B1F]">Germinating...</h2>
-            <p className="mt-2 text-sm text-[#6B4C35]/80">AI is analyzing your lecture content</p>
-          </div>
-
+        <FlowerLoader text="Germinating..." subtext="AI is analyzing your lecture content">
           {/* Step Indicators */}
           <div className="flex w-full flex-col gap-3">
             {GERMINATION_STEPS.map((step, index) => {
@@ -189,22 +163,7 @@ export default function UploadPage() {
               );
             })}
           </div>
-
-          {/* Loading dots */}
-          <div className="flex gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-1.5 w-1.5 rounded-full bg-[#3BAB55]"
-                style={{
-                  animation: "pulse 1.4s ease-in-out infinite",
-                  animationDelay: `${i * 0.2}s`,
-                  opacity: 0.3,
-                }}
-              />
-            ))}
-          </div>
-        </div>
+        </FlowerLoader>
       </div>
     );
   }
@@ -330,8 +289,8 @@ export default function UploadPage() {
               <Flower3D
                 flowerType={flowerType}
                 growthStage={previewStage}
-                patternOffsetX={previewOffset.x}
-                patternOffsetY={previewOffset.y}
+                rarity={previewRarity}
+                potColor={customPotColor}
                 size="full"
                 interactive={true}
               />
@@ -375,6 +334,25 @@ export default function UploadPage() {
               <p className="text-[10px] text-[#8B6E59] mt-3.5 leading-tight font-medium text-center opacity-80">
                 Click rarities to preview pot camos.
               </p>
+              
+              {/* Color picker */}
+              {activePreviewId !== "base" && (
+                <div className="mt-4 pt-4 border-t border-black/5">
+                  <label className="text-[10px] font-bold text-[#8B6E59] uppercase tracking-wider block mb-2">Test Pot Color</label>
+                  <input
+                    type="color"
+                    value={customPotColor}
+                    onChange={(e) => setCustomPotColor(e.target.value)}
+                    className="w-full h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0"
+                  />
+                  <div className="mt-2 bg-amber-50 border border-amber-200 rounded-md p-2 flex items-start gap-1.5 shadow-sm">
+                    <span className="text-amber-500 text-xs mt-0.5">⚠️</span>
+                    <p className="text-[10px] text-amber-800 leading-tight font-medium">
+                      Color is chosen <span className="font-bold">randomly</span> upon bloom. The picker above is just for testing!
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white/70 backdrop-blur-xl px-6 py-3 rounded-full shadow-lg border border-white/40 pointer-events-none text-center">

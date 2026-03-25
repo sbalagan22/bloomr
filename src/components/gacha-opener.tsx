@@ -4,17 +4,17 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   type Rarity,
   RARITIES,
-  RARITY_ORDER,
   rollRarity,
-  COMMON_POT_COLORS,
 } from "@/lib/rarity";
 import { PiSparkle, PiGift } from "react-icons/pi";
 
 interface GachaOpenerProps {
   /** If provided, use this rarity instead of rolling randomly */
   fixedRarity?: Rarity;
-  /** Called once the reveal animation finishes with the final rarity + color index */
-  onComplete: (rarity: Rarity, colorIndex: number) => void;
+  /** If provided, use this color for the revealed pot */
+  fixedColor?: string;
+  /** Called once the reveal animation finishes */
+  onComplete: (rarity: Rarity) => void;
   /** Whether the opener is visible */
   open: boolean;
 }
@@ -22,7 +22,7 @@ interface GachaOpenerProps {
 const SPIN_ITEMS = 40; // number of rarity slots in the reel
 const ITEM_WIDTH = 96; // px per slot
 
-export function GachaOpener({ fixedRarity, onComplete, open }: GachaOpenerProps) {
+export function GachaOpener({ fixedRarity, fixedColor, onComplete, open }: GachaOpenerProps) {
   const [phase, setPhase] = useState<"idle" | "spinning" | "reveal">("idle");
   const [finalRarity, setFinalRarity] = useState<Rarity>("common");
   const [reelItems, setReelItems] = useState<Rarity[]>([]);
@@ -53,9 +53,9 @@ export function GachaOpener({ fixedRarity, onComplete, open }: GachaOpenerProps)
     // Start spinning after a brief delay
     const t = setTimeout(() => {
       setPhase("spinning");
-      // Land on the target slot (SPIN_ITEMS - 5)
-      const target = (SPIN_ITEMS - 5) * ITEM_WIDTH - ITEM_WIDTH * 2; // center it
-      setTranslateX(-target);
+      // Align the center of the target item (slot SPIN_ITEMS - 5) precisely to the center marker
+      const targetCenter = (SPIN_ITEMS - 5) * ITEM_WIDTH + (ITEM_WIDTH / 2);
+      setTranslateX(-targetCenter);
     }, 300);
 
     return () => clearTimeout(t);
@@ -66,8 +66,7 @@ export function GachaOpener({ fixedRarity, onComplete, open }: GachaOpenerProps)
     if (phase !== "spinning") return;
     const t = setTimeout(() => {
       setPhase("reveal");
-      const colorIdx = Math.floor(Math.random() * COMMON_POT_COLORS.length);
-      onComplete(finalRarity, colorIdx);
+      onComplete(finalRarity);
     }, 4200); // matches CSS transition duration
     return () => clearTimeout(t);
   }, [phase, finalRarity, onComplete]);
@@ -136,8 +135,8 @@ export function GachaOpener({ fixedRarity, onComplete, open }: GachaOpenerProps)
           >
             <div className="relative">
               <div
-                className="w-20 h-20 rounded-2xl shadow-lg flex items-center justify-center"
-                style={{ backgroundColor: config.color }}
+                className="w-20 h-20 rounded-2xl shadow-lg flex items-center justify-center border-2 border-white/20"
+                style={{ backgroundColor: fixedColor ?? config.color }}
               >
                 <PiSparkle className="text-3xl text-white" />
               </div>
@@ -154,15 +153,19 @@ export function GachaOpener({ fixedRarity, onComplete, open }: GachaOpenerProps)
               </p>
               <p className="text-white/50 text-xs mt-1">
                 {finalRarity === "legendary"
-                  ? "Flames camo — ultra rare drop!"
+                  ? "Flames pattern — ultra rare drop!"
                   : finalRarity === "epic"
-                    ? "Drip gradient camo — sick drop!"
+                    ? "Ornate chalice — sick drop!"
                     : finalRarity === "rare"
-                      ? "Polka dot camo — nice find!"
+                      ? "Pedestal vase — nice find!"
                       : finalRarity === "uncommon"
-                        ? "Striped camo — cool pattern!"
-                        : "Solid color — classic look."}
+                        ? "Round belly pot — cool!"
+                        : "Terracotta clay — classic."}
               </p>
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/20 border border-white/10">
+                <div className="w-3 h-3 rounded-full border border-white/50 shadow-inner" style={{ backgroundColor: fixedColor ?? config.color }} />
+                <span className="text-xs font-mono font-bold tracking-wider text-white/80">{fixedColor ?? config.color}</span>
+              </div>
             </div>
           </div>
         )}

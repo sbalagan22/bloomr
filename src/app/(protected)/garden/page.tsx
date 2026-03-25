@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
-import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold } from "react-icons/pi";
+import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold } from "react-icons/pi";
 import * as THREE from "three";
 
 interface Flower {
@@ -17,8 +17,8 @@ interface Flower {
   growth_stage: number;
   status: string;
   pattern_id: number;
-  pattern_offset_x: number;
-  pattern_offset_y: number;
+  pot_rarity: string | null;
+  pot_color: string | null;
   pos_x?: number | null;
   pos_z?: number | null;
   created_at: string;
@@ -26,11 +26,11 @@ interface Flower {
 
 const GROWTH_LABELS = ["Seed", "Sprout", "Bud", "Opening", "Full Bloom"];
 const FLOWER_COLORS: Record<string, string> = {
-  sunflower: "#F5D03B",
-  tulip: "#E8637A",
-  lily: "#FFF5E6",
-  hydrangea: "#7C6CC4",
-  magnolia: "#FDF8EF",
+  rose:      "#CC2A1A",
+  tulip:     "#3D5EE0",
+  sunflower: "#F5C518",
+  daisy:     "#FFFFFF",
+  lily:      "#E8709A",
 };
 
 const GRID_SPACING = 3;
@@ -113,10 +113,10 @@ function DraggableFlower({
       </mesh>
 
       <FlowerModel
-        flowerType={flower.flower_type}
+        flowerType={flower.flower_type?.toLowerCase() || "daisy"}
         growthStage={flower.growth_stage}
-        patternOffsetX={flower.pattern_offset_x}
-        patternOffsetY={flower.pattern_offset_y}
+        rarity={(flower.pot_rarity?.toLowerCase() as "common" | "uncommon" | "rare" | "epic" | "legendary") ?? "common"}
+        potColor={flower.pot_color ?? undefined}
         isEditorMode={isEditorMode}
       />
 
@@ -171,9 +171,9 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
 
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[10, 15, 10]} intensity={1.2} castShadow />
-      <pointLight position={[-5, 5, -5]} intensity={0.5} color="#C8EDCF" />
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[5, 8, 5]} intensity={1.0} castShadow />
+      <pointLight position={[-3, 4, -3]} intensity={0.4} color="#C8EDCF" />
       
       {/* Massive Outer Pavement */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, 0]} receiveShadow>
@@ -228,9 +228,11 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
 }
 
 export default function GardenPage() {
+  const router = useRouter();
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditorMode, setIsEditorMode] = useState(false);
+  const [isListView, setIsListView] = useState(false);
   const [dragRejectId, setDragRejectId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -238,6 +240,12 @@ export default function GardenPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      
+      const { data: profile } = await supabase.from("learner_profiles").select("id").eq("user_id", user.id).maybeSingle();
+      if (!profile) {
+        router.push("/onboarding");
+        return;
+      }
       
       const { data: garden } = await supabase.from("gardens").select("id").eq("user_id", user.id).single();
       if (!garden) { setLoading(false); return; }
@@ -330,24 +338,83 @@ export default function GardenPage() {
             </p>
           </div>
 
-          <button 
-            onClick={() => setIsEditorMode(!isEditorMode)}
-            className={`pointer-events-auto flex items-center justify-center w-fit gap-2 px-6 py-3 rounded-full font-bold shadow-md transition-all animate-fade-in-up border-2
-              ${isEditorMode ? "bg-[#FFF9C4] text-[#D4722A] border-[#D4722A]/30 pebbl-shadow" : "bg-white/90 text-[#3D2B1F] border-transparent hover:bg-white"}
-            `}
-          >
-            {isEditorMode ? (
-              <><PiCheckBold className="text-lg" /> Done Editing</>
-            ) : (
-              <><PiPencilBold className="text-lg" /> Edit Layout</>
-            )}
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => { setIsEditorMode(!isEditorMode); setIsListView(false); }}
+              className={`pointer-events-auto flex items-center justify-center w-fit gap-2 px-6 py-3 rounded-full font-bold shadow-md transition-all animate-fade-in-up border-2
+                ${isEditorMode ? "bg-[#FFF9C4] text-[#D4722A] border-[#D4722A]/30 pebbl-shadow" : "bg-white/90 text-[#3D2B1F] border-transparent hover:bg-white"}
+              `}
+            >
+              {isEditorMode ? (
+                <><PiCheckBold className="text-lg" /> Done Editing</>
+              ) : (
+                <><PiPencilBold className="text-lg" /> Layout</>
+              )}
+            </button>
+
+            <button 
+              onClick={() => { setIsListView(!isListView); setIsEditorMode(false); }}
+              className={`pointer-events-auto flex items-center justify-center w-fit gap-2 px-6 py-3 rounded-full font-bold shadow-md transition-all animate-fade-in-up border-2
+                ${isListView ? "bg-[#D4E6F1] text-[#2980B9] border-[#2980B9]/30 pebbl-shadow" : "bg-white/90 text-[#3D2B1F] border-transparent hover:bg-white"}
+              `}
+            >
+              {isListView ? (
+                <><PiCheckBold className="text-lg" /> 3D View</>
+              ) : (
+                <><PiListBold className="text-lg" /> List View</>
+              )}
+            </button>
+          </div>
         </div>
         
         <Link href="/upload" className="pointer-events-auto flex items-center gap-2 px-6 py-3.5 gradient-cta text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all animate-fade-in-up">
           <PiPlusBold className="text-lg" /> Plant New
         </Link>
       </div>
+
+      {isListView && (
+        <div className="absolute inset-x-4 inset-y-24 md:inset-x-20 md:inset-y-24 bg-white/95 backdrop-blur-xl rounded-3xl pebble-shadow border border-white/50 z-20 pointer-events-auto flex flex-col overflow-hidden animate-fade-in-up">
+          <div className="px-8 py-6 border-b border-stone flex justify-between items-center bg-surface-container-lowest">
+            <div>
+              <h2 className="font-heading text-2xl font-extrabold text-soil">All Flowers</h2>
+              <p className="text-sm text-bark mt-1">Manage your blooming knowledge</p>
+            </div>
+            <button onClick={() => setIsListView(false)} className="h-10 w-10 flex items-center justify-center rounded-full bg-surface hover:bg-surface-container transition-colors text-bark">
+              <PiXBold className="text-xl" />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-3 bg-surface/50">
+            {flowers.map((flower) => (
+              <Link key={flower.id} href={`/flower/${flower.id}`} className="group block bg-white rounded-2xl p-4 border border-stone hover:border-primary-green transition-all shadow-sm hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-surface-container flex items-center justify-center text-xl shadow-inner shrink-0" style={{ backgroundColor: `${FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"]}20`, color: FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"] }}>
+                      {flower.status === "bloomed" ? "🌸" : "🌱"}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-soil group-hover:text-primary-green transition-colors">{flower.topic_name}</h3>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant capitalize">
+                          {flower.flower_type}
+                        </span>
+                        <span className="text-xs text-bark font-medium">Stage {flower.growth_stage}: {GROWTH_LABELS[flower.growth_stage]}</span>
+                        {flower.pot_color && (
+                          <span className="text-xs font-mono text-bark flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: flower.pot_color }}></span>
+                            {flower.pot_rarity}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <PiCaretRightBold className="text-stone group-hover:text-primary-green group-hover:translate-x-1 transition-all" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isEditorMode && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none animate-fade-in-down z-10">
@@ -359,7 +426,7 @@ export default function GardenPage() {
 
       {/* 3D Scene */}
       <div className={`w-full h-full ${isEditorMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"}`}>
-        <Canvas camera={{ position: [0, 10, 20], fov: 45 }} shadows dpr={[1, 1.5]}>
+        <Canvas camera={{ position: [0, 10, 20], fov: 45 }} shadows dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
           <Suspense fallback={null}>
             <GardenScene flowers={renderFlowers} isEditorMode={isEditorMode} onSavePosition={handleSavePosition} />
           </Suspense>

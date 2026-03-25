@@ -5,39 +5,31 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PiArrowLeftBold, PiCheckCircleBold, PiXCircleBold, PiLightningBold, PiFlowerBold, PiArrowRightBold } from "react-icons/pi";
+import { PiArrowLeftBold, PiCheckCircleBold, PiXCircleBold, PiLightningBold, PiFlowerBold, PiArrowRightBold, PiFunctionBold } from "react-icons/pi";
 import dynamic from "next/dynamic";
-import { getRarityFromOffsets, RARITIES, type Rarity } from "@/lib/rarity";
-import "katex/dist/katex.min.css";
+import { RARITIES, type Rarity } from "@/lib/rarity";
+import { FlowerLoader } from "@/components/ui/flower-loader";
+import { MathText } from "@/components/math-text";
+
+const MATH_SYMBOLS = [
+  { label: "√", insert: "\\sqrt{}" },
+  { label: "x²", insert: "^{2}" },
+  { label: "xⁿ", insert: "^{}" },
+  { label: "π", insert: "\\pi" },
+  { label: "θ", insert: "\\theta" },
+  { label: "∫", insert: "\\int_{}^{}" },
+  { label: "∑", insert: "\\sum_{}^{}" },
+  { label: "÷", insert: "\\div " },
+  { label: "×", insert: "\\times " },
+  { label: "a/b", insert: "\\frac{}{}" },
+];
 
 const GachaOpener = dynamic(
   () => import("@/components/gacha-opener").then((mod) => ({ default: mod.GachaOpener })),
   { ssr: false }
 );
 
-// Render text with LaTeX math
-function MathText({ text }: { text: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    let html = text;
-    html = html.replace(/\$\$(.*?)\$\$/g, (_, expr) => {
-      try {
-        const katex = require("katex");
-        return katex.renderToString(expr, { displayMode: true, throwOnError: false });
-      } catch { return `$$${expr}$$`; }
-    });
-    html = html.replace(/\$(.*?)\$/g, (_, expr) => {
-      try {
-        const katex = require("katex");
-        return katex.renderToString(expr, { displayMode: false, throwOnError: false });
-      } catch { return `$${expr}$`; }
-    });
-    ref.current.innerHTML = html;
-  }, [text]);
-  return <span ref={ref} />;
-}
-
+// Removed inline MathText in favor of component imp
 interface Quiz {
   id: string;
   type: "mc" | "short";
@@ -68,18 +60,19 @@ export default function MasteryTestPage() {
   const [flowerProgressed, setFlowerProgressed] = useState(false);
   const [showGacha, setShowGacha] = useState(false);
   const [gachaRarity, setGachaRarity] = useState<Rarity>("common");
+  const [gachaColor, setGachaColor] = useState<string>("#39AB54");
   const [gachaComplete, setGachaComplete] = useState(false);
-  const [patternOffsets, setPatternOffsets] = useState({ x: 0.5, y: 0.5 });
+  const [mathMode, setMathMode] = useState(false);
 
   useEffect(() => {
     async function loadMastery() {
       const supabase = createClient();
-      
-      const { data: flower } = await supabase.from("flowers").select("topic_name, pattern_offset_x, pattern_offset_y").eq("id", flowerId).single();
+
+      const { data: flower } = await supabase.from("flowers").select("topic_name, pot_rarity, pot_color").eq("id", flowerId).single();
       if (flower) {
         setFlowerTopic(flower.topic_name);
-        setPatternOffsets({ x: flower.pattern_offset_x ?? 0.5, y: flower.pattern_offset_y ?? 0.5 });
-        setGachaRarity(getRarityFromOffsets(flower.pattern_offset_x ?? 0.5, flower.pattern_offset_y ?? 0.5));
+        setGachaRarity((flower.pot_rarity as Rarity) ?? "common");
+        if (flower.pot_color) setGachaColor(flower.pot_color);
       }
 
       // Load all units for flower
@@ -95,9 +88,9 @@ export default function MasteryTestPage() {
       const { data: allQuizzes } = await supabase.from("quizzes").select("*").in("unit_id", unitIds);
       
       let selectedQuizzes = allQuizzes || [];
-      // Shuffle and pick 7-10 questions for mastery test
+      // Shuffle and pick 10-13 questions for mastery test
       selectedQuizzes = selectedQuizzes.sort(() => Math.random() - 0.5);
-      const masteryCount = Math.max(7, Math.min(10, selectedQuizzes.length));
+      const masteryCount = Math.max(10, Math.min(13, selectedQuizzes.length));
       selectedQuizzes = selectedQuizzes.slice(0, masteryCount);
       
       setQuizzes(selectedQuizzes);
@@ -154,9 +147,6 @@ export default function MasteryTestPage() {
     const passed = percentage >= PASS_THRESHOLD;
 
     if (passed) {
-      const supabase = createClient();
-      await supabase.from("flowers").update({ growth_stage: 4, status: "bloomed" }).eq("id", flowerId);
-      setFlowerProgressed(true);
       // Trigger gacha pot drop animation before showing results
       setShowGacha(true);
     } else {
@@ -164,14 +154,18 @@ export default function MasteryTestPage() {
     }
   }, [results, quizzes, flowerId]);
 
-  const handleGachaComplete = useCallback(() => {
+  const handleGachaComplete = useCallback(async () => {
     setGachaComplete(true);
+    const supabase = createClient();
+    await supabase.from("flowers").update({ growth_stage: 4, status: "bloomed" }).eq("id", flowerId);
+    setFlowerProgressed(true);
+    
     // Short delay then show results
     setTimeout(() => {
       setShowGacha(false);
       setShowResults(true);
     }, 2500);
-  }, []);
+  }, [flowerId]);
 
   const handleAutoPass = useCallback(() => {
     if (!quizzes.length) return;
@@ -195,6 +189,7 @@ export default function MasteryTestPage() {
       <GachaOpener
         open={true}
         fixedRarity={gachaRarity}
+        fixedColor={gachaColor}
         onComplete={handleGachaComplete}
       />
     );
@@ -203,7 +198,7 @@ export default function MasteryTestPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-primary-fixed/30" />
+        <FlowerLoader text="Loading Test..." subtext="Preparing your mastery questions" />
       </div>
     );
   }
@@ -245,8 +240,8 @@ export default function MasteryTestPage() {
             >
               <PiFlowerBold className="text-2xl mx-auto mb-1" style={{ color: RARITIES[gachaRarity].color }} />
               <p className="font-bold text-on-surface">Full Bloom + {RARITIES[gachaRarity].name} Pot Drop!</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">
-                {gachaRarity === "legendary" ? "Flames camo" : gachaRarity === "epic" ? "Drip gradient camo" : gachaRarity === "rare" ? "Polka dot camo" : gachaRarity === "uncommon" ? "Striped camo" : "Solid color pot"}
+              <p className="text-xs font-mono text-on-surface-variant mt-0.5">
+                 Rarity: {RARITIES[gachaRarity].name} | Color: {gachaColor.toUpperCase()}
               </p>
             </div>
           )}
@@ -264,7 +259,7 @@ export default function MasteryTestPage() {
                       {r?.correct ? "✓" : r?.score > 0 ? `${Math.round(r.score * 100)}%` : "✗"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-on-surface mb-1">Q{i + 1}: <MathText text={q.question} /></p>
+                      <p className="text-sm font-semibold text-on-surface mb-1">Q{i + 1}: <MathText text={q.question} inline /></p>
                       {r && <p className="text-xs text-on-surface-variant">{r.feedback}</p>}
                     </div>
                   </div>
@@ -366,8 +361,8 @@ export default function MasteryTestPage() {
                   disabled={!!result}
                   className={`w-full text-left px-5 py-4 rounded-xl font-medium transition-all ${optionClass} ${!result ? "cursor-pointer" : "cursor-default"}`}
                 >
-                  <span className="font-bold mr-3 text-sm opacity-60">{String.fromCharCode(65 + i)}.</span>
-                  <MathText text={option} />
+                  <span className="font-bold mr-3 text-sm opacity-60 shrink-0">{String.fromCharCode(65 + i)}.</span>
+                  <MathText text={option} inline />
                 </button>
               );
             })}
@@ -376,7 +371,40 @@ export default function MasteryTestPage() {
 
         {/* Short Answer */}
         {currentQuiz.type === "short" && (
-          <div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-bold text-on-surface-variant flex items-center gap-1.5">
+                Your Answer
+              </span>
+              <button 
+                onClick={() => setMathMode(!mathMode)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 border ${
+                  mathMode ? "bg-bloom-lavender/20 text-[#7150B5] border-bloom-lavender/30 shadow-sm" : "bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high"
+                }`}
+              >
+                 <PiFunctionBold className="text-sm" /> Math Mode {mathMode ? "ON" : "OFF"}
+              </button>
+            </div>
+
+            {mathMode && (
+              <div className="flex flex-wrap gap-2 mb-2 p-2 bg-surface-container-low rounded-xl border border-bloom-lavender/30">
+                {MATH_SYMBOLS.map((sym) => (
+                  <button
+                    key={sym.label}
+                    onClick={() => {
+                       setAnswers((prev) => ({
+                         ...prev,
+                         [currentQuiz.id]: (prev[currentQuiz.id] || "") + sym.insert
+                       }));
+                    }}
+                    className="px-3 py-1.5 text-xs font-bold bg-white text-[#7150B5] rounded-md shadow-sm border border-bloom-lavender/20 hover:bg-bloom-lavender/10 transition-colors"
+                  >
+                    {sym.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            
             <textarea
               value={answers[currentQuiz.id] || ""}
               onChange={(e) => setAnswers((prev) => ({ ...prev, [currentQuiz.id]: e.target.value }))}
@@ -384,16 +412,28 @@ export default function MasteryTestPage() {
               placeholder="Type your answer here... You can use $LaTeX$ for math"
               className="w-full min-h-[140px] rounded-xl bg-surface-container-highest text-on-surface p-4 placeholder:text-on-surface-variant/50 focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-deep/20 transition-all resize-y disabled:opacity-70"
             />
+            
+            {mathMode && answers[currentQuiz.id] && (
+              <div className="p-5 mt-2 bg-surface-container-lowest border-2 border-bloom-lavender/20 rounded-xl min-h-[80px] shadow-sm animate-fade-in-up">
+                 <p className="text-[10px] font-extrabold text-[#7150B5] uppercase tracking-wider mb-3 flex items-center gap-1">
+                   <PiFunctionBold /> Live Preview
+                 </p>
+                 <div className="text-lg text-on-surface font-medium overflow-x-auto pb-2">
+                   <MathText text={answers[currentQuiz.id].includes("$") ? answers[currentQuiz.id] : `$$${answers[currentQuiz.id]}$$`} />
+                 </div>
+              </div>
+            )}
+
             {!results[currentQuiz.id] && (
               <Button
                 onClick={handleShortAnswerGrade}
                 disabled={grading || !answers[currentQuiz.id]?.trim()}
-                className="mt-3 rounded-full gradient-cta text-white border-0 shadow-sm hover:shadow"
+                className="mt-4 rounded-full gradient-cta text-white border-0 py-6 text-lg font-bold shadow-md hover:shadow-lg transition-all"
               >
                 {grading ? (
                   <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Grading...
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Grading Answer...
                   </span>
                 ) : (
                   "Submit Answer"

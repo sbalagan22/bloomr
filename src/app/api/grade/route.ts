@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const openai = new OpenAI();
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,38 +25,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Call Gemini to grade the short answer
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    const prompt = `You are a fair and encouraging teacher grading a short answer question. Respond with ONLY valid JSON (no markdown, no code fences): {"score": <number 0.0-1.0>, "feedback": "<2-3 sentence encouraging feedback>"}
+    // Call OpenAI to grade the short answer
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5.4-mini",
+      max_tokens: 8192,
+      messages: [
+        {
+          role: "system",
+          content: `You are a fair and encouraging teacher grading a short answer question. Respond with ONLY valid JSON: {"score": <number 0.0-1.0>, "feedback": "<2-3 sentence encouraging feedback>"}
 
 Scoring guide:
 - 1.0 = Perfect or near-perfect answer covering all key points
 - 0.7-0.9 = Good answer, covers most key points
 - 0.4-0.6 = Partial understanding, missing some key aspects
 - 0.1-0.3 = Shows minimal understanding
-- 0.0 = Completely wrong or irrelevant
+- 0.0 = Completely wrong or irrelevant`,
+        },
+        {
+          role: "user",
+          content: `Question: ${question}\n\nCorrect/Reference Answer: ${correctAnswer}\n\nStudent's Answer: ${answer}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
 
-Question: ${question}
-
-Correct/Reference Answer: ${correctAnswer}
-
-Student's Answer: ${answer}`;
-
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    const responseText = completion.choices[0].message.content;
 
     let score = 0.5;
     let feedback = "Your answer has been recorded.";
 
     if (responseText) {
       try {
-        // Strip markdown code fences if present
-        let cleaned = responseText.trim();
-        if (cleaned.startsWith("```")) {
-          cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
-        }
-        const parsed = JSON.parse(cleaned);
+        const parsed = JSON.parse(responseText);
         score = Math.max(0, Math.min(1, parsed.score));
         feedback = parsed.feedback || feedback;
       } catch {

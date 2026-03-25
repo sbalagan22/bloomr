@@ -5,35 +5,24 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PiArrowLeftBold, PiCheckCircleBold, PiXCircleBold, PiLightningBold, PiFlowerBold, PiArrowRightBold, PiFunctionBold } from "react-icons/pi";
-import "katex/dist/katex.min.css";
+import { PiArrowLeftBold, PiCheckCircleBold, PiXCircleBold, PiLightningBold, PiArrowRightBold, PiFunctionBold } from "react-icons/pi";
+import { FlowerLoader } from "@/components/ui/flower-loader";
+import { MathText } from "@/components/math-text";
 
-// Render text with LaTeX math
-function MathText({ text }: { text: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    // Replace $...$ and $$...$$ with rendered math
-    let html = text;
-    // Display math $$...$$
-    html = html.replace(/\$\$(.*?)\$\$/g, (_, expr) => {
-      try {
-        const katex = require("katex");
-        return katex.renderToString(expr, { displayMode: true, throwOnError: false });
-      } catch { return `$$${expr}$$`; }
-    });
-    // Inline math $...$
-    html = html.replace(/\$(.*?)\$/g, (_, expr) => {
-      try {
-        const katex = require("katex");
-        return katex.renderToString(expr, { displayMode: false, throwOnError: false });
-      } catch { return `$${expr}$`; }
-    });
-    ref.current.innerHTML = html;
-  }, [text]);
-  return <span ref={ref} />;
-}
+const MATH_SYMBOLS = [
+  { label: "√", insert: "\\sqrt{}" },
+  { label: "x²", insert: "^{2}" },
+  { label: "xⁿ", insert: "^{}" },
+  { label: "π", insert: "\\pi" },
+  { label: "θ", insert: "\\theta" },
+  { label: "∫", insert: "\\int_{}^{}" },
+  { label: "∑", insert: "\\sum_{}^{}" },
+  { label: "÷", insert: "\\div " },
+  { label: "×", insert: "\\times " },
+  { label: "a/b", insert: "\\frac{}{}" },
+];
 
+// Removed inline MathText in favor of component imp
 interface Quiz {
   id: string;
   type: "mc" | "short";
@@ -63,7 +52,6 @@ export default function QuizPage() {
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unitTitle, setUnitTitle] = useState("");
-  const [flowerProgressed, setFlowerProgressed] = useState(false);
   const [mathMode, setMathMode] = useState(false);
 
   useEffect(() => {
@@ -145,7 +133,8 @@ export default function QuizPage() {
         const updateData: Record<string, unknown> = { growth_stage: newStage };
 
         await supabase.from("flowers").update(updateData).eq("id", flowerId);
-        setFlowerProgressed(true);
+        window.dispatchEvent(new CustomEvent("flowerUpdated", { detail: { id: flowerId, ...updateData } }));
+        router.refresh();
       }
     }
 
@@ -177,7 +166,7 @@ export default function QuizPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-primary-fixed/30" />
+        <FlowerLoader text="Loading Quiz..." subtext="Accessing your study materials" />
       </div>
     );
   }
@@ -209,14 +198,6 @@ export default function QuizPage() {
             </p>
           </div>
 
-          {flowerProgressed && (
-            <div className="gradient-cta text-white rounded-xl p-4 mb-6">
-              <PiFlowerBold className="text-2xl mx-auto mb-1" />
-              <p className="font-bold">Your flower grew! 🌱→🌸</p>
-            </div>
-          )}
-
-          {/* Per-question breakdown */}
           <div className="text-left space-y-3 mb-6">
             {quizzes.map((q, i) => {
               const r = results[q.id];
@@ -229,7 +210,7 @@ export default function QuizPage() {
                       {r?.correct ? "✓" : r?.score > 0 ? `${Math.round(r.score * 100)}%` : "✗"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-on-surface mb-1">Q{i + 1}: <MathText text={q.question} /></p>
+                      <p className="text-sm font-semibold text-on-surface mb-1">Q{i + 1}: <MathText text={q.question} inline /></p>
                       {r && <p className="text-xs text-on-surface-variant">{r.feedback}</p>}
                     </div>
                   </div>
@@ -318,8 +299,8 @@ export default function QuizPage() {
                   disabled={!!result}
                   className={`w-full text-left px-5 py-4 rounded-xl font-medium transition-all ${optionClass} ${!result ? "cursor-pointer" : "cursor-default"}`}
                 >
-                  <span className="font-bold mr-3 text-sm opacity-60">{String.fromCharCode(65 + i)}.</span>
-                  <MathText text={option} />
+                  <span className="font-bold mr-3 text-sm opacity-60 shrink-0">{String.fromCharCode(65 + i)}.</span>
+                  <MathText text={option} inline />
                 </button>
               );
             })}
@@ -336,12 +317,31 @@ export default function QuizPage() {
               <button 
                 onClick={() => setMathMode(!mathMode)}
                 className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 border ${
-                  mathMode ? "bg-[#B09FD8]/20 text-[#7150B5] border-[#B09FD8]/30 shadow-sm" : "bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high"
+                  mathMode ? "bg-bloom-lavender/20 text-[#7150B5] border-bloom-lavender/30 shadow-sm" : "bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container-high"
                 }`}
               >
                  <PiFunctionBold className="text-sm" /> Math Mode {mathMode ? "ON" : "OFF"}
               </button>
             </div>
+
+            {mathMode && (
+              <div className="flex flex-wrap gap-2 mb-2 p-2 bg-surface-container-low rounded-xl border border-bloom-lavender/30">
+                {MATH_SYMBOLS.map((sym) => (
+                  <button
+                    key={sym.label}
+                    onClick={() => {
+                       setAnswers((prev) => ({
+                         ...prev,
+                         [currentQuiz.id]: (prev[currentQuiz.id] || "") + sym.insert
+                       }));
+                    }}
+                    className="px-3 py-1.5 text-xs font-bold bg-white text-[#7150B5] rounded-md shadow-sm border border-bloom-lavender/20 hover:bg-bloom-lavender/10 transition-colors"
+                  >
+                    {sym.label}
+                  </button>
+                ))}
+              </div>
+            )}
             
             <textarea
               value={answers[currentQuiz.id] || ""}
@@ -352,7 +352,7 @@ export default function QuizPage() {
             />
             
             {mathMode && answers[currentQuiz.id] && (
-              <div className="p-5 mt-2 bg-surface-container-lowest border-2 border-[#B09FD8]/20 rounded-xl min-h-[80px] shadow-sm animate-fade-in-up">
+              <div className="p-5 mt-2 bg-surface-container-lowest border-2 border-bloom-lavender/20 rounded-xl min-h-[80px] shadow-sm animate-fade-in-up">
                  <p className="text-[10px] font-extrabold text-[#7150B5] uppercase tracking-wider mb-3 flex items-center gap-1">
                    <PiFunctionBold /> Live Preview
                  </p>

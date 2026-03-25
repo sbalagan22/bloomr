@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { PiBookOpenBold, PiLightningBold, PiArrowLeftBold, PiTrashBold } from "react-icons/pi";
+import { PiBookOpenBold, PiLightningBold, PiArrowLeftBold, PiTrashBold, PiPaintBucketBold } from "react-icons/pi";
+import { RARITIES, type Rarity } from "@/lib/rarity";
+import { ChatTutor } from "@/components/chat-tutor";
 
 interface Flower {
   id: string;
@@ -13,6 +15,8 @@ interface Flower {
   flower_type: string;
   growth_stage: number;
   status: string;
+  pot_rarity: string | null;
+  pot_color: string | null;
 }
 
 interface Unit {
@@ -24,11 +28,11 @@ interface Unit {
 
 const GROWTH_LABELS = ["Seed", "Sprout", "Bud", "Opening", "Full Bloom"];
 const FLOWER_COLORS: Record<string, string> = {
-  sunflower: "#F5D03B",
-  tulip: "#E8637A",
-  lily: "#FFF5E6",
-  hydrangea: "#7C6CC4",
-  magnolia: "#FDF8EF",
+  rose: "#CC2A1A",
+  tulip: "#3D5EE0",
+  sunflower: "#F5C518",
+  daisy: "#FFFFFF",
+  lily: "#E8709A",
 };
 
 export default function FlowerDetailPage() {
@@ -45,7 +49,7 @@ export default function FlowerDetailPage() {
     const supabase = createClient();
     
     async function loadData() {
-      const { data: flowerData } = await supabase.from("flowers").select("id, topic_name, flower_type, growth_stage, status").eq("id", flowerId).single();
+      const { data: flowerData } = await supabase.from("flowers").select("id, topic_name, flower_type, growth_stage, status, pot_rarity, pot_color").eq("id", flowerId).single();
       if (!flowerData) { router.push("/garden"); return; }
       setFlower(flowerData);
       
@@ -114,10 +118,10 @@ export default function FlowerDetailPage() {
   const isBloomed = flower.status === "bloomed";
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] px-6 py-6 lg:px-12 pointer-events-none relative flex items-start overflow-hidden">
+    <div className="w-full h-[calc(100vh-64px)] px-6 py-6 lg:px-12 pointer-events-none relative flex justify-between overflow-hidden gap-6">
       
       {/* LEFT PANEL: Floating Sidebar */}
-      <div className="w-full md:w-[450px] flex flex-col gap-6 animate-fade-in-up pointer-events-auto h-full overflow-y-auto pb-12 scrollbar-hide pr-4">
+      <div className="w-full md:w-[450px] shrink-0 flex flex-col gap-6 animate-fade-in-up pointer-events-auto h-full overflow-y-auto pb-12 scrollbar-hide pr-2">
         
         {/* Navigation / Back */}
         <div className="flex items-center justify-between">
@@ -143,6 +147,21 @@ export default function FlowerDetailPage() {
               {GROWTH_LABELS[flower.growth_stage]}
             </Badge>
           </div>
+
+          {/* Pot Info */}
+          {flower.growth_stage >= 4 && flower.pot_rarity && flower.pot_color && (() => {
+            const rarityKey = flower.pot_rarity as Rarity;
+            const config = RARITIES[rarityKey];
+            return (
+              <div className="mt-5 flex items-center gap-3 bg-surface-container-low rounded-xl px-4 py-3">
+                <div className="w-6 h-6 rounded-lg shadow-inner border border-black/10" style={{ backgroundColor: flower.pot_color! }} />
+                <div className="flex-1">
+                  <span className="text-xs font-bold" style={{ color: config?.color }}>{config?.name ?? "Common"} Pot</span>
+                  <span className="text-[10px] font-mono text-on-surface-variant ml-2">{flower.pot_color!.toUpperCase()}</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Growth Progress */}
           <div className="mt-8">
@@ -215,6 +234,11 @@ export default function FlowerDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* RIGHT PANEL: AI Tutor Chat */}
+      <div className="hidden lg:flex w-[400px] shrink-0 h-full animate-fade-in-up pb-12">
+        <ChatTutor flowerId={flowerId} />
       </div>
     </div>
   );

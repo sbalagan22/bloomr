@@ -101,91 +101,69 @@ export function LilyIcon({ className = "w-10 h-10" }: IconProps) {
   );
 }
 
-export function HydrangeaIcon({ className = "w-10 h-10" }: IconProps) {
+export function RoseIcon({ className = "w-10 h-10" }: IconProps) {
   return (
     <svg viewBox="0 0 64 64" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Floret cluster — many small circles forming a ball */}
-      {[
-        { x: 28, y: 16, r: 4, c: "#7C6CC4" },
-        { x: 36, y: 14, r: 4.5, c: "#8B80D0" },
-        { x: 22, y: 22, r: 4, c: "#9B8FD8" },
-        { x: 30, y: 20, r: 5, c: "#6B5BB5" },
-        { x: 38, y: 22, r: 4.5, c: "#7C6CC4" },
-        { x: 44, y: 18, r: 3.5, c: "#A8A0E0" },
-        { x: 20, y: 28, r: 4, c: "#8B80D0" },
-        { x: 28, y: 28, r: 5, c: "#7464B8" },
-        { x: 36, y: 28, r: 5, c: "#6B5BB5" },
-        { x: 44, y: 28, r: 4, c: "#9B8FD8" },
-        { x: 24, y: 34, r: 4.5, c: "#7C6CC4" },
-        { x: 32, y: 34, r: 5, c: "#8B80D0" },
-        { x: 40, y: 34, r: 4.5, c: "#A8A0E0" },
-        { x: 28, y: 40, r: 4, c: "#6B5BB5" },
-        { x: 36, y: 38, r: 4, c: "#7C6CC4" },
-      ].map((f, i) => (
-        <circle key={i} cx={f.x} cy={f.y} r={f.r} fill={f.c} />
+      {/* Outer petals */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <ellipse
+          key={i}
+          cx="32" cy="16"
+          rx="6" ry="13"
+          fill={i % 2 === 0 ? "#CC2A1A" : "#A81E0E"}
+          transform={`rotate(${(i / 8) * 360} 32 28)`}
+        />
       ))}
-      {/* Stem + leaves */}
-      <rect x="30.5" y="42" width="3" height="16" rx="1.5" fill="#2A8040" />
-      <ellipse cx="24" cy="48" rx="6" ry="3.5" fill="#358C45" transform="rotate(-20 24 48)" />
-      <ellipse cx="40" cy="50" rx="6" ry="3.5" fill="#2A8040" transform="rotate(20 40 50)" />
+      {/* Middle petals */}
+      {Array.from({ length: 5 }).map((_, i) => (
+        <ellipse
+          key={`m${i}`}
+          cx="32" cy="22"
+          rx="5" ry="8"
+          fill="#8A1810"
+          transform={`rotate(${(i / 5) * 360 + 20} 32 28)`}
+        />
+      ))}
+      {/* Center */}
+      <circle cx="32" cy="28" r="5" fill="#8A1810" />
+      <circle cx="32" cy="28" r="2.5" fill="#F5D03B" />
+      {/* Stem */}
+      <rect x="30.5" y="40" width="3" height="14" rx="1.5" fill="#2A8040" />
+      <ellipse cx="26" cy="47" rx="5" ry="3" fill="#2A8040" transform="rotate(-30 26 47)" />
+      <ellipse cx="38" cy="50" rx="5" ry="3" fill="#358C45" transform="rotate(25 38 50)" />
     </svg>
   );
 }
 
-export function MagnoliaIcon({ className = "w-10 h-10" }: IconProps) {
+export function DaisyIcon({ className = "w-10 h-10" }: IconProps) {
   return (
     <svg viewBox="0 0 64 64" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Outer petals — large cupped white/cream */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const angle = (i / 8) * 360;
-        return (
-          <ellipse
-            key={i}
-            cx="32"
-            cy="12"
-            rx="7"
-            ry="14"
-            fill={i % 2 === 0 ? "#FDF8EF" : "#F5EDE0"}
-            stroke="#E8DCC8"
-            strokeWidth="0.5"
-            transform={`rotate(${angle} 32 30)`}
-          />
-        );
-      })}
-      {/* Inner petals */}
-      {Array.from({ length: 5 }).map((_, i) => {
-        const angle = (i / 5) * 360 + 20;
-        return (
-          <ellipse
-            key={`inner-${i}`}
-            cx="32"
-            cy="20"
-            rx="4"
-            ry="8"
-            fill="#FFF9F0"
-            stroke="#E8DCC8"
-            strokeWidth="0.3"
-            transform={`rotate(${angle} 32 30)`}
-          />
-        );
-      })}
-      {/* Center — reddish stamens */}
-      <circle cx="32" cy="30" r="5" fill="#C27A5A" />
-      <circle cx="32" cy="30" r="3" fill="#A85A3A" />
-      <circle cx="31" cy="29" r="1" fill="#F5D03B" />
+      {/* White strap petals */}
+      {Array.from({ length: 14 }).map((_, i) => (
+        <ellipse
+          key={i}
+          cx="32" cy="12"
+          rx="4" ry="12"
+          fill={i % 3 === 0 ? "#E0E0F0" : "#FFFFFF"}
+          transform={`rotate(${(i / 14) * 360} 32 30)`}
+        />
+      ))}
+      {/* Yellow center */}
+      <circle cx="32" cy="30" r="8" fill="#F5C518" />
+      <circle cx="32" cy="30" r="5" fill="#DDA400" />
       {/* Stem */}
-      <path d="M32 42 C32 48, 30 54, 28 58" stroke="#5C3D1E" strokeWidth="3" strokeLinecap="round" fill="none" />
-      <ellipse cx="24" cy="48" rx="5" ry="3" fill="#2A8040" transform="rotate(-30 24 48)" />
-      <ellipse cx="38" cy="46" rx="4.5" ry="2.5" fill="#358C45" transform="rotate(15 38 46)" />
+      <rect x="30.5" y="40" width="3" height="14" rx="1.5" fill="#2A8040" />
+      <ellipse cx="26" cy="48" rx="5" ry="3" fill="#2A8040" transform="rotate(-25 26 48)" />
+      <ellipse cx="38" cy="51" rx="4.5" ry="2.5" fill="#358C45" transform="rotate(20 38 51)" />
     </svg>
   );
 }
 
 /** Map of flower type to icon component */
 export const FLOWER_ICON_MAP: Record<string, React.FC<IconProps>> = {
+  rose:      RoseIcon,
+  tulip:     TulipIcon,
   sunflower: SunflowerIcon,
-  tulip: TulipIcon,
-  lily: LilyIcon,
-  hydrangea: HydrangeaIcon,
-  magnolia: MagnoliaIcon,
+  daisy:     DaisyIcon,
+  lily:      LilyIcon,
 };

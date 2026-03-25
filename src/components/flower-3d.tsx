@@ -4,624 +4,780 @@ import { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import {
-  type CamoType,
-  getRarityFromOffsets,
-  getCommonColor,
-  RARITIES,
-} from "@/lib/rarity";
+import { type Rarity, RARITIES } from "@/lib/rarity";
 
 interface Flower3DProps {
   flowerType: string;
   growthStage: number;
-  patternOffsetX?: number;
-  patternOffsetY?: number;
+  rarity?: Rarity;
+  potColor?: string;
   size?: "sm" | "md" | "lg" | "full";
   interactive?: boolean;
 }
 
 const FLOWER_COLORS: Record<string, { petal: string; accent: string }> = {
-  rose: { petal: "#E8637A", accent: "#C2334F" },
-  tulip: { petal: "#F4A44E", accent: "#D4722A" },
-  sunflower: { petal: "#F5D03B", accent: "#2B1A0E" },
-  daisy: { petal: "#FFFFFF", accent: "#F5D03B" },
-  lavender: { petal: "#B09FD8", accent: "#7B6CB5" },
+  rose:      { petal: "#CC2A1A", accent: "#8A1810" },
+  tulip:     { petal: "#3D5EE0", accent: "#2A42A8" },
+  sunflower: { petal: "#F5C518", accent: "#DDA400" },
+  daisy:     { petal: "#FFFFFF", accent: "#E0E0F0" },
+  lily:      { petal: "#E8709A", accent: "#D04878" },
 };
 
-/* ═══════════════════════════════════════════════════════
-   PROCEDURAL CAMO TEXTURE GENERATORS  (Canvas 2D → Three.js)
-   ═══════════════════════════════════════════════════════ */
+const TERRACOTTA = "#C8682B";
+const GREEN      = "#2A8040";
+const SOIL_DARK  = "#2B1A0E";
 
-function createSolidTexture(color: string): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, 256, 256);
-  // Subtle ceramic sheen gradient
-  const grad = ctx.createLinearGradient(0, 0, 256, 256);
-  grad.addColorStop(0, "rgba(255,255,255,0.12)");
-  grad.addColorStop(0.5, "rgba(0,0,0,0.05)");
-  grad.addColorStop(1, "rgba(255,255,255,0.08)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 256, 256);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  return tex;
+/* ── Shared material hooks ── */
+function useGreenMat() {
+  return useMemo(
+    () => new THREE.MeshPhongMaterial({ color: GREEN, flatShading: true }),
+    []
+  );
+}
+function useSoilMat() {
+  return useMemo(
+    () => new THREE.MeshPhongMaterial({ color: SOIL_DARK, flatShading: true }),
+    []
+  );
+}
+function usePotMat(color?: string) {
+  return useMemo(
+    () => new THREE.MeshPhongMaterial({ color: color || TERRACOTTA, flatShading: true, shininess: 22 }),
+    [color]
+  );
 }
 
-function createStripesTexture(
-  primary: string,
-  secondary: string,
-  ox: number,
-  oy: number
-): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = primary;
-  ctx.fillRect(0, 0, 512, 512);
-  const stripeWidth = 18 + Math.floor(ox * 20);
-  const angle = -35 + oy * 30; // slight rotation variance
-  ctx.save();
-  ctx.translate(256, 256);
-  ctx.rotate((angle * Math.PI) / 180);
-  ctx.translate(-256, -256);
-  ctx.fillStyle = secondary;
-  for (let i = -512; i < 1024; i += stripeWidth * 2) {
-    ctx.fillRect(i, -100, stripeWidth, 1200);
-  }
-  ctx.restore();
-  // Soft vignette overlay
-  const vig = ctx.createRadialGradient(256, 256, 80, 256, 256, 360);
-  vig.addColorStop(0, "rgba(255,255,255,0.1)");
-  vig.addColorStop(1, "rgba(0,0,0,0.15)");
-  ctx.fillStyle = vig;
-  ctx.fillRect(0, 0, 512, 512);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  return tex;
+/* ═══════════════════════════════════════════════════
+   POT MODELS  (terracotta clay, shape-per-rarity)
+   All reference images: /design/pots/
+   ═══════════════════════════════════════════════════ */
+
+/** Common — short squat classic terracotta pot, 8-sided, slight lip at top */
+function CommonPot({ potColor }: { potColor?: string }) {
+  const mat  = usePotMat(potColor);
+  const soil = useSoilMat();
+  const geo  = useMemo(() => {
+    const pts = [
+      new THREE.Vector2(0.18, -0.36),   // flat bottom edge
+      new THREE.Vector2(0.20, -0.34),   // bottom corner
+      new THREE.Vector2(0.32,  0.06),   // tapers outward linearly
+      new THREE.Vector2(0.38,  0.28),   // near top
+      new THREE.Vector2(0.42,  0.34),   // lip flare
+      new THREE.Vector2(0.44,  0.38),   // lip top
+      new THREE.Vector2(0.42,  0.40),   // lip roll-over
+    ];
+    return new THREE.LatheGeometry(pts, 8);
+  }, []);
+
+  return (
+    <group>
+      <mesh geometry={geo} material={mat} castShadow receiveShadow />
+      <mesh material={soil} position={[0, 0.38, 0]}>
+        <cylinderGeometry args={[0.38, 0.38, 0.03, 8]} />
+      </mesh>
+    </group>
+  );
 }
 
-function createDripTexture(
-  bg: string,
-  dripColor: string,
-  ox: number,
-  oy: number
-): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, 512, 512);
-  // Seeded pseudo-random from offsets
-  const seed = (n: number) => ((Math.sin(n * 127.1 + ox * 311.7) * 43758.5453) % 1 + 1) % 1;
-  const dripCount = 8 + Math.floor(oy * 8);
-  ctx.fillStyle = dripColor;
-  for (let i = 0; i < dripCount; i++) {
-    const x = seed(i) * 512;
-    const w = 14 + seed(i + 50) * 24;
-    const h = 60 + seed(i + 100) * 200;
-    const topY = seed(i + 200) * 180;
-    // Rounded drip shape
-    ctx.beginPath();
-    ctx.moveTo(x - w / 2, topY);
-    ctx.quadraticCurveTo(x - w / 2, topY + h * 0.7, x, topY + h);
-    ctx.quadraticCurveTo(x + w / 2, topY + h * 0.7, x + w / 2, topY);
-    ctx.closePath();
-    ctx.fill();
-    // Paint splatter at drip origin
-    ctx.beginPath();
-    ctx.arc(x, topY, w * 0.6, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  // Glossy overlay
-  const gloss = ctx.createLinearGradient(0, 0, 0, 512);
-  gloss.addColorStop(0, "rgba(255,255,255,0.18)");
-  gloss.addColorStop(0.4, "rgba(255,255,255,0)");
-  gloss.addColorStop(1, "rgba(0,0,0,0.1)");
-  ctx.fillStyle = gloss;
-  ctx.fillRect(0, 0, 512, 512);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  return tex;
+/** Uncommon — tall round-belly urn with narrow neck and flared lip, 12 segments */
+function UncommonPot({ potColor }: { potColor?: string }) {
+  const mat  = usePotMat(potColor);
+  const soil = useSoilMat();
+  const geo  = useMemo(() => {
+    const pts = [
+      new THREE.Vector2(0.14, -0.58),   // narrow base
+      new THREE.Vector2(0.16, -0.56),   // base corner
+      new THREE.Vector2(0.42, -0.20),   // big belly outward
+      new THREE.Vector2(0.48,  0.00),   // max belly width
+      new THREE.Vector2(0.44,  0.16),   // belly curves in
+      new THREE.Vector2(0.28,  0.34),   // narrow neck
+      new THREE.Vector2(0.24,  0.42),   // neck
+      new THREE.Vector2(0.28,  0.48),   // lip flare out
+      new THREE.Vector2(0.32,  0.52),   // lip edge
+      new THREE.Vector2(0.30,  0.54),   // lip roll
+    ];
+    return new THREE.LatheGeometry(pts, 12);
+  }, []);
+
+  return (
+    <group>
+      <mesh geometry={geo} material={mat} castShadow receiveShadow />
+      <mesh material={soil} position={[0, 0.52, 0]}>
+        <cylinderGeometry args={[0.26, 0.26, 0.03, 12]} />
+      </mesh>
+    </group>
+  );
 }
 
-/* --- The Stage 4 Exclusive Rarity Pot --- */
-function RarityPot({ offsetX, offsetY }: { offsetX: number; offsetY: number }) {
-  const rarity = getRarityFromOffsets(offsetX, offsetY);
-  const config = RARITIES[rarity];
-  const camo: CamoType = config.camo;
+/** Rare — tall elegant pedestal vase, slim with dramatic flared bowl at top, 10 segments */
+function RarePot({ potColor }: { potColor?: string }) {
+  const mat  = usePotMat(potColor);
+  const soil = useSoilMat();
+  const geo  = useMemo(() => {
+    const pts = [
+      new THREE.Vector2(0.22, -0.70),   // wide pedestal base
+      new THREE.Vector2(0.24, -0.68),
+      new THREE.Vector2(0.22, -0.62),   // pedestal rim
+      new THREE.Vector2(0.10, -0.48),   // very narrow stem
+      new THREE.Vector2(0.08, -0.20),   // still narrow
+      new THREE.Vector2(0.10,  0.04),   // starts to widen
+      new THREE.Vector2(0.22,  0.24),   // bowl widens
+      new THREE.Vector2(0.38,  0.42),   // wide bowl
+      new THREE.Vector2(0.40,  0.48),   // rim
+      new THREE.Vector2(0.38,  0.50),   // rim roll
+    ];
+    return new THREE.LatheGeometry(pts, 10);
+  }, []);
 
-  /* ── 1. UNIQUE SHAPE PER RARITY (LatheGeometry) ── */
-  const { potGeometry, rimY, rimRadius, soilRadius } = useMemo(() => {
-    const pts: THREE.Vector2[] = [];
+  return (
+    <group>
+      <mesh geometry={geo} material={mat} castShadow receiveShadow />
+      <mesh material={soil} position={[0, 0.48, 0]}>
+        <cylinderGeometry args={[0.34, 0.34, 0.03, 10]} />
+      </mesh>
+    </group>
+  );
+}
 
-    switch (camo) {
-      case "flames": {
-        // "Golden Pagoda" — stacked tiered temple pot with decreasing platforms
-        // Tier 1 (base) — widest
-        pts.push(
-          new THREE.Vector2(0.55, -0.55),  // base floor
-          new THREE.Vector2(0.55, -0.45),  // tier 1 wall
-          new THREE.Vector2(0.48, -0.42),  // tier 1 roof overhang inward
-        );
-        // Tier 2 (middle)
-        pts.push(
-          new THREE.Vector2(0.48, -0.35),  // tier 2 step
-          new THREE.Vector2(0.42, -0.35),  // tier 2 base
-          new THREE.Vector2(0.42, -0.18),  // tier 2 wall
-          new THREE.Vector2(0.36, -0.15),  // tier 2 roof overhang
-        );
-        // Tier 3 (top)
-        pts.push(
-          new THREE.Vector2(0.36, -0.08),  // tier 3 step
-          new THREE.Vector2(0.30, -0.08),  // tier 3 base
-          new THREE.Vector2(0.30, 0.1),    // tier 3 wall
-          new THREE.Vector2(0.35, 0.12),   // tier 3 roof overhang
-        );
-        // Bowl opening
-        pts.push(
-          new THREE.Vector2(0.35, 0.2),    // inner rise
-          new THREE.Vector2(0.42, 0.35),   // flared opening
-          new THREE.Vector2(0.45, 0.4),    // rim lip
-        );
-        return { potGeometry: new THREE.LatheGeometry(pts, 8), rimY: 0.4, rimRadius: 0.45, soilRadius: 0.40 };
-      }
-      case "drip": {
-        // "Crater" — wide, shallow, rocky/irregular basin
-        // Matches CSS: wide (140px) but short (60px), irregular polygon edges
-        pts.push(
-          new THREE.Vector2(0.2, -0.3),    // narrow base
-          new THREE.Vector2(0.5, -0.28),   // base flare outward
-          new THREE.Vector2(0.6, -0.15),   // wide lower wall (rocky slope)
-          new THREE.Vector2(0.65, 0.0),    // maximum width — crater rim zone
-          new THREE.Vector2(0.6, 0.08),    // slight inward lip
-          new THREE.Vector2(0.55, 0.12),   // inner crater edge
-          new THREE.Vector2(0.5, 0.15),    // crater opening
-        );
-        // 7 segments for irregular rocky feel
-        return { potGeometry: new THREE.LatheGeometry(pts, 7), rimY: 0.15, rimRadius: 0.5, soilRadius: 0.48 };
-      }
-      case "stripes": {
-        // "Crystal Prism" — faceted geometric prism with slight taper
-        // 4 segments = square cross-section, creating a prism/crystal look
-        pts.push(
-          new THREE.Vector2(0.05, -0.6),   // narrow base point
-          new THREE.Vector2(0.3, -0.55),    // base flare
-          new THREE.Vector2(0.42, -0.3),    // lower body
-          new THREE.Vector2(0.45, 0.0),     // mid body — widest
-          new THREE.Vector2(0.42, 0.25),    // upper taper
-          new THREE.Vector2(0.38, 0.45),    // near-top
-          new THREE.Vector2(0.4, 0.5),      // slight lip flare
-        );
-        return { potGeometry: new THREE.LatheGeometry(pts, 5), rimY: 0.5, rimRadius: 0.4, soilRadius: 0.36 };
-      }
-      case "polkadots": {
-        // "Crystal Hexagon" — faceted diamond/crystal shape (hex clip-path)
-        // Matches CSS polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
-        // Sharp diamond silhouette: point at bottom, widens, then tapers to opening
-        pts.push(
-          new THREE.Vector2(0.02, -0.6),   // bottom point (near-vertex)
-          new THREE.Vector2(0.15, -0.5),   // start flare
-          new THREE.Vector2(0.45, -0.3),   // lower 25% — widest section begins
-          new THREE.Vector2(0.5, -0.1),    // maximum width
-          new THREE.Vector2(0.5, 0.15),    // hold width (75% zone)
-          new THREE.Vector2(0.42, 0.35),   // upper taper begins
-          new THREE.Vector2(0.3, 0.5),     // narrowed opening top
-          new THREE.Vector2(0.32, 0.55),   // slight rim lip
-        );
-        return { potGeometry: new THREE.LatheGeometry(pts, 6), rimY: 0.55, rimRadius: 0.32, soilRadius: 0.28 };
-      }
-      default: {
-        // "Glass Orb" — spherical terrarium with cutout opening at top
-        // Generate a sphere profile via LatheGeometry, trimmed at the top for the planting hole
-        const segments = 24;
-        const radius = 0.5;
-        for (let i = 0; i <= segments; i++) {
-          const t = i / segments;
-          // Sweep from bottom (-PI/2) up to ~80% of the top (stop before full top to leave opening)
-          const angle = -Math.PI / 2 + t * (Math.PI * 0.82);
-          pts.push(new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius));
-        }
-        const topR = pts[pts.length - 1].x;
-        return { potGeometry: new THREE.LatheGeometry(pts, 32), rimY: pts[pts.length - 1].y, rimRadius: topR, soilRadius: topR - 0.02 };
-      }
-    }
-  }, [camo]);
+/** Epic — wide ornate chalice with handles (side lugs), pedestal foot, 12 segments */
+function EpicPot({ potColor }: { potColor?: string }) {
+  const mat  = usePotMat(potColor);
+  const soil = useSoilMat();
+  const geo  = useMemo(() => {
+    const pts = [
+      new THREE.Vector2(0.28, -0.60),   // wide pedestal base
+      new THREE.Vector2(0.30, -0.58),
+      new THREE.Vector2(0.28, -0.52),   // pedestal lip
+      new THREE.Vector2(0.12, -0.44),   // narrow stem
+      new THREE.Vector2(0.10, -0.32),   // stem
+      new THREE.Vector2(0.18, -0.18),   // bowl starts
+      new THREE.Vector2(0.46, -0.02),   // wide bowl
+      new THREE.Vector2(0.52,  0.14),   // max width
+      new THREE.Vector2(0.50,  0.28),   // curves in slightly
+      new THREE.Vector2(0.44,  0.38),   // upper bowl
+      new THREE.Vector2(0.48,  0.44),   // decorative rim flare
+      new THREE.Vector2(0.50,  0.48),   // rim edge
+      new THREE.Vector2(0.48,  0.50),   // rim roll
+    ];
+    return new THREE.LatheGeometry(pts, 12);
+  }, []);
 
-  /* ── 2. PROCEDURAL TEXTURE (null for legendary — pure gold) ── */
-  const potTexture = useMemo(() => {
-    switch (camo) {
-      case "solid":
-        return createSolidTexture(getCommonColor(offsetX));
-      case "stripes":
-        return createStripesTexture("#1A1A2E", "#7B8CDE", offsetX, offsetY);
-      case "polkadots":
-        return null; // Crystal — no texture, pure refractive material
-      case "drip":
-        return createDripTexture("#3A3A3A", "#FF6B35", offsetX, offsetY);
-      case "flames":
-        return null;
-    }
-  }, [camo, offsetX, offsetY]);
+  // Two decorative handle lugs on opposite sides
+  const handleGeo = useMemo(() => new THREE.TorusGeometry(0.10, 0.025, 6, 8, Math.PI), []);
 
-  /* ── 3. MATERIAL ── */
-  const potMaterial = useMemo(() => {
-    if (camo === "flames") {
-      // Legendary — pure polished gold, no texture
-      const mat = new THREE.MeshPhysicalMaterial({
-        color: "#FFD700",
-        roughness: 0.05,
-        metalness: 1.0,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.05,
-        reflectivity: 1.0,
-      });
-      mat.emissive = new THREE.Color("#B8860B");
-      mat.emissiveIntensity = 0.25;
-      return mat;
-    }
-    if (camo === "solid") {
-      // Glass Orb — transparent, refractive glass look
-      const mat = new THREE.MeshPhysicalMaterial({
-        color: getCommonColor(offsetX),
-        roughness: 0.05,
-        metalness: 0.0,
-        transmission: 0.85,
-        thickness: 0.5,
-        ior: 1.5,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.05,
-        transparent: true,
-        opacity: 0.4,
-      });
-      return mat;
-    }
-    if (camo === "polkadots") {
-      // Crystal Hexagon — frosted diamond, refractive with inner glow
-      const mat = new THREE.MeshPhysicalMaterial({
-        color: "#A8D8FF",
-        roughness: 0.02,
-        metalness: 0.1,
-        transmission: 0.6,
-        thickness: 0.8,
-        ior: 2.0,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.01,
-        transparent: true,
-        opacity: 0.55,
-      });
-      mat.emissive = new THREE.Color(config.glowColor);
-      mat.emissiveIntensity = 0.35;
-      return mat;
-    }
-    if (camo === "drip") {
-      // Crater — rough volcanic rock with lava drip accents
-      const mat = new THREE.MeshPhysicalMaterial({
-        map: potTexture,
-        roughness: 0.85,
-        metalness: 0.15,
-        clearcoat: 0.1,
-        clearcoatRoughness: 0.8,
-      });
-      mat.emissive = new THREE.Color("#FF4500");
-      mat.emissiveIntensity = 0.15;
-      return mat;
-    }
-    // Stripes (uncommon) — crystal prism
-    const mat = new THREE.MeshPhysicalMaterial({
-      map: potTexture,
-      roughness: 0.08,
-      metalness: 0.15,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.02,
-      transmission: 0.4,
-      thickness: 0.3,
-      ior: 1.8,
-      transparent: true,
-      opacity: 0.75,
-    });
-    return mat;
-  }, [potTexture, camo, config.glowColor]);
+  return (
+    <group>
+      <mesh geometry={geo} material={mat} castShadow receiveShadow />
+      {/* Decorative band around widest point */}
+      <mesh material={mat} position={[0, 0.14, 0]} castShadow>
+        <torusGeometry args={[0.52, 0.02, 6, 12]} />
+      </mesh>
+      {/* Side handles */}
+      <mesh geometry={handleGeo} material={mat} position={[0.50, 0.26, 0]} rotation={[0, 0, Math.PI / 2]} castShadow />
+      <mesh geometry={handleGeo} material={mat} position={[-0.50, 0.26, 0]} rotation={[0, Math.PI, Math.PI / 2]} castShadow />
+      <mesh material={soil} position={[0, 0.48, 0]}>
+        <cylinderGeometry args={[0.44, 0.44, 0.03, 12]} />
+      </mesh>
+    </group>
+  );
+}
 
-  const rimMaterial = useMemo(() => {
-    if (camo === "solid") {
-      // Frosted glass rim for the orb
-      return new THREE.MeshStandardMaterial({ color: "#FFFFFF", roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.6 });
-    }
-    if (camo === "flames") {
-      // Legendary — polished gold rim
-      const mat = new THREE.MeshStandardMaterial({ color: "#FFD700", roughness: 0.05, metalness: 1.0 });
-      mat.emissive = new THREE.Color("#B8860B");
-      mat.emissiveIntensity = 0.2;
-      return mat;
-    }
-    const mat = new THREE.MeshStandardMaterial({
-      color: config.color,
-      roughness: 0.1,
-      metalness: 0.8,
-    });
-    if (camo === "polkadots") {
-      mat.emissive = new THREE.Color(config.glowColor);
-      mat.emissiveIntensity = 0.3;
-    }
-    return mat;
-  }, [camo, config.color, config.glowColor]);
+/** Legendary — ornate castle vase with crenellations, pedestal, and crown rim */
+function LegendaryPot({ potColor }: { potColor?: string }) {
+  const mat  = usePotMat(potColor);
+  const soil = useSoilMat();
+  const bodyGeo = useMemo(() => {
+    const pts = [
+      new THREE.Vector2(0.26, -0.64),   // wide ornate base
+      new THREE.Vector2(0.28, -0.62),
+      new THREE.Vector2(0.26, -0.56),   // base lip
+      new THREE.Vector2(0.14, -0.48),   // narrow stem
+      new THREE.Vector2(0.12, -0.34),
+      new THREE.Vector2(0.18, -0.18),   // widens into body
+      new THREE.Vector2(0.38, -0.02),
+      new THREE.Vector2(0.42,  0.12),   // body
+      new THREE.Vector2(0.40,  0.26),
+      new THREE.Vector2(0.36,  0.36),   // below rim
+    ];
+    return new THREE.LatheGeometry(pts, 8);
+  }, []);
 
-  const soilMaterial = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: "#2B1A0E", roughness: 1 }),
+  const battlements = useMemo(
+    () => Array.from({ length: 10 }, (_, i) => {
+      const a = (i / 10) * Math.PI * 2;
+      return { x: Math.cos(a) * 0.34, z: Math.sin(a) * 0.34, key: i };
+    }),
     []
   );
 
   return (
-    <group position={[0, -0.4, 0]}>
-      {/* Pot body — unique LatheGeometry per rarity */}
-      <mesh geometry={potGeometry} material={potMaterial} castShadow receiveShadow />
-      {/* Pot Rim — metallic ring color-coded to rarity */}
-      <mesh material={rimMaterial} position={[0, rimY, 0]} castShadow>
-        <torusGeometry args={[rimRadius, 0.04, 16, 32]} />
+    <group>
+      <mesh geometry={bodyGeo} material={mat} castShadow receiveShadow />
+      {/* Thick rim band */}
+      <mesh material={mat} position={[0, 0.40, 0]} castShadow>
+        <cylinderGeometry args={[0.38, 0.38, 0.08, 8]} />
       </mesh>
-      {/* Top Soil Layer */}
-      <mesh material={soilMaterial} position={[0, rimY - 0.03, 0]} receiveShadow>
-        <cylinderGeometry args={[soilRadius, soilRadius, 0.02, 32]} />
+      {/* Decorative mid-band */}
+      <mesh material={mat} position={[0, 0.12, 0]} castShadow>
+        <torusGeometry args={[0.42, 0.02, 6, 8]} />
       </mesh>
-      {/* Rarity glow ring (rare + epic + legendary) */}
-      {(camo === "polkadots" || camo === "drip" || camo === "flames") && (
-        <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.18, 0.35, 32]} />
-          <meshBasicMaterial
-            color={camo === "flames" ? "#FFD700" : config.glowColor}
-            transparent
-            opacity={camo === "flames" ? 0.7 : 0.5}
-            side={THREE.DoubleSide}
-          />
+      {/* Crenellations — taller and more of them */}
+      {battlements.map(({ x, z, key }) => (
+        <mesh key={key} material={mat} position={[x, 0.56, z]} castShadow>
+          <boxGeometry args={[0.08, 0.18, 0.08]} />
+        </mesh>
+      ))}
+      <mesh material={soil} position={[0, 0.44, 0]}>
+        <cylinderGeometry args={[0.34, 0.34, 0.03, 8]} />
+      </mesh>
+    </group>
+  );
+}
+
+function RarityPot({ rarity, potColor }: { rarity: Rarity; potColor?: string }) {
+  switch (rarity) {
+    case "uncommon":  return <UncommonPot potColor={potColor} />;
+    case "rare":      return <RarePot potColor={potColor} />;
+    case "epic":      return <EpicPot potColor={potColor} />;
+    case "legendary": return <LegendaryPot potColor={potColor} />;
+    default:          return <CommonPot potColor={potColor} />;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   SHARED PLANT PARTS
+   ═══════════════════════════════════════════════════ */
+
+function Stem({ growthStage }: { growthStage: number }) {
+  const mat = useGreenMat();
+  const h   = growthStage >= 3 ? 2.0 : growthStage === 2 ? 1.6 : 1.2;
+  return (
+    <mesh material={mat} position={[0, h / 2 - 0.5, 0]} castShadow>
+      <cylinderGeometry args={[0.03, 0.06, h, 6]} />
+    </mesh>
+  );
+}
+
+function Leaves({ growthStage }: { growthStage: number }) {
+  const mat = useMemo(
+    () => new THREE.MeshPhongMaterial({ color: GREEN, flatShading: true, side: THREE.DoubleSide }),
+    []
+  );
+  return (
+    <>
+      <mesh material={mat} position={[0.22, 0.08, 0]} rotation={[0.1, 0, -0.65]} scale={[1.9, 0.5, 0.3]} castShadow>
+        <sphereGeometry args={[0.14, 4, 3]} />
+      </mesh>
+      <mesh material={mat} position={[-0.22, 0.32, 0.05]} rotation={[-0.1, 0.2, 0.60]} scale={[1.8, 0.5, 0.3]} castShadow>
+        <sphereGeometry args={[0.13, 4, 3]} />
+      </mesh>
+      {growthStage >= 2 && (
+        <mesh material={mat} position={[0.18, 0.70, 0]} rotation={[0, 0, -0.45]} scale={[1.6, 0.45, 0.3]} castShadow>
+          <sphereGeometry args={[0.12, 4, 3]} />
         </mesh>
       )}
-    </group>
+    </>
   );
 }
 
-/* --- Natural Meshes (No Offsets) --- */
+/* ═══════════════════════════════════════════════════
+   BLOOM COMPONENTS
+   Reference images: /design/flowers/
+   ═══════════════════════════════════════════════════ */
 
-function RoseBloom({ growthStage, color }: { growthStage: number, color: string }) {
-  const layers = growthStage >= 4 ? 6 : growthStage >= 3 ? 3 : 0;
-  const spread = growthStage >= 4 ? 1.0 : 0.6;
-  if (!layers) return null;
+/** Rose — deep red, 4 concentric petal rings spiralling outward, gold stamens */
+function RoseBloom({ growthStage }: { growthStage: number }) {
+  const deepRed = useMemo(() => new THREE.MeshPhongMaterial({ color: "#6B0E08", flatShading: true, side: THREE.DoubleSide }), []);
+  const midRed  = useMemo(() => new THREE.MeshPhongMaterial({ color: "#8A1810", flatShading: true, side: THREE.DoubleSide }), []);
+  const outer   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#CC2A1A", flatShading: true, side: THREE.DoubleSide }), []);
+  const bright  = useMemo(() => new THREE.MeshPhongMaterial({ color: "#E03525", flatShading: true, side: THREE.DoubleSide }), []);
+  const ctr     = useMemo(() => new THREE.MeshPhongMaterial({ color: "#F5D03B", flatShading: true }), []);
+  const spread  = growthStage >= 4 ? 1.0 : 0.6;
 
   return (
-    <group position={[0, 1.4, 0]}>
-      {Array.from({ length: layers * 4 }).map((_, i) => {
-        const radius = 0.05 + (i * 0.02) * spread;
-        const angle = i * 2.4; 
-        const height = (layers * 4 - i) * 0.015;
-        const petalScale = 0.15 + (i * 0.008);
+    <group position={[0, 1.40, 0]}>
+      {/* Gold stamen center */}
+      <mesh material={ctr}><sphereGeometry args={[0.055, 6, 5]} /></mesh>
+      {/* Innermost tight bud — 4 petals curving inward */}
+      {Array.from({ length: 4 }, (_, i) => {
+        const a = (i / 4) * Math.PI * 2 + 0.3;
         return (
-          <mesh key={i} position={[Math.cos(angle) * radius, height - 0.2, Math.sin(angle) * radius]} rotation={[Math.sin(angle) * 0.2 * spread, angle + Math.PI / 2, Math.PI / 6 * spread]} castShadow>
-            <sphereGeometry args={[petalScale, 12, 8, 0, Math.PI, 0, Math.PI]} />
-            <meshStandardMaterial color={color} roughness={0.3} side={THREE.DoubleSide} />
+          <mesh key={`c${i}`} material={deepRed}
+            position={[Math.cos(a) * 0.04, 0.06, Math.sin(a) * 0.04]}
+            rotation={[Math.PI / 4, a, Math.PI / 5]}
+            scale={[0.7, 1.2, 0.35]} castShadow>
+            <sphereGeometry args={[0.08, 5, 4]} />
           </mesh>
-        )
+        );
+      })}
+      {/* Inner ring — 6 petals, slightly open */}
+      {Array.from({ length: 6 }, (_, i) => {
+        const a = (i / 6) * Math.PI * 2;
+        return (
+          <mesh key={`i${i}`} material={midRed}
+            position={[Math.cos(a) * 0.10 * spread, 0.02, Math.sin(a) * 0.10 * spread]}
+            rotation={[Math.PI / 2.8 * spread, a, Math.PI / 6]}
+            scale={[0.9, 1.5, 0.38]} castShadow>
+            <sphereGeometry args={[0.10, 5, 4]} />
+          </mesh>
+        );
+      })}
+      {/* Middle ring — 8 petals, opening wider */}
+      {Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2 + 0.15;
+        return (
+          <mesh key={`m${i}`} material={outer}
+            position={[Math.cos(a) * 0.19 * spread, -0.03, Math.sin(a) * 0.19 * spread]}
+            rotation={[Math.PI / 3.0 * spread, a, Math.PI / 5]}
+            scale={[1.0, 1.7, 0.4]} castShadow>
+            <sphereGeometry args={[0.12, 5, 4]} />
+          </mesh>
+        );
+      })}
+      {/* Outer ring — 10 petals, fully open and drooping */}
+      {Array.from({ length: 10 }, (_, i) => {
+        const a = (i / 10) * Math.PI * 2 + 0.25;
+        return (
+          <mesh key={`o${i}`} material={i % 3 === 0 ? bright : outer}
+            position={[Math.cos(a) * 0.29 * spread, -0.12, Math.sin(a) * 0.29 * spread]}
+            rotation={[Math.PI / 2.2 * spread, a, Math.PI / 4]}
+            scale={[1.15, 1.9, 0.38]} castShadow>
+            <sphereGeometry args={[0.13, 5, 4]} />
+          </mesh>
+        );
       })}
     </group>
   );
 }
 
-function TulipBloom({ growthStage, color }: { growthStage: number, color: string }) {
-  if (growthStage < 3) return null;
-  const spread = growthStage >= 4 ? 0.3 : 0.05;
+/** Tulip — blue, elegant cup bloom with visible interior, side buds */
+function TulipBloom({ growthStage }: { growthStage: number }) {
+  const main   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#3D5EE0", flatShading: true, side: THREE.DoubleSide }), []);
+  const dark   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#2A42A8", flatShading: true, side: THREE.DoubleSide }), []);
+  const light  = useMemo(() => new THREE.MeshPhongMaterial({ color: "#5B7CF0", flatShading: true, side: THREE.DoubleSide }), []);
+  const center = useMemo(() => new THREE.MeshPhongMaterial({ color: "#1A2A6C", flatShading: true }), []);
+  const stamen = useMemo(() => new THREE.MeshPhongMaterial({ color: "#F5D03B", flatShading: true }), []);
+  const stemM  = useGreenMat();
+  const open   = growthStage >= 4 ? 0.35 : 0.10;
 
   return (
-    <group position={[0, 1.2, 0]}>
-      {Array.from({ length: 6 }).map((_, i) => {
-        const angle = (i / 6) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(angle) * 0.08 * spread, 0.2, Math.sin(angle) * 0.08 * spread]} rotation={[spread, angle, 0]} scale={[1, 1.4, 1]} castShadow>
-            <cylinderGeometry args={[0.1, 0.01, 0.4, 12, 1, false, 0, Math.PI]} />
-            <meshStandardMaterial color={color} roughness={0.2} side={THREE.DoubleSide} />
+    <group>
+      {/* Main cup bloom */}
+      <group position={[0, 1.40, 0]}>
+        {/* Dark interior cup */}
+        <mesh material={center} position={[0, 0.02, 0]}>
+          <cylinderGeometry args={[0.06, 0.04, 0.14, 6]} />
+        </mesh>
+        {/* Stamens visible inside */}
+        {Array.from({ length: 3 }, (_, i) => {
+          const a = (i / 3) * Math.PI * 2;
+          return (
+            <mesh key={`st${i}`} material={stamen}
+              position={[Math.cos(a) * 0.03, 0.12, Math.sin(a) * 0.03]}>
+              <sphereGeometry args={[0.015, 4, 3]} />
+            </mesh>
+          );
+        })}
+        {/* 6 tall cupped petals */}
+        {Array.from({ length: 6 }, (_, i) => {
+          const a = (i / 6) * Math.PI * 2;
+          const mat = i % 3 === 0 ? light : i % 2 === 0 ? main : dark;
+          return (
+            <mesh key={i} material={mat}
+              position={[Math.cos(a) * 0.08 * (1 + open), 0.08, Math.sin(a) * 0.08 * (1 + open)]}
+              rotation={[open * 0.8, a, 0]}
+              scale={[0.8, 1.6, 0.42]} castShadow>
+              <sphereGeometry args={[0.12, 5, 4, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
+            </mesh>
+          );
+        })}
+      </group>
+      {/* Side buds with branch stems */}
+      {([
+        { pos: [ 0.22,  0.55,  0.00] as const, rz:  0.55 },
+        { pos: [-0.20,  0.78,  0.10] as const, rz: -0.45 },
+        { pos: [ 0.18,  1.00, -0.10] as const, rz:  0.38 },
+        { pos: [-0.15,  1.18,  0.00] as const, rz: -0.32 },
+      ] as const).map(({ pos, rz }, i) => (
+        <group key={i}>
+          <mesh material={stemM} position={[pos[0] * 0.5, pos[1] - 0.07, pos[2] * 0.5]} rotation={[0, 0, rz]}>
+            <cylinderGeometry args={[0.012, 0.020, 0.22, 5]} />
           </mesh>
-        )
-      })}
+          <mesh material={i % 2 === 0 ? main : dark} position={[pos[0], pos[1] + 0.10, pos[2]]} scale={[0.85, 1.4, 0.85]} castShadow>
+            <sphereGeometry args={[0.06, 5, 4]} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
 
+/** Sunflower — large tilted face, textured dark center, triple-layer yellow petals */
 function SunflowerBloom({ growthStage }: { growthStage: number }) {
-  if (growthStage < 3) return null;
-  const numPetals = growthStage >= 4 ? 24 : 12;
+  const petal     = useMemo(() => new THREE.MeshPhongMaterial({ color: "#F5C518", flatShading: true, side: THREE.DoubleSide }), []);
+  const petalDark = useMemo(() => new THREE.MeshPhongMaterial({ color: "#DDA400", flatShading: true, side: THREE.DoubleSide }), []);
+  const petalTip  = useMemo(() => new THREE.MeshPhongMaterial({ color: "#E8B010", flatShading: true, side: THREE.DoubleSide }), []);
+  const centerD   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#2B1A0E", flatShading: true }), []);
+  const centerM   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#4A3018", flatShading: true }), []);
+  const seedMat   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#1A0E06", flatShading: true }), []);
+  const outerCnt  = growthStage >= 4 ? 18 : 14;
 
   return (
-    <group position={[0, 1.4, 0]} rotation={[Math.PI / 6, 0, 0]}>
-      <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.25, 0.25, 0.05, 32]} />
-        <meshStandardMaterial color="#2B1A0E" roughness={0.9} />
+    <group position={[0, 1.40, 0]} rotation={[Math.PI / 10, 0, 0]}>
+      {/* Center disk — layered for texture */}
+      <mesh material={centerD} castShadow>
+        <cylinderGeometry args={[0.24, 0.22, 0.08, 12]} />
       </mesh>
-      {Array.from({ length: numPetals }).map((_, i) => {
-        const angle = (i / numPetals) * Math.PI * 2;
+      <mesh material={centerM} position={[0, 0.04, 0]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.04, 10]} />
+      </mesh>
+      {/* Seed dots on face */}
+      {Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2;
+        const r = 0.10;
         return (
-          <mesh key={i} position={[Math.cos(angle) * 0.28, Math.sin(angle) * 0.28, 0]} rotation={[0, 0, angle]} scale={[3.5, 0.5, 0.1]} castShadow>
-            <sphereGeometry args={[0.08, 8, 4]} />
-            <meshStandardMaterial color="#F5D03B" roughness={0.4} />
+          <mesh key={`sd${i}`} material={seedMat}
+            position={[Math.cos(a) * r, 0.06, Math.sin(a) * r]}>
+            <sphereGeometry args={[0.02, 4, 3]} />
           </mesh>
-        )
+        );
+      })}
+      {/* Outer petals — long pointed */}
+      {Array.from({ length: outerCnt }, (_, i) => {
+        const a = (i / outerCnt) * Math.PI * 2;
+        return (
+          <mesh key={i} material={i % 5 === 0 ? petalTip : petal}
+            position={[Math.cos(a) * 0.36, 0, Math.sin(a) * 0.36]}
+            rotation={[0, -a, Math.PI / 2]}
+            scale={[0.75, 0.28, 0.90]} castShadow>
+            <sphereGeometry args={[0.14, 5, 3]} />
+          </mesh>
+        );
+      })}
+      {/* Middle petals — slightly shorter, offset */}
+      {Array.from({ length: 12 }, (_, i) => {
+        const a = (i / 12) * Math.PI * 2 + Math.PI / 12;
+        return (
+          <mesh key={`md${i}`} material={petalDark}
+            position={[Math.cos(a) * 0.28, -0.01, Math.sin(a) * 0.28]}
+            rotation={[0, -a, Math.PI / 2]}
+            scale={[0.55, 0.24, 0.78]} castShadow>
+            <sphereGeometry args={[0.12, 5, 3]} />
+          </mesh>
+        );
+      })}
+      {/* Inner petals — short, close to disk */}
+      {Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+        return (
+          <mesh key={`in${i}`} material={petalTip}
+            position={[Math.cos(a) * 0.24, -0.02, Math.sin(a) * 0.24]}
+            rotation={[0, -a, Math.PI / 2]}
+            scale={[0.40, 0.22, 0.65]} castShadow>
+            <sphereGeometry args={[0.10, 5, 3]} />
+          </mesh>
+        );
       })}
     </group>
   );
 }
 
+/** Daisy — white strap petals around golden dome, multiple heads on branches */
 function DaisyBloom({ growthStage }: { growthStage: number }) {
-  if (growthStage < 3) return null;
-  const numPetals = growthStage >= 4 ? 16 : 8;
+  const white   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#FFFFFF", flatShading: true, side: THREE.DoubleSide }), []);
+  const cream   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#F5F0E0", flatShading: true, side: THREE.DoubleSide }), []);
+  const shade   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#D8D0E8", flatShading: true, side: THREE.DoubleSide }), []);
+  const yellow  = useMemo(() => new THREE.MeshPhongMaterial({ color: "#F5C518", flatShading: true }), []);
+  const yellowD = useMemo(() => new THREE.MeshPhongMaterial({ color: "#DDA400", flatShading: true }), []);
+  const stemM   = useGreenMat();
+  const budM    = useMemo(() => new THREE.MeshPhongMaterial({ color: "#B8CC90", flatShading: true }), []);
+  const petalN  = growthStage >= 4 ? 22 : 16;
 
   return (
-    <group position={[0, 1.4, 0]} rotation={[Math.PI / 6, 0, 0]}>
-      <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.1, 0.1, 0.04, 16]} />
-        <meshStandardMaterial color="#F5D03B" roughness={0.3} />
-      </mesh>
-      {Array.from({ length: numPetals }).map((_, i) => {
-        const angle = (i / numPetals) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(angle) * 0.15, Math.sin(angle) * 0.15, 0]} rotation={[0, 0, angle]} scale={[3.5, 0.6, 0.1]} castShadow>
-            <sphereGeometry args={[0.05, 8, 4]} />
-            <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
+    <group>
+      {/* Main bloom */}
+      <group position={[0, 1.52, 0]} rotation={[Math.PI / 14, 0, 0]}>
+        {/* Layered center dome */}
+        <mesh material={yellow} castShadow>
+          <sphereGeometry args={[0.14, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+        </mesh>
+        <mesh material={yellowD} position={[0, 0.02, 0]}>
+          <sphereGeometry args={[0.09, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+        </mesh>
+        {/* Outer petals — long, thin, strap-like */}
+        {Array.from({ length: petalN }, (_, i) => {
+          const a = (i / petalN) * Math.PI * 2;
+          const mat = i % 7 === 0 ? shade : i % 4 === 0 ? cream : white;
+          return (
+            <mesh key={i} material={mat}
+              position={[Math.cos(a) * 0.26, -0.03, Math.sin(a) * 0.26]}
+              rotation={[0.15, -a, Math.PI / 2]}
+              scale={[1.0, 0.18, 0.70]} castShadow>
+              <sphereGeometry args={[0.11, 5, 3]} />
+            </mesh>
+          );
+        })}
+        {/* Inner shorter petals */}
+        {Array.from({ length: 10 }, (_, i) => {
+          const a = (i / 10) * Math.PI * 2 + Math.PI / 10;
+          return (
+            <mesh key={`ip${i}`} material={cream}
+              position={[Math.cos(a) * 0.17, -0.01, Math.sin(a) * 0.17]}
+              rotation={[0, -a, Math.PI / 2]}
+              scale={[0.65, 0.16, 0.55]} castShadow>
+              <sphereGeometry args={[0.09, 5, 3]} />
+            </mesh>
+          );
+        })}
+      </group>
+      {/* Side buds with mini-blooms */}
+      {([
+        { pos: [ 0.20, 0.86,  0.00] as const, size: 0.055, open: true },
+        { pos: [-0.18, 1.04,  0.10] as const, size: 0.048, open: false },
+        { pos: [ 0.15, 1.20, -0.08] as const, size: 0.042, open: false },
+      ] as const).map(({ pos, size, open }, i) => (
+        <group key={i}>
+          <mesh material={stemM} position={[pos[0] * 0.5, pos[1] - 0.07, pos[2] * 0.5]}>
+            <cylinderGeometry args={[0.010, 0.018, 0.18, 5]} />
           </mesh>
-        )
-      })}
+          {open ? (
+            <group position={[...pos] as [number, number, number]} scale={0.45}>
+              <mesh material={yellow}><sphereGeometry args={[0.08, 6, 4, 0, Math.PI * 2, 0, Math.PI * 0.5]} /></mesh>
+              {Array.from({ length: 8 }, (_, j) => {
+                const ba = (j / 8) * Math.PI * 2;
+                return (
+                  <mesh key={j} material={white}
+                    position={[Math.cos(ba) * 0.16, -0.02, Math.sin(ba) * 0.16]}
+                    rotation={[0, -ba, Math.PI / 2]}
+                    scale={[0.7, 0.16, 0.5]}>
+                    <sphereGeometry args={[0.08, 4, 3]} />
+                  </mesh>
+                );
+              })}
+            </group>
+          ) : (
+            <mesh material={budM} position={[...pos] as [number, number, number]} castShadow>
+              <sphereGeometry args={[size, 5, 4]} />
+            </mesh>
+          )}
+        </group>
+      ))}
     </group>
   );
 }
 
-function LavenderBloom({ growthStage, color }: { growthStage: number, color: string }) {
-  const clusters = growthStage >= 4 ? 10 : growthStage >= 3 ? 5 : 0;
-  if (!clusters) return null;
+/** Lily — 6 wide elegantly reflexed petals with speckles, prominent stamens, side buds */
+function LilyBloom({ growthStage }: { growthStage: number }) {
+  const main    = useMemo(() => new THREE.MeshPhongMaterial({ color: "#E8709A", flatShading: true, side: THREE.DoubleSide }), []);
+  const light   = useMemo(() => new THREE.MeshPhongMaterial({ color: "#F0A0B8", flatShading: true, side: THREE.DoubleSide }), []);
+  const acc     = useMemo(() => new THREE.MeshPhongMaterial({ color: "#D04878", flatShading: true, side: THREE.DoubleSide }), []);
+  const speckle = useMemo(() => new THREE.MeshPhongMaterial({ color: "#8B2040", flatShading: true }), []);
+  const stamen  = useMemo(() => new THREE.MeshPhongMaterial({ color: "#F5C53A", flatShading: true }), []);
+  const stmStem = useMemo(() => new THREE.MeshPhongMaterial({ color: "#A0D070", flatShading: true }), []);
+  const stemM   = useGreenMat();
+  const budMat  = useMemo(() => new THREE.MeshPhongMaterial({ color: "#C8547A", flatShading: true }), []);
+  const spread  = growthStage >= 4 ? 1.0 : 0.60;
 
   return (
-    <group position={[0, 1.0, 0]}>
-      <mesh material={new THREE.MeshStandardMaterial({ color: "#2A8040", roughness: 0.6 })} castShadow>
-         <cylinderGeometry args={[0.015, 0.02, 0.8, 8]} />
-      </mesh>
-      {Array.from({ length: clusters * 6 }).map((_, i) => {
-        const height = (i / (clusters * 6)) * 0.8 - 0.4;
-        const angle = i * 2.1;
-        const rad = 0.04 * (i % 2 === 0 ? 1 : 0.6);
-        return (
-           <mesh key={i} position={[Math.cos(angle) * 0.05, height, Math.sin(angle) * 0.05]} castShadow>
-             <sphereGeometry args={[rad, 8, 8]} />
-             <meshStandardMaterial color={color} roughness={0.5} />
-           </mesh>
-        )
-      })}
+    <group>
+      {/* Main open bloom */}
+      <group position={[0, 1.42, 0]}>
+        {/* 6 petals — alternating wide and narrow for star shape */}
+        {Array.from({ length: 6 }, (_, i) => {
+          const a = (i / 6) * Math.PI * 2;
+          const isWide = i % 2 === 0;
+          const mat = isWide ? main : light;
+          return (
+            <group key={i}>
+              <mesh material={mat}
+                position={[Math.cos(a) * 0.18 * spread, -0.05, Math.sin(a) * 0.18 * spread]}
+                rotation={[Math.PI / 2.3 * spread, a, 0]}
+                scale={[isWide ? 1.1 : 0.85, 2.4, isWide ? 0.5 : 0.4]} castShadow>
+                <sphereGeometry args={[0.12, 5, 4]} />
+              </mesh>
+              {/* Speckle dots on each petal */}
+              {isWide && Array.from({ length: 3 }, (_, j) => {
+                const dist = 0.08 + j * 0.04;
+                return (
+                  <mesh key={`sp${j}`} material={speckle}
+                    position={[
+                      Math.cos(a) * dist * spread * 1.2,
+                      -0.03 - j * 0.015,
+                      Math.sin(a) * dist * spread * 1.2
+                    ]}>
+                    <sphereGeometry args={[0.012, 3, 3]} />
+                  </mesh>
+                );
+              })}
+            </group>
+          );
+        })}
+        {/* Prominent stamens — tall with big anthers */}
+        {Array.from({ length: 6 }, (_, i) => {
+          const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+          return (
+            <group key={`s${i}`}>
+              <mesh material={stmStem}
+                position={[Math.cos(a) * 0.04, 0.10, Math.sin(a) * 0.04]}
+                rotation={[0.2 * Math.sin(a), 0, 0.2 * Math.cos(a)]}>
+                <cylinderGeometry args={[0.006, 0.008, 0.22, 4]} />
+              </mesh>
+              <mesh material={stamen}
+                position={[Math.cos(a) * 0.06, 0.22, Math.sin(a) * 0.06]}>
+                <boxGeometry args={[0.03, 0.05, 0.015]} />
+              </mesh>
+            </group>
+          );
+        })}
+        {/* Central pistil */}
+        <mesh material={stmStem} position={[0, 0.14, 0]}>
+          <cylinderGeometry args={[0.008, 0.006, 0.28, 4]} />
+        </mesh>
+        <mesh material={acc} position={[0, 0.28, 0]}>
+          <sphereGeometry args={[0.018, 5, 4]} />
+        </mesh>
+      </group>
+      {/* Side buds — elongated teardrop shape */}
+      {([
+        { pos: [ 0.22, 0.80,  0.00] as const, sc: 0.85 },
+        { pos: [-0.20, 1.00,  0.12] as const, sc: 0.72 },
+        { pos: [ 0.16, 1.16, -0.10] as const, sc: 0.58 },
+      ] as const).map(({ pos, sc }, i) => (
+        <group key={i}>
+          <mesh material={stemM} position={[pos[0] * 0.5, pos[1] - 0.06, pos[2] * 0.5]}>
+            <cylinderGeometry args={[0.010, 0.018, 0.16, 5]} />
+          </mesh>
+          <mesh material={budMat} position={[...pos] as [number, number, number]}
+            scale={[sc * 0.7, sc * 1.8, sc * 0.7]} castShadow>
+            <sphereGeometry args={[0.055, 5, 4]} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
 
-/* --- Main Scene Model --- */
+/* ═══════════════════════════════════════════════════
+   MAIN FLOWER MODEL
+   ═══════════════════════════════════════════════════ */
 
 export function FlowerModel({
   flowerType,
   growthStage,
-  patternOffsetX = 0,
-  patternOffsetY = 0,
+  rarity: rarityProp = "common",
+  potColor,
   isEditorMode = false,
-  onPositionChange,
 }: {
   flowerType: string;
   growthStage: number;
-  patternOffsetX: number;
-  patternOffsetY: number;
+  rarity?: Rarity;
+  potColor?: string;
   isEditorMode?: boolean;
-  onPositionChange?: (position: [number, number, number]) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const colors = FLOWER_COLORS[flowerType] || FLOWER_COLORS.rose;
+  const soilMat  = useSoilMat();
+  const budColor = FLOWER_COLORS[flowerType]?.petal ?? "#E8637A";
+  const rarity: Rarity = rarityProp;
 
-  // Gentle idle rotation ONLY if not in editor mode
   useFrame((_, delta) => {
     if (groupRef.current && !isEditorMode) {
       groupRef.current.rotation.y += delta * 0.15;
     }
   });
 
-  const stemMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#2A8040", roughness: 0.6 }), []);
-  const soilMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#3D2B1F", roughness: 0.9 }), []);
-
   const scaleMap = [0.3, 0.5, 0.75, 0.9, 1.0];
-  const scale = scaleMap[growthStage] || 0.3;
+  const scale    = scaleMap[Math.max(0, Math.min(4, growthStage))];
 
   return (
     <group ref={groupRef} scale={scale} position={[0, growthStage >= 4 ? 0 : -0.8, 0]}>
-      {/* Unique Pot only drops at Stage 4! Otherwise generic soil mound. */}
+
+      {/* Pot (stage 4) or soil mound (stages 0–3) */}
       {growthStage >= 4 ? (
-        <RarityPot offsetX={patternOffsetX} offsetY={patternOffsetY} />
+        <group position={[0, -0.48, 0]} scale={0.82}>
+          <RarityPot rarity={rarity} potColor={potColor} />
+        </group>
       ) : (
-        <mesh position={[0, -0.5, 0]} material={soilMaterial} receiveShadow>
-          <sphereGeometry args={[0.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <mesh material={soilMat} position={[0, -0.5, 0]} receiveShadow>
+          <sphereGeometry args={[0.6, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
         </mesh>
       )}
 
-      {/* Core Stem (Stage 1+) */}
-      {growthStage >= 1 && (
-        <mesh position={[0, 0.5, 0]} material={stemMaterial} castShadow>
-          <cylinderGeometry args={[0.03, 0.06, 2, 8]} />
+      {/* Stage 0: tiny seed nub */}
+      {growthStage === 0 && (
+        <mesh material={soilMat} position={[0, -0.14, 0]}>
+          <sphereGeometry args={[0.08, 5, 4]} />
         </mesh>
       )}
 
-      {/* Leaves (Stage 1+) */}
+      {/* Stage 1+: stem + leaves */}
       {growthStage >= 1 && (
         <>
-          <mesh position={[0.15, 0.2, 0]} rotation={[0, 0, -Math.PI / 4]} material={stemMaterial} scale={[2, 0.5, 1]} castShadow>
-            <sphereGeometry args={[0.1, 8, 4]} />
-          </mesh>
-          <mesh position={[-0.15, 0.4, 0]} rotation={[0, 0, Math.PI / 4]} material={stemMaterial} scale={[1.8, 0.5, 1]} castShadow>
-            <sphereGeometry args={[0.09, 8, 4]} />
-          </mesh>
+          <Stem growthStage={growthStage} />
+          <Leaves growthStage={growthStage} />
         </>
       )}
 
-      {/* Generic Bud (Stage 2 strictly) */}
+      {/* Stage 2: closed bud at tip */}
       {growthStage === 2 && (
-        <mesh position={[0, 1.5, 0]} castShadow>
-          <sphereGeometry args={[0.15, 12, 8]} />
-          <meshStandardMaterial color={colors.petal} roughness={0.5} />
+        <mesh position={[0, 1.52, 0]} castShadow>
+          <sphereGeometry args={[0.12, 5, 4]} />
+          <meshPhongMaterial color={budColor} flatShading />
         </mesh>
       )}
 
-      {/* Pure Natural Blooms (Stage 3+) */}
-      {flowerType === "rose" && <RoseBloom growthStage={growthStage} color={colors.petal} />}
-      {flowerType === "tulip" && <TulipBloom growthStage={growthStage} color={colors.petal} />}
-      {flowerType === "sunflower" && <SunflowerBloom growthStage={growthStage} />}
-      {flowerType === "daisy" && <DaisyBloom growthStage={growthStage} />}
-      {flowerType === "lavender" && <LavenderBloom growthStage={growthStage} color={colors.petal} />}
+      {/* Stage 3+: species-specific bloom */}
+      {growthStage >= 3 && flowerType === "rose"      && <RoseBloom      growthStage={growthStage} />}
+      {growthStage >= 3 && flowerType === "tulip"     && <TulipBloom     growthStage={growthStage} />}
+      {growthStage >= 3 && flowerType === "sunflower" && <SunflowerBloom growthStage={growthStage} />}
+      {growthStage >= 3 && flowerType === "daisy"     && <DaisyBloom     growthStage={growthStage} />}
+      {growthStage >= 3 && flowerType === "lily"      && <LilyBloom      growthStage={growthStage} />}
 
-      {/* Stage 4 Particles — color matches pot rarity */}
-      {growthStage >= 4 &&
-        (() => {
-          const r = getRarityFromOffsets(patternOffsetX, patternOffsetY);
-          const glowColor = RARITIES[r].glowColor;
-          return Array.from({ length: 6 }).map((_, i) => {
-            const angle = (i / 6) * Math.PI * 2;
-            return (
-              <mesh key={`particle-${i}`} position={[Math.cos(angle) * 0.8, 1.5 + Math.sin(i * 0.7) * 0.3, Math.sin(angle) * 0.8]}>
-                <sphereGeometry args={[0.03, 8, 8]} />
-                <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={1.0} />
-              </mesh>
-            );
-          });
-        })()}
+      {/* Stage 4: rarity-coloured glow particles */}
+      {growthStage >= 4 && Array.from({ length: 6 }, (_, i) => {
+        const a  = (i / 6) * Math.PI * 2;
+        const gc = RARITIES[rarity].glowColor;
+        return (
+          <mesh key={`p${i}`} position={[Math.cos(a) * 0.8, 1.5 + Math.sin(i * 0.7) * 0.3, Math.sin(a) * 0.8]}>
+            <sphereGeometry args={[0.03, 6, 4]} />
+            <meshStandardMaterial color={gc} emissive={gc} emissiveIntensity={1.2} />
+          </mesh>
+        );
+      })}
     </group>
   );
 }
 
-/* --- Container Export for individual views --- */
+/* ═══════════════════════════════════════════════════
+   CANVAS WRAPPER  (for standalone use)
+   ═══════════════════════════════════════════════════ */
 
 export function Flower3D({
   flowerType,
   growthStage,
-  patternOffsetX = 0,
-  patternOffsetY = 0,
+  rarity = "common",
+  potColor,
   size = "md",
   interactive = true,
 }: Flower3DProps) {
-  const sizeMap = { sm: "h-32 w-32", md: "h-48 w-48", lg: "h-64 w-64", full: "w-full h-full absolute inset-0" };
+  const sizeMap = {
+    sm:   "h-32 w-32",
+    md:   "h-48 w-48",
+    lg:   "h-64 w-64",
+    full: "w-full h-full absolute inset-0",
+  };
 
   return (
     <div className={`${sizeMap[size]} ${size !== "full" ? "rounded-2xl overflow-hidden" : ""}`}>
       <Canvas camera={{ position: [2, 4, 6], fov: 45 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[5, 8, 5]} intensity={1} castShadow />
-        <pointLight position={[-3, 3, -3]} intensity={0.5} color="#C8EDCF" />
-
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[5, 8, 5]} intensity={1.0} castShadow />
+        <pointLight position={[-3, 4, -3]} intensity={0.4} color="#C8EDCF" />
         <FlowerModel
           flowerType={flowerType}
           growthStage={growthStage}
-          patternOffsetX={patternOffsetX}
-          patternOffsetY={patternOffsetY}
+          rarity={rarity}
+          potColor={potColor}
         />
-
         {interactive && (
           <OrbitControls
             enableZoom={size === "full"}

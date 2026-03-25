@@ -23,75 +23,18 @@ const LANGUAGES = [
   "Other",
 ] as const;
 
-const LEARNING_STYLES = [
-  {
-    value: "ADHD",
-    label: "ADHD-friendly",
-    description: "Bite-sized chunks, frequent check-ins",
-    icon: "🧠",
-  },
-  {
-    value: "dyslexia",
-    label: "Dyslexia-friendly",
-    description: "Clear fonts, simplified layouts",
-    icon: "📖",
-  },
-  {
-    value: "none",
-    label: "No preference",
-    description: "Standard learning experience",
-    icon: "📚",
-  },
-  {
-    value: "prefer_not_to_say",
-    label: "Prefer not to say",
-    description: "We'll use default settings",
-    icon: "🤫",
-  },
-] as const;
-
-const CONTENT_STYLES = [
-  {
-    value: "visual",
-    label: "Visual learner",
-    description: "Diagrams, charts, and imagery",
-    icon: "🎨",
-  },
-  {
-    value: "audio",
-    label: "Audio learner",
-    description: "Listen to explanations and summaries",
-    icon: "🎧",
-  },
-  {
-    value: "text",
-    label: "Text-focused",
-    description: "Detailed written explanations",
-    icon: "📝",
-  },
-] as const;
-
-type LearningStyle = (typeof LEARNING_STYLES)[number]["value"];
-type ContentStyle = (typeof CONTENT_STYLES)[number]["value"];
-
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [language, setLanguage] = useState("");
-  const [learningStyle, setLearningStyle] = useState<LearningStyle | "">("");
-  const [contentStyle, setContentStyle] = useState<ContentStyle | "">("");
+  const [language, setLanguage] = useState("English");
+  const [isEsl, setIsEsl] = useState(false);
+  const [isVisual, setIsVisual] = useState(false);
+  const [learningStyle, setLearningStyle] = useState<"ADHD" | "dyslexia" | "none">("none");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const totalSteps = 3;
+  const totalSteps = 2;
   const progressPercent = ((step + 1) / totalSteps) * 100;
-
-  const canProceed = () => {
-    if (step === 0) return language !== "";
-    if (step === 1) return learningStyle !== "";
-    if (step === 2) return contentStyle !== "";
-    return false;
-  };
 
   const handleNext = () => {
     if (step < totalSteps - 1) {
@@ -130,7 +73,8 @@ export default function OnboardingPage() {
             primary_language: language,
             learning_style: learningStyle,
             preferences_json: {
-              content_style: contentStyle,
+              is_esl: isEsl,
+              is_visual_learner: isVisual,
             },
           },
           { onConflict: "user_id" }
@@ -147,16 +91,11 @@ export default function OnboardingPage() {
       const { error: gardenError } = await supabase
         .from("gardens")
         .upsert(
-          {
-            user_id: user.id,
-          },
+          { user_id: user.id },
           { onConflict: "user_id" }
         );
 
-      if (gardenError) {
-        console.error("Garden creation error:", gardenError);
-        // Non-blocking: garden can be created later
-      }
+      if (gardenError) console.error("Garden creation error:", gardenError);
 
       router.push("/garden");
     } catch (err) {
@@ -191,115 +130,107 @@ export default function OnboardingPage() {
       {/* Content area */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
         <div className="w-full max-w-lg">
-          {/* Step 0: Language */}
+          {/* Step 0: Language & ESL */}
           {step === 0 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="text-center mb-8">
                 <span className="text-4xl mb-4 block">🌍</span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-soil font-(family-name:--font-display) mb-2">
-                  What&rsquo;s your primary language?
+                <h1 className="text-2xl sm:text-3xl font-bold text-soil font-heading mb-2">
+                  Language Profile
                 </h1>
                 <p className="text-bark text-base">
-                  We&rsquo;ll tailor your study materials to be clearer and more
-                  accessible.
+                  Tell us about your language background so we can adapt the vocabulary.
                 </p>
               </div>
 
-              <div className="bg-cream rounded-2xl border border-stone p-6">
-                <Label
-                  htmlFor="language-select"
-                  className="text-soil font-medium mb-3 block"
-                >
-                  Primary language
-                </Label>
-                <Select value={language} onValueChange={(val) => setLanguage(val ?? "")}>
-                  <SelectTrigger className="w-full h-12 rounded-xl bg-parchment border-stone text-soil text-base">
-                    <SelectValue placeholder="Select your language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGES.map((lang) => (
-                      <SelectItem key={lang} value={lang}>
-                        {lang}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="bg-cream rounded-2xl border border-stone p-6 space-y-6">
+                <div>
+                  <Label className="text-soil font-medium mb-3 block">
+                    Primary language
+                  </Label>
+                  <Select value={language} onValueChange={(val) => setLanguage(val ?? "English")}>
+                    <SelectTrigger className="w-full h-12 rounded-xl bg-parchment border-stone text-soil text-base">
+                      <SelectValue placeholder="Select your language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang} value={lang}>
+                          {lang}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 border border-stone rounded-xl bg-parchment/50">
+                  <input
+                    type="checkbox"
+                    id="esl"
+                    checked={isEsl}
+                    onChange={(e) => setIsEsl(e.target.checked)}
+                    className="mt-1 h-5 w-5 rounded border-stone text-primary-green focus:ring-primary-green-muted"
+                  />
+                  <div>
+                    <Label htmlFor="esl" className="font-semibold text-soil text-base cursor-pointer">
+                      I am an ESL Learner
+                    </Label>
+                    <p className="text-sm text-bark mt-1">
+                      We will simplify language, reduce complexity, and avoid idioms in generated content.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Step 1: Learning style */}
+          {/* Step 1: Learning Preferences */}
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="text-center mb-8">
-                <span className="text-4xl mb-4 block">🌱</span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-soil font-(family-name:--font-display) mb-2">
-                  How do you learn best?
+                <span className="text-4xl mb-4 block">🧠</span>
+                <h1 className="text-2xl sm:text-3xl font-bold text-soil font-heading mb-2">
+                  Learning Preferences
                 </h1>
                 <p className="text-bark text-base">
-                  We&rsquo;ll adapt content structure to fit your needs.
+                  Customize how your study materials are presented.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {LEARNING_STYLES.map((style) => (
-                  <button
-                    key={style.value}
-                    onClick={() => setLearningStyle(style.value)}
-                    className={`group text-left p-5 rounded-2xl border-2 transition-all duration-200 ${
-                      learningStyle === style.value
-                        ? "border-primary-green bg-primary-green-muted/40 shadow-sm"
-                        : "border-stone bg-cream hover:border-primary-green/50 hover:bg-cream/80"
-                    }`}
-                  >
-                    <span className="text-2xl block mb-2">{style.icon}</span>
-                    <span className="text-soil font-semibold block text-base">
-                      {style.label}
-                    </span>
-                    <span className="text-bark text-sm mt-1 block">
-                      {style.description}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+              <div className="space-y-4">
+                <div onClick={() => setIsVisual(!isVisual)} className={`cursor-pointer p-5 rounded-2xl border-2 transition-all duration-200 flex items-start gap-4 ${isVisual ? "border-primary-green bg-primary-green-muted/40" : "border-stone bg-cream hover:border-primary-green/50"}`}>
+                  <span className="text-3xl shrink-0">🎨</span>
+                  <div>
+                    <span className="text-soil font-semibold block text-base">Visual Learner</span>
+                    <span className="text-bark text-sm mt-1 block">Increases emphasis on Mermaid diagrams and visual aids in all content.</span>
+                  </div>
+                </div>
 
-          {/* Step 2: Content style */}
-          {step === 2 && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="text-center mb-8">
-                <span className="text-4xl mb-4 block">🌸</span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-soil font-(family-name:--font-display) mb-2">
-                  Pick your content style
-                </h1>
-                <p className="text-bark text-base">
-                  Choose how you prefer to absorb new material.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                {CONTENT_STYLES.map((style) => (
-                  <button
-                    key={style.value}
-                    onClick={() => setContentStyle(style.value)}
-                    className={`group text-left p-5 rounded-2xl border-2 transition-all duration-200 flex items-start gap-4 ${
-                      contentStyle === style.value
-                        ? "border-primary-green bg-primary-green-muted/40 shadow-sm"
-                        : "border-stone bg-cream hover:border-primary-green/50 hover:bg-cream/80"
-                    }`}
-                  >
-                    <span className="text-3xl flex-shrink-0">{style.icon}</span>
-                    <div>
-                      <span className="text-soil font-semibold block text-base">
-                        {style.label}
-                      </span>
-                      <span className="text-bark text-sm mt-1 block">
-                        {style.description}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                <div className="pt-4 pb-2">
+                  <Label className="text-soil font-medium mb-3 block">Special Accommodations</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      onClick={() => setLearningStyle("none")}
+                      className={`text-center p-4 rounded-xl border-2 transition-all duration-200 ${learningStyle === "none" ? "border-primary-green bg-primary-green-muted/40" : "border-stone bg-cream hover:border-primary-green/50"}`}
+                    >
+                      <span className="block text-2xl mb-1">📚</span>
+                      <span className="text-sm font-semibold text-soil">Standard</span>
+                    </button>
+                    <button
+                      onClick={() => setLearningStyle("ADHD")}
+                      className={`text-center p-4 rounded-xl border-2 transition-all duration-200 ${learningStyle === "ADHD" ? "border-primary-green bg-primary-green-muted/40" : "border-stone bg-cream hover:border-primary-green/50"}`}
+                    >
+                      <span className="block text-2xl mb-1">⚡</span>
+                      <span className="text-sm font-semibold text-soil">ADHD</span>
+                    </button>
+                    <button
+                      onClick={() => setLearningStyle("dyslexia")}
+                      className={`text-center p-4 rounded-xl border-2 transition-all duration-200 ${learningStyle === "dyslexia" ? "border-primary-green bg-primary-green-muted/40" : "border-stone bg-cream hover:border-primary-green/50"}`}
+                    >
+                      <span className="block text-2xl mb-1">📖</span>
+                      <span className="text-sm font-semibold text-soil">Dyslexia</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -328,29 +259,14 @@ export default function OnboardingPage() {
 
             <Button
               onClick={handleNext}
-              disabled={!canProceed() || isSubmitting}
+              disabled={isSubmitting}
               className="rounded-full h-12 px-8 bg-primary-green text-white hover:bg-primary-green-dark disabled:opacity-40 font-semibold text-base shadow-sm"
             >
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   Setting up...
                 </span>
