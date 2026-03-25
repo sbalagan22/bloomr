@@ -166,4 +166,5 @@ export const FLOWER_ICON_MAP: Record<string, React.FC<IconProps>> = {
   sunflower: SunflowerIcon,
   daisy:     DaisyIcon,
   lily:      LilyIcon,
+  lavender:  LilyIcon,
 };

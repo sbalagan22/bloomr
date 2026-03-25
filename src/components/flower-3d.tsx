@@ -21,6 +21,7 @@ const FLOWER_COLORS: Record<string, { petal: string; accent: string }> = {
   sunflower: { petal: "#F5C518", accent: "#DDA400" },
   daisy:     { petal: "#FFFFFF", accent: "#E0E0F0" },
   lily:      { petal: "#E8709A", accent: "#D04878" },
+  lavender:  { petal: "#E8709A", accent: "#D04878" },
 };
 
 const TERRACOTTA = "#C8682B";
@@ -731,6 +732,7 @@ export function FlowerModel({
       {growthStage >= 3 && flowerType === "sunflower" && <SunflowerBloom growthStage={growthStage} />}
       {growthStage >= 3 && flowerType === "daisy"     && <DaisyBloom     growthStage={growthStage} />}
       {growthStage >= 3 && flowerType === "lily"      && <LilyBloom      growthStage={growthStage} />}
+      {growthStage >= 3 && flowerType === "lavender"  && <LilyBloom      growthStage={growthStage} />}
 
       {/* Stage 4: rarity-coloured glow particles */}
       {growthStage >= 4 && Array.from({ length: 6 }, (_, i) => {

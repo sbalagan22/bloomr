@@ -35,17 +35,24 @@ export async function POST(request: NextRequest) {
   try {
     // 1. Parse request body
     const body = await request.json();
-    const { fileUrl, topicName, flowerType } = body;
+    const { fileUrl, topicName, flowerType, textContent, sourceType } = body;
 
-    if (!fileUrl || !topicName || !flowerType) {
+    if (!topicName || !flowerType) {
       return NextResponse.json(
-        { error: "Missing required fields: fileUrl, topicName, flowerType" },
+        { error: "Missing required fields: topicName, flowerType" },
+        { status: 400 }
+      );
+    }
+
+    if (!fileUrl && !textContent) {
+      return NextResponse.json(
+        { error: "Missing content: provide either a file or text content" },
         { status: 400 }
       );
     }
 
     // Validate flower type
-    const validFlowerTypes = ["rose", "tulip", "sunflower", "daisy", "lily"];
+    const validFlowerTypes = ["rose", "tulip", "sunflower", "daisy", "lavender"];
     if (!validFlowerTypes.includes(flowerType)) {
       return NextResponse.json(
         { error: "Invalid flower type" },
@@ -89,23 +96,85 @@ ${isVisual ? "STUDENT IS A VISUAL LEARNER: You MUST increase emphasis on Mermaid
 `.trim()
       : "No learner profile available. Use clear, standard explanations.";
 
-    // 4. Download the PDF from Supabase Storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from("uploads")
-      .download(fileUrl);
+    // 4. Build AI input based on source type
+    type InputContent =
+      | { type: "input_text"; text: string }
+      | { type: "input_file"; filename: string; file_data: string }
+      | { type: "input_image"; image_url: string; detail: "auto" | "low" | "high" };
 
-    if (downloadError || !fileData) {
-      return NextResponse.json(
-        { error: `Failed to download file: ${downloadError?.message || "Unknown error"}` },
-        { status: 500 }
-      );
+    let aiInputContent: InputContent[];
+
+    if (sourceType === "image" && fileUrl) {
+      // IMAGE: download from Supabase, send as vision input
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("uploads")
+        .download(fileUrl);
+
+      if (downloadError || !fileData) {
+        return NextResponse.json(
+          { error: `Failed to download image: ${downloadError?.message || "Unknown error"}` },
+          { status: 500 }
+        );
+      }
+
+      const arrayBuffer = await fileData.arrayBuffer();
+      const base64Data = Buffer.from(arrayBuffer).toString("base64");
+      const ext = fileUrl.split(".").pop()?.toLowerCase() || "jpeg";
+      const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+
+      aiInputContent = [
+        {
+          type: "input_image",
+          image_url: `data:${mimeType};base64,${base64Data}`,
+          detail: "auto" as const,
+        },
+        {
+          type: "input_text",
+          text: `This image contains study material about "${topicName}". First, extract ALL text and content visible in the image (OCR). Then analyze the extracted content and create structured study units. Return ONLY raw JSON.`,
+        },
+      ];
+    } else if (textContent) {
+      // TEXT / VOICE / YOUTUBE: send raw text
+      // Truncate to ~100k chars to stay within model context limits
+      const truncated = textContent.length > 100000 ? textContent.slice(0, 100000) + "\n\n[Content truncated due to length]" : textContent;
+      aiInputContent = [
+        {
+          type: "input_text",
+          text: `Here is study material about "${topicName}":\n\n${truncated}\n\nAnalyze this content and create structured study units. Return ONLY raw JSON.`,
+        },
+      ];
+    } else if (fileUrl) {
+      // PDF: existing flow
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("uploads")
+        .download(fileUrl);
+
+      if (downloadError || !fileData) {
+        return NextResponse.json(
+          { error: `Failed to download file: ${downloadError?.message || "Unknown error"}` },
+          { status: 500 }
+        );
+      }
+
+      const arrayBuffer = await fileData.arrayBuffer();
+      const base64Data = Buffer.from(arrayBuffer).toString("base64");
+
+      aiInputContent = [
+        {
+          type: "input_file",
+          filename: "lecture.pdf",
+          file_data: `data:application/pdf;base64,${base64Data}`,
+        },
+        {
+          type: "input_text",
+          text: `Analyze this PDF about "${topicName}" and create structured study units. Return ONLY raw JSON.`,
+        },
+      ];
+    } else {
+      return NextResponse.json({ error: "No content provided" }, { status: 400 });
     }
 
-    // Convert PDF to base64 for OpenAI inline file data
-    const arrayBuffer = await fileData.arrayBuffer();
-    const base64Data = Buffer.from(arrayBuffer).toString("base64");
-
-    // 5. Call OpenAI Responses API with PDF as inline file data
+    // 5. Call OpenAI Responses API
     const systemPrompt = `You are a world-class university professor and educational content designer. Your job is to transform the provided PDF document into a complete, self-contained study guide that a student could use to master the material without needing the original document.
 
 ${learnerContext}
@@ -181,17 +250,7 @@ Rules:
       input: [
         {
           role: "user",
-          content: [
-            {
-              type: "input_file",
-              filename: "lecture.pdf",
-              file_data: `data:application/pdf;base64,${base64Data}`,
-            },
-            {
-              type: "input_text",
-              text: `Analyze this PDF about "${topicName}" and create structured study units. Return ONLY raw JSON.`,
-            },
-          ],
+          content: aiInputContent,
         },
       ],
       text: { format: { type: "json_object" } },
@@ -389,10 +448,11 @@ Rules:
     // 8. Return the flower ID
     return NextResponse.json({ flowerId: flower.id }, { status: 201 });
   } catch (err) {
-    console.error("PDF process error:", err);
+    console.error("Process error:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
 
     return NextResponse.json(
-      { error: "Something went wrong processing your PDF. Please try again." },
+      { error: `Something went wrong processing your content: ${message}` },
       { status: 500 }
     );
   }

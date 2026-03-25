@@ -31,6 +31,7 @@ const FLOWER_COLORS: Record<string, string> = {
   sunflower: "#F5C518",
   daisy:     "#FFFFFF",
   lily:      "#E8709A",
+  lavender:  "#E8709A",
 };
 
 const GRID_SPACING = 3;
@@ -143,12 +144,11 @@ function DraggableFlower({
     return (
       <DragControls
         axisLock="y"
-        dragLimits={[[-14, 14], [-10, 10], [-14, 14]]}
+        dragLimits={[[-14, 14], undefined, [-14, 14]]}
         onDragStart={() => { document.body.style.cursor = 'grabbing'; }}
         onDragEnd={() => {
           document.body.style.cursor = 'auto';
           if (groupRef.current) {
-            // Read the world position (accounts for DragControls matrix offset)
             const worldPos = new THREE.Vector3();
             groupRef.current.getWorldPosition(worldPos);
             onSave(flower.id, worldPos.x, worldPos.z);
@@ -213,16 +213,17 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
         );
       })}
 
-      {!isEditorMode && (
-        <OrbitControls
-          makeDefault
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI / 2 - 0.05}
-          minDistance={3}
-          maxDistance={35}
-          target={[0, 0, centerZ]}
-        />
-      )}
+      <OrbitControls
+        makeDefault
+        enableRotate={!isEditorMode}
+        enablePan={true}
+        enableZoom={true}
+        minPolarAngle={0}
+        maxPolarAngle={Math.PI / 2 - 0.05}
+        minDistance={3}
+        maxDistance={35}
+        target={[0, 0, centerZ]}
+      />
     </>
   );
 }
@@ -267,7 +268,14 @@ export default function GardenPage() {
     const clampZ = Math.max(-12, Math.min(12, snapZ));
 
     // Collision Detection: Only 1 flower per grid square
-    const isOccupied = flowers.some(f => f.id !== id && (f.pos_x ?? 0) === clampX && (f.pos_z ?? 0) === clampZ);
+    // Use actual positions (pos_x/pos_z are always set on creation now)
+    const isOccupied = flowers.some(f => {
+      if (f.id === id) return false;
+      const fx = f.pos_x ?? null;
+      const fz = f.pos_z ?? null;
+      if (fx === null || fz === null) return false;
+      return fx === clampX && fz === clampZ;
+    });
     if (isOccupied) {
       // Reject coordinates, trigger a force re-render back to original state
       setDragRejectId(id);
