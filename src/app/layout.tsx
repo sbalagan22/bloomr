@@ -22,9 +22,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bloomr | Cultivating Clarity",
+  title: "Bloomr",
   description:
     "Transform lecture slides into interactive botanical journals. Master your semester while your digital garden flourishes.",
+  icons: {
+    icon: "/bloomr_icon.svg",
+  },
 };
 
 export default function RootLayout({
