@@ -21,7 +21,7 @@ export function FlowerLoader({ text = "Loading", subtext = "Please wait a moment
         <div className="absolute inset-4 rounded-full bg-primary-container/5 animate-pulse" />
         {/* Bloomr Icon */}
         <img
-          src="/bloomr_icon.png"
+          src="/bloomr_icon.svg"
           alt="Bloomr"
           className="relative z-10 h-14 w-14 rounded-xl drop-shadow-sm"
         />

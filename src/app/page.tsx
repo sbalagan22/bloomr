@@ -1,220 +1,185 @@
 import Link from "next/link";
 import Image from "next/image";
-import { PiPottedPlantFill, PiUploadSimpleBold, PiSparkle, PiDropHalfBottom, PiFlower } from "react-icons/pi";
-import { HiOutlineBolt, HiOutlineLanguage, HiOutlineEye, HiArrowRight } from "react-icons/hi2";
-import { RiDoubleQuotesL } from "react-icons/ri";
+import { PiPottedPlantFill, PiSparkle, PiDropHalfBottom, PiFlower, PiBrainBold, PiMusicNoteBold, PiShootingStarBold, PiArrowRightBold, PiFlaskBold, PiPaletteBold, PiHeadphonesBold } from "react-icons/pi";
+import { HiArrowRight } from "react-icons/hi2";
+import { HeroFlower } from "@/components/hero-flower";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* TopNavBar */}
-      <header className="fixed top-0 w-full z-50 bg-surface/80 glass-morphism">
-        <nav className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/bloomr_icon.png" alt="Bloomr" width={28} height={28} className="rounded-md" />
-            <span className="text-2xl text-primary-container tracking-tighter font-logo">Bloomr</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8 font-heading font-bold tracking-tight">
-            <a href="#how-it-works" className="text-on-surface-variant hover:text-primary-container transition-colors duration-300">How it Works</a>
-            <a href="#how-it-helps" className="text-on-surface-variant hover:text-primary-container transition-colors duration-300">How it Helps</a>
-            <Link href="/garden" className="text-on-surface-variant hover:text-primary-container transition-colors duration-300">My Garden</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-semibold text-on-surface-variant hover:text-primary-container transition-colors">Sign in</Link>
-            <Link href="/signup" className="px-5 py-2 gradient-cta text-white rounded-full font-bold text-sm hover:shadow-lg transition-all">Get Started</Link>
-          </div>
-        </nav>
+    <div className="min-h-screen flex flex-col bg-parchment relative overflow-hidden">
+      {/* Ambient background blobs */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-64 -right-64 w-[800px] h-[800px] bg-[#C8EDCF]/25 animate-blob opacity-60" />
+        <div className="absolute top-1/3 -left-96 w-[600px] h-[600px] bg-[#F5D03B]/8 animate-blob opacity-40" style={{ animationDelay: "5s" }} />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#E8637A]/5 animate-blob opacity-30" style={{ animationDelay: "10s" }} />
+      </div>
+      
+      {/* TopNavBar — floating frosted pill */}
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-5xl bg-white/70 glass-morphism rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/80 px-8 py-3.5 flex justify-between items-center transition-all hover:shadow-[0_12px_48px_rgba(0,0,0,0.12)]">
+        <Link href="/" className="flex items-center gap-3 group">
+          <Image src="/bloomr_icon.svg" alt="Bloomr" width={30} height={30} className="group-hover:rotate-12 transition-transform duration-500 drop-shadow-sm" />
+          <span className="text-2xl text-primary-container tracking-tighter font-logo mt-0.5">Bloomr</span>
+        </Link>
+        <div className="hidden md:flex items-center gap-8 font-heading font-extrabold tracking-tight text-sm">
+          <a href="#how-it-works" className="text-on-surface-variant hover:text-[#39AB54] transition-colors duration-300">How it Works</a>
+          <a href="#features" className="text-on-surface-variant hover:text-[#39AB54] transition-colors duration-300">Features</a>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link href="/login" className="hidden md:block text-sm font-bold text-on-surface-variant hover:text-[#39AB54] transition-colors px-4 py-2">Sign In</Link>
+          <Link href="/signup" className="px-6 py-2.5 bg-[#39AB54] text-white rounded-full font-bold text-sm hover:bg-[#2A8040] shadow-lg shadow-[#39AB54]/20 hover:shadow-xl hover:shadow-[#39AB54]/30 hover:-translate-y-0.5 transition-all duration-300">Start Free</Link>
+        </div>
       </header>
 
-      <main className="pt-24">
-        {/* Hero Section */}
-        <section className="max-w-7xl mx-auto px-6 py-20 flex flex-col items-center text-center animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 bg-surface-container-high rounded-full">
-            <PiPottedPlantFill className="text-primary-deep text-sm" />
-            <span className="text-on-surface-variant font-body text-sm font-semibold tracking-wide uppercase">
-              Your semester in full bloom
-            </span>
+      <main className="relative z-10">
+        {/* ═══════════════════ HERO ═══════════════════ */}
+        <section className="max-w-7xl mx-auto px-6 pt-36 pb-16 md:pt-44 md:pb-24 flex flex-col lg:flex-row items-center gap-16 lg:gap-12 min-h-[85vh]">
+          
+          {/* Left Text */}
+          <div className="flex-1 w-full text-center lg:text-left z-10">
+            <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black text-[#1c1c18] tracking-tighter leading-[0.95] mb-8 animate-fade-in-up">
+              Learn it<br/>
+              Own it<br/>
+              <span className="text-transparent bg-clip-text animate-shimmer bg-[linear-gradient(110deg,#39AB54_0%,#2A8040_45%,#8FD99E_55%,#39AB54_100%)] bg-size-[200%_100%]">Grow it</span>
+            </h1>
+
+            <p className="max-w-xl mx-auto lg:mx-0 text-lg md:text-xl text-on-surface-variant mb-12 leading-relaxed font-medium animate-fade-in-up-delay-1">
+              Transform lectures, PDFs, and notes into a living 3D botanical garden. The more you study, the more it grows. 
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up-delay-2">
+              <Link href="/signup" className="group px-10 py-5 bg-[#39AB54] text-white rounded-full font-bold text-lg shadow-xl shadow-[#39AB54]/25 hover:shadow-2xl hover:shadow-[#39AB54]/30 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3">
+                <PiPottedPlantFill className="text-2xl group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" /> 
+                Start Growing Free
+                <HiArrowRight className="text-xl group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
 
-          <h1 className="font-heading text-5xl md:text-7xl font-extrabold text-on-surface tracking-tight leading-[1.1] mb-6">
-            Learn it. Grow it. <span className="text-primary-deep italic font-medium">Own it.</span>
-          </h1>
-
-          <p className="max-w-2xl text-lg md:text-xl text-on-surface-variant mb-12 leading-relaxed">
-            Transform lecture slides into interactive botanical journals. Master your semester while your digital garden flourishes.
-          </p>
-
-          {/* Central Upload Box */}
-          <div className="w-full max-w-2xl p-12 bg-surface-container-low rounded-2xl pebble-shadow border-2 border-dashed border-outline-variant/30 hover:border-primary-deep/40 transition-all group relative overflow-hidden animate-fade-in-up-delay-1">
-            <div className="absolute inset-0 bg-primary-deep/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative flex flex-col items-center">
-              <div className="w-20 h-20 bg-surface-container-lowest rounded-xl flex items-center justify-center mb-6 pebble-shadow">
-                <PiUploadSimpleBold className="text-primary-deep text-4xl" />
-              </div>
-              <h3 className="font-heading text-2xl font-bold mb-2 text-on-surface">Deposit your seeds</h3>
-              <p className="text-on-surface-variant mb-8">
-                Drag and drop your PDF/PPT or{" "}
-                <Link href="/upload" className="text-primary-deep font-bold underline decoration-primary-deep/30 hover:decoration-primary-deep">
-                  Select Files
-                </Link>
-              </p>
-              <div className="flex gap-4">
-                <div className="px-4 py-2 bg-surface-container-high rounded-full text-xs font-bold text-on-surface-variant flex items-center gap-2">
-                  📄 PDF
-                </div>
-                <div className="px-4 py-2 bg-surface-container-high rounded-full text-xs font-bold text-on-surface-variant flex items-center gap-2">
-                  📊 PPTX
-                </div>
-              </div>
+          {/* Right 3D Block */}
+          <div className="flex-1 w-full max-w-lg lg:max-w-[550px] h-[400px] sm:h-[500px] lg:h-[600px] relative animate-scale-in">
+            <div className="absolute inset-[-60px] bg-[#C8EDCF]/20 rounded-full blur-3xl animate-blob pointer-events-none" />
+            <div className="relative h-full w-full animate-glow-pulse rounded-[3rem]">
+              <HeroFlower />
+            </div>
+            <div className="absolute bottom-4 right-4 lg:bottom-8 lg:right-8 bg-white/90 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-lg border border-white font-bold text-sm text-[#1c1c18] flex items-center gap-3 animate-float">
+              <span className="text-2xl">🌹</span> Drag to interact
             </div>
           </div>
         </section>
 
-        {/* How it Helps */}
-        <section id="how-it-helps" className="max-w-7xl mx-auto px-6 py-32 bg-surface-container rounded-t-[3rem]">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-            <div className="max-w-xl">
-              <h2 className="font-heading text-4xl font-bold text-on-surface mb-4">Nurturing every mind.</h2>
-              <p className="text-on-surface-variant">
-                We believe learning isn&apos;t a one-size-fits-all process. Bloomr adapts to your unique neuro-landscape.
-              </p>
-            </div>
-            <Link
-              href="/signup"
-              className="px-8 py-3 gradient-cta text-white rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2"
-            >
-              Explore Support <HiArrowRight className="text-lg" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* ESL Card */}
-            <div className="asymmetric-shape-1 p-10 bg-bloom-lavender/10 flex flex-col items-start hover:scale-[1.02] transition-transform">
-              <div className="w-14 h-14 bg-bloom-lavender text-white rounded-full flex items-center justify-center mb-6">
-                <HiOutlineLanguage className="text-2xl" />
-              </div>
-              <h4 className="font-heading text-2xl font-bold text-[#342657] mb-4">ESL Flourish</h4>
-              <p className="text-on-surface-variant leading-relaxed">
-                Complex academic jargon simplified and translated into botanical metaphors that transcend language barriers.
-              </p>
-            </div>
-
-            {/* ADHD Card */}
-            <div className="bg-secondary-container/10 p-10 rounded-2xl flex flex-col items-start hover:scale-[1.02] transition-transform">
-              <div className="w-14 h-14 bg-secondary-container text-white rounded-full flex items-center justify-center mb-6">
-                <HiOutlineBolt className="text-2xl" />
-              </div>
-              <h4 className="font-heading text-2xl font-bold text-[#720427] mb-4">Focus Focus</h4>
-              <p className="text-on-surface-variant leading-relaxed">
-                Gamified attention loops and micro-learning pulses designed specifically for neurodivergent momentum.
-              </p>
-            </div>
-
-            {/* Visual Learner Card */}
-            <div className="asymmetric-shape-2 p-10 bg-bloom-tulip/10 flex flex-col items-start hover:scale-[1.02] transition-transform">
-              <div className="w-14 h-14 bg-bloom-tulip text-white rounded-full flex items-center justify-center mb-6">
-                <HiOutlineEye className="text-2xl" />
-              </div>
-              <h4 className="font-heading text-2xl font-bold text-[#400011] mb-4">Visual Rooting</h4>
-              <p className="text-on-surface-variant leading-relaxed">
-                Mapping concepts into visual garden layouts, helping visual thinkers branch ideas together effortlessly.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works — Growth Cycle */}
-        <section id="how-it-works" className="max-w-7xl mx-auto px-6 py-32">
+        {/* ═══════════════════ HOW IT WORKS — The Growth Cycle ═══════════════════ */}
+        <section id="how-it-works" className="max-w-6xl mx-auto px-6 py-32">
           <div className="text-center mb-20">
-            <h2 className="font-heading text-4xl font-bold text-on-surface mb-4">The Growth Cycle</h2>
-            <p className="text-on-surface-variant max-w-lg mx-auto">
+            <h2 className="font-heading text-4xl lg:text-6xl font-black text-[#1c1c18] mb-5 tracking-tight">The Growth Cycle</h2>
+            <p className="text-on-surface-variant text-lg font-medium max-w-lg mx-auto">
               From scattered notes to a thriving knowledge ecosystem in four natural steps.
             </p>
           </div>
 
+          {/* Connected diagram / timeline */}
           <div className="relative">
-            {/* Connecting Line */}
-            <div className="hidden lg:block absolute top-1/2 left-0 w-full h-px bg-outline-variant/20 -z-10" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            {/* Horizontal connecting line — desktop only */}
+            <div className="hidden lg:block absolute top-[56px] left-[12%] right-[12%] h-[3px] z-0">
+              <div className="w-full h-full rounded-full bg-linear-to-r from-[#C8EDCF] via-[#39AB54] to-[#F5D03B]" />
+            </div>
+            {/* Vertical connecting line — mobile only */}
+            <div className="lg:hidden absolute top-0 bottom-0 left-[28px] w-[3px] z-0">
+              <div className="w-full h-full rounded-full bg-linear-to-b from-[#C8EDCF] via-[#39AB54] to-[#F5D03B]" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-6 relative z-10">
               {[
-                { icon: PiPottedPlantFill, title: "1. Upload (Seed)", desc: "Plant your lecture slides or textbook chapters into our secure portal." },
-                { icon: PiSparkle, title: "2. Germination", desc: "Our AI breaks down complex topics into digestible, nutrient-rich concepts." },
-                { icon: PiDropHalfBottom, title: "3. Watering", desc: "Engage with interactive quizzes and flashcards to nourish your memory." },
-                { icon: PiFlower, title: "4. Mastery (Bloom)", desc: "Watch your digital flora grow as your exam scores hit full bloom." },
-              ].map((step) => (
-                <div key={step.title} className="flex flex-col items-center text-center group">
-                  <div className="w-16 h-16 rounded-full bg-surface-container-high border-2 border-primary-deep/20 flex items-center justify-center mb-6 group-hover:bg-primary-deep group-hover:border-primary-deep transition-all">
-                    <step.icon className="text-2xl text-primary-deep group-hover:text-white transition-colors" />
+                { icon: PiPottedPlantFill, title: "Plant", desc: "Upload your PDFs, YouTube links, or lecture text.", num: "01", color: "#39AB54" },
+                { icon: PiSparkle, title: "Germinate", desc: "AI breaks down topics into digestible study units.", num: "02", color: "#F5D03B" },
+                { icon: PiDropHalfBottom, title: "Water", desc: "Engage with quizzes and audio recaps to build memory.", num: "03", color: "#7B6CB5" },
+                { icon: PiFlower, title: "Bloom", desc: "Your flower reaches full bloom as you master the material.", num: "04", color: "#E8637A" },
+              ].map((step, idx) => (
+                <div key={idx} className="flex lg:flex-col items-start lg:items-center text-left lg:text-center gap-6 lg:gap-0 group">
+                  {/* Numbered circle on the line */}
+                  <div className="w-14 h-14 lg:w-[72px] lg:h-[72px] lg:mb-8 rounded-full flex items-center justify-center bg-white border-[3px] shadow-lg shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500" style={{ borderColor: step.color }}>
+                    <step.icon className="text-2xl lg:text-3xl" style={{ color: step.color }} />
                   </div>
-                  <h4 className="font-heading font-bold text-xl mb-2">{step.title}</h4>
-                  <p className="text-on-surface-variant text-sm px-4">{step.desc}</p>
+                  <div>
+                    <div className="text-xs font-black tracking-widest uppercase mb-1.5" style={{ color: step.color }}>{step.num}</div>
+                    <h4 className="font-heading font-black text-xl lg:text-2xl text-[#1c1c18] mb-2">{step.title}</h4>
+                    <p className="text-on-surface-variant text-sm font-medium leading-relaxed max-w-[240px] lg:mx-auto">{step.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Testimonial */}
-        <section className="max-w-7xl mx-auto px-6 py-32">
-          <div className="bg-surface-container-lowest pebble-shadow rounded-2xl overflow-hidden flex flex-col lg:flex-row">
-            <div className="lg:w-1/2 p-12 lg:p-20 bg-surface-container-high/50">
-              <RiDoubleQuotesL className="text-primary-deep text-5xl mb-8" />
-              <h3 className="font-heading text-3xl font-bold text-on-surface mb-8 leading-tight italic">
-                &ldquo;Bloomr didn&apos;t just help me pass Organic Chem; it made me actually enjoy the structure of it. It feels like I&apos;m curating a library that breathes.&rdquo;
-              </h3>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-outline-variant flex items-center justify-center text-white font-bold">ES</div>
-                <div>
-                  <p className="font-bold text-on-surface">Elena S.</p>
-                  <p className="text-sm text-on-surface-variant">Biology Major, Stanford</p>
+        {/* ═══════════════════ FEATURES ═══════════════════ */}
+        <section id="features" className="max-w-7xl mx-auto px-6 py-24">
+          <div className="text-center mb-16">
+            <h2 className="font-heading text-4xl lg:text-6xl font-black text-[#1c1c18] mb-5 tracking-tight">What&apos;s included</h2>
+            <p className="text-on-surface-variant text-lg font-medium max-w-xl mx-auto">
+              Everything you need to transform messy notes into lasting knowledge.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: PiFlaskBold, title: "AI-Curated Quizzes", desc: "Auto-generated quizzes that adapt to the content you uploaded. Focus on weak spots.", color: "#39AB54" },
+              { icon: PiBrainBold, title: "Smart Study Notes", desc: "AI condenses your material into structured, digestible units with key terms highlighted.", color: "#3D5EE0" },
+              { icon: PiFlower, title: "Personalized Flower", desc: "Each subject grows a unique 3D flower. Watch it bloom as you master the material.", color: "#E8637A" },
+              { icon: PiPaletteBold, title: "Pot Drops (Gacha)", desc: "Earn randomized collectible pots with different rarities. Customize your garden aesthetic.", color: "#F5D03B" },
+              { icon: PiHeadphonesBold, title: "Audio Recaps", desc: "Listen to AI-generated audio summaries of your study units on the go.", color: "#7B6CB5" },
+              { icon: PiShootingStarBold, title: "AI Tutor Chatbot", desc: "Ask Flowy anything about your material. Get instant, context-aware explanations.", color: "#D4722A" },
+            ].map((feature, idx) => (
+              <div key={idx} className="bg-white border-2 border-[#e5e2db] rounded-[1.75rem] p-8 flex flex-col items-start hover:border-[#39AB54]/20 hover:shadow-lg hover:-translate-y-1 transition-all duration-500 group">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500" style={{ backgroundColor: `${feature.color}15` }}>
+                  <feature.icon className="text-2xl" style={{ color: feature.color }} />
                 </div>
+                <h4 className="font-heading font-bold text-lg text-[#1c1c18] mb-2">{feature.title}</h4>
+                <p className="text-on-surface-variant text-sm font-medium leading-relaxed">{feature.desc}</p>
               </div>
-            </div>
-            <div className="lg:w-1/2 relative min-h-[400px] bg-primary-deep/10 flex items-center justify-center">
-              <div className="text-center p-12">
-                <PiFlower className="text-8xl text-primary-deep/40 mx-auto mb-4" />
-                <p className="text-on-surface-variant font-heading font-semibold">Your garden grows with every concept mastered</p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="max-w-7xl mx-auto px-6 py-20 pb-40">
-          <div className="gradient-cta text-white rounded-[2rem] p-12 md:p-24 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-fixed-dim/20 rounded-full -ml-32 -mb-32 blur-3xl" />
-            <h2 className="font-heading text-4xl md:text-6xl font-extrabold mb-8 relative z-10">Start your garden today.</h2>
-            <p className="text-primary-fixed text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-90 relative z-10">
-              Join over 15,000 learners who have turned their study stress into botanical mastery.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-              <Link href="/signup" className="px-10 py-5 bg-white text-primary-deep rounded-full font-black text-lg hover:scale-105 transition-transform pebble-shadow">
-                Plant your first seed
-              </Link>
-              <Link href="/garden" className="px-10 py-5 bg-primary-container text-white rounded-full font-bold text-lg hover:bg-primary-container/90 transition-all border border-white/20">
-                View Demo Garden
-              </Link>
-            </div>
-          </div>
-        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full rounded-t-[3rem] mt-20 bg-surface-container-low">
-        <div className="flex flex-col md:flex-row justify-between items-center px-12 py-12 w-full gap-6 max-w-7xl mx-auto">
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <div className="flex items-center gap-2">
-              <Image src="/bloomr_icon.png" alt="Bloomr" width={24} height={24} className="rounded-md" />
-              <span className="text-primary-container text-2xl tracking-tighter font-logo">Bloomr</span>
-            </div>
-            <p className="text-sm text-on-surface-variant">© 2026 Bloomr. Cultivating clarity.</p>
+      {/* ═══════════════════ FOOTER ═══════════════════ */}
+      <footer className="w-full relative z-10 mt-auto bg-[#39AB54]">
+        {/* CTA section */}
+        <div className="pt-20 pb-12">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h3 className="font-heading text-3xl lg:text-5xl font-black text-white mb-4 tracking-tight">Ready to plant your first seed?</h3>
+            <p className="text-white/75 font-medium mb-10 text-lg max-w-lg mx-auto">Join thousands of students growing their knowledge gardens.</p>
+            <Link href="/signup" className="inline-flex items-center gap-3 px-10 py-4 bg-white text-[#39AB54] rounded-full font-bold text-lg hover:bg-[#f7f2ea] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 shadow-lg">
+              Get Started Free <PiArrowRightBold className="text-xl" />
+            </Link>
           </div>
-          <div className="flex gap-8">
-            <a className="text-sm text-on-surface-variant hover:text-primary-container transition-all" href="#">Privacy</a>
-            <a className="text-sm text-on-surface-variant hover:text-primary-container transition-all" href="#">Terms</a>
-            <a className="text-sm text-on-surface-variant hover:text-primary-container transition-all" href="#">Contact</a>
-            <a className="text-sm text-on-surface-variant hover:text-primary-container transition-all" href="#">Support</a>
+        </div>
+        
+        {/* Divider */}
+        <div className="border-t border-white/15 mx-6" />
+
+        {/* Footer links */}
+        <div className="max-w-7xl mx-auto px-10 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-10">
+            <div className="max-w-xs">
+              <div className="flex items-center gap-2.5 mb-4">
+                <Image src="/bloomr_icon.svg" alt="Bloomr" width={24} height={24} className="brightness-200" />
+                <span className="text-white text-xl tracking-tighter font-logo mt-0.5">Bloomr</span>
+              </div>
+              <p className="text-white/60 text-sm font-medium leading-relaxed">
+                Transform your notes into a living, interactive garden of knowledge.
+              </p>
+            </div>
+            
+
+          </div>
+          
+          <div className="border-t border-white/15 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+            <p className="text-xs text-white/35 font-medium">
+              © 2026 Bloomr. All rights reserved.
+            </p>
+            <p className="text-xs text-white/35 font-medium">
+              Made with <span className="text-white">♥</span> for students everywhere.
+            </p>
           </div>
         </div>
       </footer>

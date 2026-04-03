@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
-import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold } from "react-icons/pi";
+import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiArrowLeftBold } from "react-icons/pi";
 import * as THREE from "three";
 
 interface Flower {
@@ -294,7 +294,7 @@ export default function GardenPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-surface">
+      <div className="flex h-[calc(100vh-80px)] items-center justify-center bg-surface">
         <div className="mx-auto flex flex-col items-center gap-5">
           <div className="relative flex h-24 w-24 items-center justify-center">
             <svg
@@ -305,7 +305,7 @@ export default function GardenPage() {
               <circle cx="48" cy="48" r="44" fill="none" stroke="#E8F5E9" strokeWidth="3" />
               <circle cx="48" cy="48" r="44" fill="none" stroke="#3BAB55" strokeWidth="3" strokeDasharray="60 220" strokeLinecap="round" />
             </svg>
-            <img src="/bloomr_icon.png" alt="Bloomr" className="relative z-10 h-10 w-10 rounded-lg" />
+            <img src="/bloomr_icon.svg" alt="Bloomr" className="relative z-10 h-10 w-10 drop-shadow-sm" />
           </div>
           <p className="text-[#3D2B1F] font-medium text-sm">Loading your garden...</p>
         </div>
@@ -315,7 +315,7 @@ export default function GardenPage() {
 
   if (flowers.length === 0) {
     return (
-      <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center px-6 bg-surface-container-lowest animate-fade-in-up">
+      <div className="flex h-screen flex-col items-center justify-center px-6 bg-surface-container-lowest animate-fade-in-up">
         <div className="text-center max-w-md bg-white/70 backdrop-blur-xl p-10 rounded-3xl pebble-shadow border border-white/40">
           <PiPottedPlantFill className="text-7xl text-[#39AB54]/80 mx-auto mb-6 drop-shadow-sm" />
           <h1 className="font-heading text-3xl font-extrabold text-[#3D2B1F] mb-3 tracking-tight">Your garden awaits</h1>
@@ -334,92 +334,102 @@ export default function GardenPage() {
   const renderFlowers = dragRejectId ? flowers.map(f => ({...f, _refresh: Date.now()})) : flowers;
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] relative bg-[#A4D5EA]">
+    <div className="w-full h-screen relative bg-[#A4D5EA]">
       {/* 2D UI Overlay */}
-      <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-10 pointer-events-none">
+      <div className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-start z-10 pointer-events-none">
         
-        <div className="flex flex-col gap-4">
-          <div className="pointer-events-auto bg-white/85 backdrop-blur-xl px-7 py-5 rounded-3xl pebble-shadow border border-white/50 animate-fade-in-up">
-            <h1 className="font-heading text-3xl font-extrabold text-[#3D2B1F] tracking-tight">My Garden</h1>
-            <p className="text-sm text-[#6B4C35] mt-1 font-medium">
-              {flowers.length} flower{flowers.length !== 1 ? "s" : ""} • {flowers.filter((f) => f.status === "bloomed").length} bloomed
+        <div className="flex flex-col gap-3">
+          <div className="pointer-events-auto bg-white/90 backdrop-blur-xl px-6 py-4 rounded-2xl shadow-md border border-white/60 animate-fade-in-up">
+            <h1 className="font-heading text-2xl font-black text-[#1c1c18] tracking-tight">My Garden</h1>
+            <p className="text-xs text-on-surface-variant mt-0.5 font-medium">
+              {flowers.length} flower{flowers.length !== 1 ? "s" : ""} · {flowers.filter((f) => f.status === "bloomed").length} bloomed
             </p>
           </div>
 
           <div className="flex gap-2">
             <button 
               onClick={() => { setIsEditorMode(!isEditorMode); setIsListView(false); }}
-              className={`pointer-events-auto flex items-center justify-center w-fit gap-2 px-6 py-3 rounded-full font-bold shadow-md transition-all animate-fade-in-up border-2
-                ${isEditorMode ? "bg-[#FFF9C4] text-[#D4722A] border-[#D4722A]/30 pebbl-shadow" : "bg-white/90 text-[#3D2B1F] border-transparent hover:bg-white"}
+              className={`pointer-events-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all animate-fade-in-up border
+                ${isEditorMode 
+                  ? "bg-[#FFF9C4] text-[#D4722A] border-[#D4722A]/20 shadow-md" 
+                  : "bg-white/90 text-[#1c1c18] border-white/60 hover:bg-white hover:shadow-md"}
               `}
             >
               {isEditorMode ? (
-                <><PiCheckBold className="text-lg" /> Done Editing</>
+                <><PiCheckBold className="text-base" /> Done</>
               ) : (
-                <><PiPencilBold className="text-lg" /> Layout</>
+                <><PiPencilBold className="text-base" /> Layout</>
               )}
             </button>
 
             <button 
               onClick={() => { setIsListView(!isListView); setIsEditorMode(false); }}
-              className={`pointer-events-auto flex items-center justify-center w-fit gap-2 px-6 py-3 rounded-full font-bold shadow-md transition-all animate-fade-in-up border-2
-                ${isListView ? "bg-[#D4E6F1] text-[#2980B9] border-[#2980B9]/30 pebbl-shadow" : "bg-white/90 text-[#3D2B1F] border-transparent hover:bg-white"}
+              className={`pointer-events-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all animate-fade-in-up border
+                ${isListView 
+                  ? "bg-[#D4E6F1] text-[#2980B9] border-[#2980B9]/20 shadow-md" 
+                  : "bg-white/90 text-[#1c1c18] border-white/60 hover:bg-white hover:shadow-md"}
               `}
             >
               {isListView ? (
-                <><PiCheckBold className="text-lg" /> 3D View</>
+                <><PiCheckBold className="text-base" /> 3D View</>
               ) : (
-                <><PiListBold className="text-lg" /> List View</>
+                <><PiListBold className="text-base" /> List</>
               )}
             </button>
           </div>
         </div>
         
-        <Link href="/upload" className="pointer-events-auto flex items-center gap-2 px-6 py-3.5 gradient-cta text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all animate-fade-in-up">
-          <PiPlusBold className="text-lg" /> Plant New
+        <Link href="/upload" className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 gradient-cta text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all animate-fade-in-up">
+          <PiPlusBold className="text-base" /> Plant New
         </Link>
       </div>
 
       {isListView && (
-        <div className="absolute inset-x-4 inset-y-24 md:inset-x-20 md:inset-y-24 bg-white/95 backdrop-blur-xl rounded-3xl pebble-shadow border border-white/50 z-20 pointer-events-auto flex flex-col overflow-hidden animate-fade-in-up">
-          <div className="px-8 py-6 border-b border-stone flex justify-between items-center bg-surface-container-lowest">
+        <div className="absolute inset-x-3 inset-y-20 md:inset-x-16 md:inset-y-20 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-[#e5e2db] z-20 pointer-events-auto flex flex-col overflow-hidden animate-fade-in-up">
+          <div className="px-6 py-5 border-b border-[#e5e2db] flex justify-between items-center bg-[#faf8f4]">
             <div>
-              <h2 className="font-heading text-2xl font-extrabold text-soil">All Flowers</h2>
-              <p className="text-sm text-bark mt-1">Manage your blooming knowledge</p>
+              <h2 className="font-heading text-xl font-black text-[#1c1c18]">All Flowers</h2>
+              <p className="text-xs text-on-surface-variant mt-0.5 font-medium">{flowers.length} total · {flowers.filter(f => f.status === 'bloomed').length} bloomed</p>
             </div>
-            <button onClick={() => setIsListView(false)} className="h-10 w-10 flex items-center justify-center rounded-full bg-surface hover:bg-surface-container transition-colors text-bark">
-              <PiXBold className="text-xl" />
+            <button onClick={() => setIsListView(false)} className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-[#e5e2db] hover:bg-[#f1eee7] transition-colors text-on-surface-variant">
+              <PiXBold className="text-lg" />
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-3 bg-surface/50">
-            {flowers.map((flower) => (
-              <Link key={flower.id} href={`/flower/${flower.id}`} className="group block bg-white rounded-2xl p-4 border border-stone hover:border-primary-green transition-all shadow-sm hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-surface-container flex items-center justify-center text-xl shadow-inner shrink-0" style={{ backgroundColor: `${FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"]}20`, color: FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"] }}>
-                      {flower.status === "bloomed" ? "🌸" : "🌱"}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-soil group-hover:text-primary-green transition-colors">{flower.topic_name}</h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant capitalize">
-                          {flower.flower_type}
-                        </span>
-                        <span className="text-xs text-bark font-medium">Stage {flower.growth_stage}: {GROWTH_LABELS[flower.growth_stage]}</span>
-                        {flower.pot_color && (
-                          <span className="text-xs font-mono text-bark flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: flower.pot_color }}></span>
-                            {flower.pot_rarity}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-2.5 bg-[#faf8f4]/50">
+            {flowers.map((flower) => {
+              const progress = (flower.growth_stage / 4) * 100;
+              return (
+                <Link key={flower.id} href={`/flower/${flower.id}`} className="group block bg-white rounded-xl p-4 border border-[#e5e2db] hover:border-[#39AB54]/30 transition-all hover:shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm" style={{ backgroundColor: `${FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"]}15`, color: FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"] }}>
+                        {flower.status === "bloomed" ? "🌸" : "🌱"}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-[#1c1c18] text-sm group-hover:text-[#39AB54] transition-colors truncate">{flower.topic_name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#f1eee7] text-on-surface-variant capitalize">
+                            {flower.flower_type}
                           </span>
-                        )}
+                          <span className="text-[10px] text-on-surface-variant font-medium">{GROWTH_LABELS[flower.growth_stage]}</span>
+                          {flower.pot_color && (
+                            <span className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full inline-block border border-black/10" style={{ backgroundColor: flower.pot_color }} />
+                            </span>
+                          )}
+                        </div>
+                        {/* Mini progress bar */}
+                        <div className="mt-2 h-1.5 w-32 bg-[#e5e2db] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full gradient-cta transition-all duration-500" style={{ width: `${Math.max(5, progress)}%` }} />
+                        </div>
                       </div>
                     </div>
+                    <PiCaretRightBold className="text-[#e5e2db] group-hover:text-[#39AB54] group-hover:translate-x-1 transition-all shrink-0" />
                   </div>
-                  <PiCaretRightBold className="text-stone group-hover:text-primary-green group-hover:translate-x-1 transition-all" />
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

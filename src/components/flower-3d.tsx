@@ -782,7 +782,7 @@ export function Flower3D({
         />
         {interactive && (
           <OrbitControls
-            enableZoom={size === "full"}
+            enableZoom={false}
             enablePan={false}
             minDistance={2}
             maxDistance={8}

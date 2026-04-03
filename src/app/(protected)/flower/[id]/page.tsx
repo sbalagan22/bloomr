@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { PiBookOpenBold, PiLightningBold, PiArrowLeftBold, PiTrashBold, PiPaintBucketBold } from "react-icons/pi";
+import { PiBookOpenBold, PiLightningBold, PiArrowLeftBold, PiTrashBold, PiPaintBucketBold, PiWarningBold } from "react-icons/pi";
 import { RARITIES, type Rarity } from "@/lib/rarity";
 import { ChatTutor } from "@/components/chat-tutor";
 
@@ -26,6 +26,12 @@ interface Unit {
   completed: boolean;
 }
 
+interface WeakAreaEntry {
+  concept: string;
+  unitTitle: string;
+  count: number;
+}
+
 const GROWTH_LABELS = ["Seed", "Sprout", "Bud", "Opening", "Full Bloom"];
 const FLOWER_COLORS: Record<string, string> = {
   rose: "#CC2A1A",
@@ -44,6 +50,7 @@ export default function FlowerDetailPage() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [aggregatedWeakAreas, setAggregatedWeakAreas] = useState<WeakAreaEntry[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -52,10 +59,46 @@ export default function FlowerDetailPage() {
       const { data: flowerData } = await supabase.from("flowers").select("id, topic_name, flower_type, growth_stage, status, pot_rarity, pot_color").eq("id", flowerId).single();
       if (!flowerData) { router.push("/garden"); return; }
       setFlower(flowerData);
-      
+
       const { data: unitsData } = await supabase.from("units").select("id, title, order_index, completed").eq("flower_id", flowerId).order("order_index");
       setUnits(unitsData || []);
       setLoading(false);
+
+      // Load aggregated weak areas from all quiz_attempts for this flower
+      if (unitsData && unitsData.length > 0) {
+        const unitIds = unitsData.map((u) => u.id);
+        const { data: quizzes } = await supabase
+          .from("quizzes")
+          .select("id")
+          .in("unit_id", unitIds);
+
+        if (quizzes && quizzes.length > 0) {
+          const quizIds = quizzes.map((q) => q.id);
+          const { data: attempts } = await supabase
+            .from("quiz_attempts")
+            .select("weak_areas")
+            .in("quiz_id", quizIds)
+            .not("weak_areas", "is", null);
+
+          if (attempts) {
+            const conceptCounts: Record<string, WeakAreaEntry> = {};
+            for (const attempt of attempts) {
+              const areas = attempt.weak_areas as { concept: string; unitTitle: string }[] | null;
+              if (!areas) continue;
+              for (const area of areas) {
+                const key = area.concept.toLowerCase();
+                if (conceptCounts[key]) {
+                  conceptCounts[key].count += 1;
+                } else {
+                  conceptCounts[key] = { concept: area.concept, unitTitle: area.unitTitle, count: 1 };
+                }
+              }
+            }
+            const sorted = Object.values(conceptCounts).sort((a, b) => b.count - a.count);
+            setAggregatedWeakAreas(sorted);
+          }
+        }
+      }
     }
     loadData();
 
@@ -118,7 +161,7 @@ export default function FlowerDetailPage() {
   const isBloomed = flower.status === "bloomed";
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] px-6 py-6 lg:px-12 pointer-events-none relative flex justify-between overflow-hidden gap-6">
+    <div className="w-full h-[calc(100vh-80px)] px-6 py-6 lg:px-12 pointer-events-none relative flex justify-between overflow-hidden gap-6">
       
       {/* LEFT PANEL: Floating Sidebar */}
       <div className="w-full md:w-[450px] shrink-0 flex flex-col gap-6 animate-fade-in-up pointer-events-auto h-full overflow-y-auto pb-12 scrollbar-hide pr-2">
@@ -180,6 +223,32 @@ export default function FlowerDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Areas to Review */}
+        {aggregatedWeakAreas.length > 0 && (
+          <div className="rounded-3xl bg-amber-50/90 backdrop-blur-xl pebble-shadow border border-amber-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <PiWarningBold className="text-amber-500 text-lg shrink-0" />
+              <h2 className="font-heading text-base font-bold text-amber-900">Areas to Review</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {aggregatedWeakAreas.map((area, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-800 shadow-sm"
+                >
+                  {area.concept}
+                  {area.count > 1 && (
+                    <span className="rounded-full bg-amber-400 text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">
+                      {area.count}×
+                    </span>
+                  )}
+                  <span className="text-amber-400 font-normal">· {area.unitTitle}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Units Scroll List */}
         <div className="flex flex-col gap-4">

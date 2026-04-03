@@ -663,7 +663,6 @@ export default function UploadPage() {
                           style={{ backgroundColor: config.color }}
                         />
                         {config.name}
-                        {rarity === "legendary" && " CSGO"}
                       </span>
                       <span>{config.dropRate}%</span>
                     </button>

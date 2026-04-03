@@ -45,7 +45,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="mb-10 text-center animate-fade-in-up">
         <Link href="/" className="inline-flex items-center gap-2 mb-4">
-          <Image src="/bloomr_icon.png" alt="Bloomr" width={40} height={40} className="rounded-lg" />
+          <Image src="/bloomr_icon.svg" alt="Bloomr" width={40} height={40} className="drop-shadow-sm" />
         </Link>
         <h1 className="font-heading text-4xl font-extrabold text-on-surface tracking-tight">Plant your first seed</h1>
         <p className="mt-2 text-on-surface-variant">Create an account to begin your learning garden</p>

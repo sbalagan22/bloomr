@@ -35,7 +35,7 @@ export default function LoginPage() {
       {/* Branding */}
       <div className="mb-10 text-center animate-fade-in-up">
         <Link href="/" className="inline-flex items-center gap-2 mb-4">
-          <Image src="/bloomr_icon.png" alt="Bloomr" width={40} height={40} className="rounded-lg" />
+          <Image src="/bloomr_icon.svg" alt="Bloomr" width={40} height={40} className="drop-shadow-sm" />
         </Link>
         <h1 className="font-heading text-4xl font-extrabold text-on-surface tracking-tight">Welcome back</h1>
         <p className="mt-2 text-on-surface-variant">Sign in to continue growing your garden</p>

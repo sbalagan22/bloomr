@@ -22,11 +22,11 @@ export function NavBar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-surface/80 glass-morphism">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-8">
+    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-4xl bg-surface/80 glass-morphism rounded-full shadow-lg border border-white/50 px-6 py-3 transition-all">
+      <div className="flex w-full items-center justify-between">
         {/* Logo */}
-        <Link href="/garden" className="flex items-center gap-2">
-          <Image src="/bloomr_icon.png" alt="Bloomr" width={28} height={28} className="rounded-md" />
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/bloomr_icon.svg" alt="Bloomr" width={28} height={28} className="drop-shadow-sm" />
           <span className="text-2xl text-primary-container tracking-tighter font-logo">
             Bloomr
           </span>
