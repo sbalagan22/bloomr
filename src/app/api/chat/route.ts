@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
+import { getUserPlan, checkFlowyLimit, incrementFlowyUsage } from "@/lib/plan";
 
 const openai = new OpenAI();
 
@@ -39,6 +40,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Flower not found or unauthorized" },
         { status: 404 }
+      );
+    }
+
+    // 3. Check Flowy daily limit (Free: 10/day/flower)
+    const plan = await getUserPlan();
+    const flowyCheck = await checkFlowyLimit(user.id, flowerId, plan);
+    if (!flowyCheck.allowed) {
+      return NextResponse.json(
+        { error: "FLOWY_LIMIT_REACHED", used: flowyCheck.used, limit: flowyCheck.limit },
+        { status: 403 }
       );
     }
 
@@ -88,7 +99,10 @@ ${contextString}`;
 
     const reply = response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
 
-    return NextResponse.json({ reply });
+    // Increment usage count after successful response
+    await incrementFlowyUsage(user.id, flowerId);
+
+    return NextResponse.json({ reply, used: flowyCheck.used + 1, limit: flowyCheck.limit });
   } catch (err) {
     console.error("Chat API error:", err);
     return NextResponse.json(

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { PiPottedPlantFill, PiSparkle, PiDropHalfBottom, PiFlower, PiBrainBold, PiMusicNoteBold, PiShootingStarBold, PiArrowRightBold, PiFlaskBold, PiPaletteBold, PiHeadphonesBold } from "react-icons/pi";
+import { PiPottedPlantFill, PiSparkle, PiDropHalfBottom, PiFlower, PiBrainBold, PiShootingStarBold, PiArrowRightBold, PiFlaskBold, PiPaletteBold, PiHeadphonesBold } from "react-icons/pi";
 import { HiArrowRight } from "react-icons/hi2";
 import { HeroFlower } from "@/components/hero-flower";
+import { PricingSection } from "@/components/pricing-section";
 
 export default function LandingPage() {
   return (
@@ -23,6 +24,7 @@ export default function LandingPage() {
         <div className="hidden md:flex items-center gap-8 font-heading font-extrabold tracking-tight text-sm">
           <a href="#how-it-works" className="text-on-surface-variant hover:text-[#39AB54] transition-colors duration-300">How it Works</a>
           <a href="#features" className="text-on-surface-variant hover:text-[#39AB54] transition-colors duration-300">Features</a>
+          <a href="#pricing" className="text-on-surface-variant hover:text-[#39AB54] transition-colors duration-300">Pricing</a>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/login" className="hidden md:block text-sm font-bold text-on-surface-variant hover:text-[#39AB54] transition-colors px-4 py-2">Sign In</Link>
@@ -138,6 +140,9 @@ export default function LandingPage() {
             ))}
           </div>
         </section>
+
+        {/* ═══════════════════ PRICING ═══════════════════ */}
+        <PricingSection />
 
       </main>
 

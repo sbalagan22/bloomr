@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { rollRarity, randomHexColor } from "@/lib/rarity";
+import { checkSeedLimit } from "@/lib/plan";
 
 const openai = new OpenAI();
 
@@ -71,6 +72,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    // 2b. Check seed limit (Free: 3/week)
+    const seedCheck = await checkSeedLimit();
+    if (!seedCheck.allowed) {
+      return NextResponse.json(
+        { error: "SEED_LIMIT_REACHED", used: seedCheck.used, limit: seedCheck.limit },
+        { status: 403 }
       );
     }
 

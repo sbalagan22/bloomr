@@ -13,12 +13,15 @@ import {
   PiPlantBold,
   PiGiftBold,
   PiFilePdfBold,
-  PiTextTBold,
   PiImageBold,
   PiMicrophoneBold,
   PiYoutubeLogoBold,
   PiStopBold,
+  PiLockBold,
+  PiSparkle,
 } from "react-icons/pi";
+import { usePlan } from "@/hooks/use-plan";
+import { UpgradeModal } from "@/components/upgrade-modal";
 import { FLOWER_ICON_MAP } from "@/components/flower-icons";
 import { RARITIES, RARITY_ORDER, type Rarity } from "@/lib/rarity";
 import { FlowerLoader } from "@/components/ui/flower-loader";
@@ -37,14 +40,13 @@ const FLOWER_TYPES = [
 ] as const;
 
 type FlowerType = (typeof FLOWER_TYPES)[number]["name"];
-type SourceType = "pdf" | "text" | "image" | "voice" | "youtube";
+type SourceType = "pdf" | "image" | "voice" | "youtube";
 
-const SOURCE_TABS: { id: SourceType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const SOURCE_TABS: { id: SourceType; label: string; icon: React.ComponentType<{ className?: string }>; proOnly?: boolean }[] = [
   { id: "pdf", label: "PDF", icon: PiFilePdfBold },
-  { id: "text", label: "Text", icon: PiTextTBold },
-  { id: "image", label: "Image", icon: PiImageBold },
-  { id: "voice", label: "Voice", icon: PiMicrophoneBold },
-  { id: "youtube", label: "YouTube", icon: PiYoutubeLogoBold },
+  { id: "image", label: "Image", icon: PiImageBold, proOnly: true },
+  { id: "voice", label: "Voice", icon: PiMicrophoneBold, proOnly: true },
+  { id: "youtube", label: "YouTube", icon: PiYoutubeLogoBold, proOnly: true },
 ];
 
 export default function UploadPage() {
@@ -63,9 +65,6 @@ export default function UploadPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Text state
-  const [textContent, setTextContent] = useState("");
-
   // Voice state
   const [isRecording, setIsRecording] = useState(false);
   const [voiceText, setVoiceText] = useState("");
@@ -83,6 +82,9 @@ export default function UploadPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState("");
+  const { plan } = usePlan();
 
   // Preview states
   const [previewStage, setPreviewStage] = useState(3);
@@ -248,7 +250,6 @@ export default function UploadPage() {
   const hasContent = (() => {
     switch (sourceType) {
       case "pdf": return !!file;
-      case "text": return textContent.trim().length > 50;
       case "image": return !!imageFile;
       case "voice": return voiceText.trim().length > 50;
       case "youtube": return youtubeTranscript.trim().length > 50;
@@ -283,9 +284,6 @@ export default function UploadPage() {
         if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
         processBody = { fileUrl: fileName, topicName: topicName.trim(), flowerType, sourceType: "image" };
 
-      } else if (sourceType === "text") {
-        processBody = { textContent, topicName: topicName.trim(), flowerType, sourceType: "text" };
-
       } else if (sourceType === "voice") {
         processBody = { textContent: voiceText, topicName: topicName.trim(), flowerType, sourceType: "text" };
 
@@ -304,6 +302,12 @@ export default function UploadPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        if (errorData?.error === "SEED_LIMIT_REACHED") {
+          setUpgradeReason(`You've planted ${errorData.used} seeds this week — the Free plan limit is ${errorData.limit}.`);
+          setShowUpgrade(true);
+          setIsSubmitting(false);
+          return;
+        }
         throw new Error(errorData?.error || `Processing failed (${response.status})`);
       }
 
@@ -372,16 +376,31 @@ export default function UploadPage() {
               {SOURCE_TABS.map((tab) => {
                 const Icon = tab.icon;
                 const active = sourceType === tab.id;
+                const locked = tab.proOnly && plan === "free";
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => { setSourceType(tab.id); setError(null); }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all
+                    onClick={() => {
+                      if (locked) {
+                        setUpgradeReason(`${tab.label} uploads are a Pro feature.`);
+                        setShowUpgrade(true);
+                      } else {
+                        setSourceType(tab.id);
+                        setError(null);
+                      }
+                    }}
+                    className={`flex-1 relative flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all
                       ${active ? "bg-white text-[#39AB54] shadow-sm" : "text-[#8B6E59] hover:text-[#3D2B1F] hover:bg-white/50"}
+                      ${locked ? "opacity-60" : ""}
                     `}
                   >
-                    <Icon className="text-sm" />
+                    {locked ? <PiLockBold className="text-sm" /> : <Icon className="text-sm" />}
                     <span className="hidden sm:inline">{tab.label}</span>
+                    {locked && (
+                      <span className="hidden sm:flex absolute -top-1.5 -right-1 items-center gap-0.5 bg-[#39AB54] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                        <PiSparkle className="text-[8px]" />Pro
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -421,22 +440,6 @@ export default function UploadPage() {
                     )}
                     <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={handleFileSelect} className="hidden" />
                   </button>
-                )}
-
-                {/* Text Input */}
-                {sourceType === "text" && (
-                  <div className="p-6">
-                    <label className="mb-2 block text-sm font-bold text-[#3D2B1F]">Paste your study material</label>
-                    <textarea
-                      value={textContent}
-                      onChange={(e) => setTextContent(e.target.value)}
-                      placeholder="Paste your lecture notes, textbook excerpts, or any study material here..."
-                      className="w-full h-48 rounded-2xl border-0 bg-black/5 p-4 font-medium text-sm text-[#3D2B1F] placeholder:text-black/30 focus:outline-none focus:ring-2 focus:ring-[#39AB54] focus:bg-white transition-all shadow-inner resize-none"
-                    />
-                    <p className="mt-2 text-xs text-[#8B6E59] font-medium">
-                      {textContent.length} characters {textContent.trim().length < 50 && textContent.length > 0 && "— need at least 50"}
-                    </p>
-                  </div>
                 )}
 
                 {/* Image Upload */}
@@ -707,6 +710,12 @@ export default function UploadPage() {
           </div>
         )}
       </div>
+
+      <UpgradeModal
+        open={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        reason={upgradeReason}
+      />
     </div>
   );
 }

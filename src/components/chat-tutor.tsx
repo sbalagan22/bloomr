@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MathText } from "@/components/math-text";
-import { PiPaperPlaneRightBold, PiFlowerBold, PiUserBold } from "react-icons/pi";
+import { PiPaperPlaneRightBold, PiFlowerBold, PiUserBold, PiSparkle } from "react-icons/pi";
+import { usePlan } from "@/hooks/use-plan";
+import { UpgradeModal } from "@/components/upgrade-modal";
 
 interface Message {
   role: "user" | "assistant";
@@ -13,13 +15,20 @@ interface ChatTutorProps {
   flowerId: string;
 }
 
+const FREE_DAILY_LIMIT = 10;
+
 export function ChatTutor({ flowerId }: ChatTutorProps) {
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Hi! I'm Flowy, your personal AI assistant. Ask me anything about the study material!" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dailyUsed, setDailyUsed] = useState(0);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { plan } = usePlan();
+
+  const isAtLimit = plan === "free" && dailyUsed >= FREE_DAILY_LIMIT;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -30,11 +39,10 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
   }, [messages, loading]);
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || isAtLimit) return;
 
     const userMsg: Message = { role: "user", content: input.trim() };
     const newMessages = [...messages, userMsg];
-    
     setMessages(newMessages);
     setInput("");
     setLoading(true);
@@ -43,23 +51,34 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          flowerId,
-          messages: newMessages.slice(1) // exclude the initial greeting if we want, or keep it. Let's keep it but mapped in route.
-        }),
+        body: JSON.stringify({ flowerId, messages: newMessages.slice(1) }),
       });
 
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === "FLOWY_LIMIT_REACHED") {
+          setDailyUsed(data.used);
+          setShowUpgrade(true);
+          setMessages((prev) => prev.slice(0, -1)); // remove the user msg we added optimistically
+          setInput(userMsg.content); // restore input
+          return;
+        }
+      }
+
       if (!res.ok) throw new Error("Failed to fetch response");
-      
+
       const data = await res.json();
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+      if (data.used !== undefined) setDailyUsed(data.used);
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [...prev, { role: "assistant", content: "Oops, something went wrong connecting to the tutor." }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "Oops, something went wrong connecting to Flowy." }]);
     } finally {
       setLoading(false);
     }
   };
+
+  const remaining = FREE_DAILY_LIMIT - dailyUsed;
 
   return (
     <div className="flex flex-col h-full w-full bg-surface/85 backdrop-blur-xl rounded-3xl border border-white/20 pebble-shadow overflow-hidden pointer-events-auto">
@@ -68,10 +87,17 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
         <div className="bg-primary-fixed text-on-primary-fixed p-2 rounded-xl shadow-sm">
           <PiFlowerBold className="text-xl" />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-heading font-bold text-on-surface">Flowy</h3>
           <p className="text-xs text-on-surface-variant">Your personal AI assistant</p>
         </div>
+        {plan === "free" && (
+          <div className="text-right">
+            <p className="text-[10px] font-bold text-on-surface-variant">
+              {remaining > 0 ? `${remaining} msgs left today` : "Limit reached"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -84,8 +110,8 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
               {msg.role === "user" ? <PiUserBold /> : <PiFlowerBold />}
             </div>
             <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-              msg.role === "user" 
-                ? "bg-bloom-lavender text-white rounded-tr-sm" 
+              msg.role === "user"
+                ? "bg-bloom-lavender text-white rounded-tr-sm"
                 : "bg-surface-container-high text-on-surface rounded-tl-sm"
             }`}>
               <div className="whitespace-pre-wrap">
@@ -109,6 +135,21 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Limit banner */}
+      {isAtLimit && (
+        <div className="mx-4 mb-2 rounded-2xl bg-[#39AB54]/10 border border-[#39AB54]/20 px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-xs font-medium text-[#1c1c18]">
+            You&apos;ve used all {FREE_DAILY_LIMIT} free Flowy messages today.
+          </p>
+          <button
+            onClick={() => setShowUpgrade(true)}
+            className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-white bg-[#39AB54] px-3 py-1.5 rounded-full hover:bg-[#2A8040] transition-colors"
+          >
+            <PiSparkle /> Upgrade
+          </button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-4 bg-surface-container-low border-t border-white/10">
         <div className="flex gap-2">
@@ -117,18 +158,25 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Ask a question..."
-            className="flex-1 bg-surface-container-lowest border border-white/20 rounded-full px-4 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed transition-all placeholder:text-on-surface-variant/50"
+            placeholder={isAtLimit ? "Upgrade for unlimited messages..." : "Ask a question..."}
+            disabled={isAtLimit}
+            className="flex-1 bg-surface-container-lowest border border-white/20 rounded-full px-4 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed transition-all placeholder:text-on-surface-variant/50 disabled:opacity-40 disabled:cursor-not-allowed"
           />
           <button
-            onClick={handleSend}
-            disabled={!input.trim() || loading}
+            onClick={isAtLimit ? () => setShowUpgrade(true) : handleSend}
+            disabled={(!input.trim() && !isAtLimit) || loading}
             className="h-10 w-10 shrink-0 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <PiPaperPlaneRightBold />
+            {isAtLimit ? <PiSparkle /> : <PiPaperPlaneRightBold />}
           </button>
         </div>
       </div>
+
+      <UpgradeModal
+        open={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        reason={`You've used all ${FREE_DAILY_LIMIT} free Flowy messages today.`}
+      />
     </div>
   );
 }
