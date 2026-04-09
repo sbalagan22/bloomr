@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
-import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiArrowLeftBold, PiSealCheckFill } from "react-icons/pi";
+import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiSealCheckFill } from "react-icons/pi";
+import { ProCelebration } from "@/components/pro-celebration";
 import * as THREE from "three";
 
 interface Flower {
@@ -237,13 +238,19 @@ function GardenContent() {
   const [isListView, setIsListView] = useState(false);
   const [dragRejectId, setDragRejectId] = useState<string | null>(null);
   const [showUpgradedToast, setShowUpgradedToast] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("upgraded") === "true") {
       setShowUpgradedToast(true);
-      // Remove the query param without reloading
+      setShowCelebration(true);
+      // Verify-session fallback: ensure subscription is written even if webhook missed
+      const sessionId = searchParams.get("session_id");
+      if (sessionId) {
+        fetch(`/api/stripe/verify-session?session_id=${sessionId}`).catch(() => {});
+      }
       router.replace("/garden", { scroll: false });
-      const t = setTimeout(() => setShowUpgradedToast(false), 5000);
+      const t = setTimeout(() => setShowUpgradedToast(false), 6000);
       return () => clearTimeout(t);
     }
   }, []);
@@ -347,6 +354,7 @@ function GardenContent() {
 
   return (
     <div className="w-full h-screen relative bg-[#A4D5EA]">
+      {showCelebration && <ProCelebration onDone={() => setShowCelebration(false)} />}
       {/* Upgrade success toast */}
       {showUpgradedToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#1a6830] text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-[#39AB54]/30 border border-white/10 animate-fade-in-up">

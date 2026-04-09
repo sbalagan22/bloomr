@@ -20,7 +20,19 @@ export function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { plan, loading: planLoading } = usePlan();
-  const { remaining, loading: seedLoading } = useSeedCount();
+  const { remaining, usage, loading: seedLoading } = useSeedCount();
+
+  const seedTooltip = (() => {
+    if (!usage?.nextReset) return "Resets every Saturday";
+    const d = new Date(usage.nextReset);
+    const now = new Date();
+    const diffMs = d.getTime() - now.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    if (diffDays === 0) return `Resets in ${diffHrs}h`;
+    if (diffDays === 1) return `Resets tomorrow (${d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })})`;
+    return `Resets ${d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })}`;
+  })();
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -78,7 +90,7 @@ export function NavBar() {
                   ? "bg-amber-50 border-amber-200 text-amber-600"
                   : "bg-[#39AB54]/8 border-[#39AB54]/20 text-[#39AB54]"
               }`}
-              title="Seeds reset every Saturday"
+              title={seedTooltip}
             >
               <PiPlantBold className="text-sm" />
               <span>{remaining}/3 seeds</span>
