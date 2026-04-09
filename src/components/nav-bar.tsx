@@ -46,8 +46,8 @@ export function NavBar() {
   return (
     <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-4xl bg-surface/80 glass-morphism rounded-full shadow-lg border border-white/50 px-6 py-3 transition-all">
       <div className="flex w-full items-center justify-between">
-        {/* Logo — links to garden (dashboard) */}
-        <Link href="/garden" className="flex items-center gap-2 group">
+        {/* Logo — links to landing page, user stays signed in */}
+        <Link href="/" className="flex items-center gap-2 group">
           <Image
             src="/bloomr_icon.svg"
             alt="Bloomr"

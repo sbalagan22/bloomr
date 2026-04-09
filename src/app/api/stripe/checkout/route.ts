@@ -26,9 +26,7 @@ export async function POST(req: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      // "card" covers Apple Pay + Google Pay automatically in Stripe Checkout.
-      // PayPal must be enabled in Stripe Dashboard > Payment methods.
-      payment_method_types: ["card", "paypal"],
+      payment_method_types: ["card"],
       customer: sub?.stripe_customer_id ?? undefined,
       customer_email: sub?.stripe_customer_id ? undefined : user.email,
       line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID, quantity: 1 }],

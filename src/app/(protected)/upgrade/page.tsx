@@ -3,51 +3,29 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   PiSparkle, PiCheckBold, PiInfinityBold, PiMicrophoneBold,
-  PiYoutubeLogoBold, PiImageBold, PiFilePdfBold, PiArrowLeftBold,
-  PiFlowerBold, PiArrowRightBold, PiLockBold, PiSealCheckFill,
-  PiShieldCheckBold, PiCreditCardBold,
+  PiYoutubeLogoBold, PiImageBold, PiFilePdfBold, PiArrowRightBold,
+  PiFlowerBold, PiSealCheckFill, PiXBold,
 } from "react-icons/pi";
 import { usePlan } from "@/hooks/use-plan";
 
-const PRO_FEATURES = [
-  {
-    icon: PiInfinityBold,
-    title: "Unlimited Seeds",
-    desc: "Plant as many flowers as you want, no weekly cap.",
-    free: "3 / week",
-  },
-  {
-    icon: PiInfinityBold,
-    title: "Unlimited Flowy Messages",
-    desc: "Ask your AI tutor anything, anytime. No daily limit.",
-    free: "10 / day",
-  },
-  {
-    icon: PiMicrophoneBold,
-    title: "Voice Uploads",
-    desc: "Record lectures directly — AI transcribes and studies them.",
-    free: null,
-  },
-  {
-    icon: PiImageBold,
-    title: "Image & Diagram Analysis",
-    desc: "Upload whiteboards, diagrams, and handwritten notes.",
-    free: null,
-  },
-  {
-    icon: PiYoutubeLogoBold,
-    title: "YouTube Link Uploads",
-    desc: "Drop any YouTube URL — lectures, tutorials, explainers.",
-    free: null,
-  },
-  {
-    icon: PiFilePdfBold,
-    title: "Export Study Notes as PDF",
-    desc: "Download your AI-generated notes as a beautiful PDF.",
-    free: null,
-  },
+const FREE_ITEMS = [
+  "3 seeds per week",
+  "PDF uploads only",
+  "10 Flowy messages/day",
+  "All study units & quizzes",
+  "Audio recaps",
+];
+
+const PRO_ITEMS = [
+  { icon: PiInfinityBold, text: "Unlimited seeds — no weekly cap" },
+  { icon: PiInfinityBold, text: "Unlimited Flowy AI messages" },
+  { icon: PiMicrophoneBold, text: "Voice recording uploads" },
+  { icon: PiImageBold, text: "Image & whiteboard uploads" },
+  { icon: PiYoutubeLogoBold, text: "YouTube link uploads" },
+  { icon: PiFilePdfBold, text: "Export study notes as PDF" },
 ];
 
 export default function UpgradePage() {
@@ -65,198 +43,186 @@ export default function UpgradePage() {
         router.push("/login?redirect=/upgrade");
         return;
       }
-      // Safely parse JSON — a misconfigured server might return HTML
       let data: { url?: string; error?: string } = {};
-      try { data = await res.json(); } catch { /* non-JSON response */ }
-
+      try { data = await res.json(); } catch { /* non-JSON */ }
       if (res.ok && data.url) {
         window.location.href = data.url;
       } else {
-        setError(data.error ?? "Checkout failed. Please try again or contact support.");
+        setError(data.error ?? "Checkout failed. Please try again.");
         setLoading(false);
       }
     } catch {
-      setError("Could not reach the server. Please try again.");
+      setError("Could not reach the server. Please check your connection.");
       setLoading(false);
     }
   }
 
+  if (plan === "pro") {
+    return (
+      <div className="min-h-screen bg-[#f7f2ea] flex items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <div className="w-20 h-20 bg-[#39AB54]/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <PiSealCheckFill className="text-4xl text-[#39AB54]" />
+          </div>
+          <h1 className="font-heading text-3xl font-black text-[#1c1c18] mb-3">You&apos;re already Pro!</h1>
+          <p className="text-on-surface-variant font-medium mb-8">Enjoy unlimited access to everything Bloomr.</p>
+          <Link href="/garden" className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#39AB54] text-white rounded-full font-bold hover:bg-[#2A8040] transition-colors shadow-lg shadow-[#39AB54]/20">
+            Go to your Garden <PiArrowRightBold />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f7f2ea]">
-      {/* Ambient background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-[#C8EDCF]/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 -left-40 w-[400px] h-[400px] bg-[#F5D03B]/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[#f7f2ea] relative overflow-hidden">
+      {/* Ambient blobs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute -top-32 -right-32 w-[700px] h-[700px] bg-[#C8EDCF]/35 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] bg-[#F5D03B]/12 rounded-full blur-3xl" />
       </div>
 
-      {/* Back button */}
-      <div className="fixed top-6 left-6 z-50">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2.5 shadow-md border border-white/60 text-sm font-bold text-[#1c1c18] hover:shadow-lg hover:-translate-y-0.5 transition-all"
-        >
-          <PiArrowLeftBold />
-          Back
-        </button>
-      </div>
+      {/* Minimal nav */}
+      <nav className="relative z-10 flex items-center justify-between px-8 py-5 max-w-6xl mx-auto">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image src="/bloomr_icon.svg" alt="Bloomr" width={26} height={26} />
+          <span className="text-xl text-primary-container tracking-tighter font-logo">Bloomr</span>
+        </Link>
+        <Link href="/garden" className="text-sm font-bold text-on-surface-variant hover:text-[#1c1c18] transition-colors">
+          ← Back to garden
+        </Link>
+      </nav>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-24 pb-20">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 pb-24">
 
-        {/* Already Pro */}
-        {plan === "pro" && (
-          <div className="max-w-md mx-auto text-center py-16">
-            <div className="w-20 h-20 bg-[#39AB54]/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <PiSealCheckFill className="text-4xl text-[#39AB54]" />
-            </div>
-            <h1 className="font-heading text-3xl font-black text-[#1c1c18] mb-3">You&apos;re already Pro!</h1>
-            <p className="text-on-surface-variant font-medium mb-8">Enjoy unlimited access to everything Bloomr has to offer.</p>
-            <Link
-              href="/garden"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#39AB54] text-white rounded-full font-bold hover:bg-[#2A8040] transition-colors shadow-lg shadow-[#39AB54]/20"
-            >
-              Go to your Garden <PiArrowRightBold />
-            </Link>
+        {/* Hero headline */}
+        <div className="text-center pt-10 pb-16">
+          <div className="inline-flex items-center gap-2 bg-[#39AB54]/12 text-[#39AB54] rounded-full px-4 py-1.5 text-xs font-black tracking-wider uppercase mb-5">
+            <PiSparkle /> Pro Plan
           </div>
-        )}
+          <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-black text-[#1c1c18] tracking-tight leading-[0.97] mb-5">
+            Grow without<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#39AB54] via-[#5AC76F] to-[#2A8040]">
+              limits.
+            </span>
+          </h1>
+          <p className="text-on-surface-variant text-lg font-medium max-w-md mx-auto">
+            Everything in Free, plus unlimited access to every feature Bloomr has to offer.
+          </p>
+        </div>
 
-        {plan !== "pro" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+        {/* Main content: comparison + CTA */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start max-w-4xl mx-auto">
 
-            {/* Left — Hero + features */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-[#39AB54]/10 text-[#39AB54] rounded-full px-4 py-2 text-sm font-bold mb-6">
-                <PiSparkle />
-                Bloomr Pro
-              </div>
-              <h1 className="font-heading text-5xl lg:text-6xl font-black text-[#1c1c18] tracking-tight leading-[1.05] mb-4">
-                Grow without<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#39AB54] to-[#2A8040]">
-                  limits.
-                </span>
-              </h1>
-              <p className="text-on-surface-variant text-lg font-medium mb-10 max-w-md">
-                Unlock everything Bloomr has to offer — unlimited seeds, unlimited AI, and every upload type.
-              </p>
-
-              {/* Feature comparison list */}
-              <div className="space-y-3">
-                {PRO_FEATURES.map((f) => (
-                  <div
-                    key={f.title}
-                    className="flex items-start gap-4 bg-white rounded-2xl px-5 py-4 border border-[#e5e2db] hover:border-[#39AB54]/30 transition-colors"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-[#39AB54]/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <f.icon className="text-[#39AB54] text-lg" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-sm text-[#1c1c18]">{f.title}</p>
-                        {f.free && (
-                          <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 line-through">
-                            Free: {f.free}
-                          </span>
-                        )}
-                        {!f.free && (
-                          <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                            Free: locked
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-on-surface-variant font-medium mt-0.5">{f.desc}</p>
-                    </div>
-                    <PiCheckBold className="text-[#39AB54] shrink-0 mt-1.5" />
-                  </div>
-                ))}
+          {/* Free column */}
+          <div className="lg:col-span-2 bg-white border-2 border-[#e5e2db] rounded-[1.75rem] p-7">
+            <div className="mb-5">
+              <p className="font-heading font-black text-lg text-[#1c1c18] mb-1">Free</p>
+              <div className="flex items-baseline gap-1">
+                <span className="font-heading text-4xl font-black text-[#1c1c18]">$0</span>
+                <span className="text-on-surface-variant text-sm font-medium">/forever</span>
               </div>
             </div>
+            <ul className="space-y-2.5">
+              {FREE_ITEMS.map((item) => (
+                <li key={item} className="flex items-center gap-2.5 text-sm font-medium text-[#1c1c18]/70">
+                  <PiCheckBold className="text-[#39AB54]/50 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 pt-5 border-t border-[#e5e2db]">
+              <p className="text-xs text-on-surface-variant font-medium text-center">Your current plan</p>
+            </div>
+          </div>
 
-            {/* Right — Checkout card */}
-            <div className="lg:sticky lg:top-24">
-              {/* Pro card */}
-              <div className="relative bg-gradient-to-br from-[#39AB54] to-[#1a6830] rounded-[2rem] p-8 shadow-2xl shadow-[#39AB54]/25 overflow-hidden mb-4">
-                {/* Decorative orbs */}
-                <div className="absolute top-0 right-0 w-56 h-56 bg-white/8 rounded-full -translate-y-28 translate-x-28 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full translate-y-20 -translate-x-20 pointer-events-none" />
-                <div className="absolute inset-0 rounded-[2rem] ring-1 ring-white/15 pointer-events-none" />
+          {/* Pro column */}
+          <div className="lg:col-span-3 relative">
+            {/* Glow ring */}
+            <div className="absolute -inset-1 bg-gradient-to-br from-[#39AB54] to-[#2A8040] rounded-[2rem] blur-sm opacity-30" />
 
-                <div className="relative">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                          <PiFlowerBold className="text-white text-lg" />
-                        </div>
-                        <span className="font-heading font-black text-lg text-white">Bloomr Pro</span>
-                      </div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="font-heading text-6xl font-black text-white">$5.99</span>
-                        <span className="text-white/70 font-medium text-sm">/month</span>
-                      </div>
-                      <p className="text-white/60 text-xs mt-1 font-medium">Billed monthly. Cancel anytime.</p>
+            <div className="relative bg-gradient-to-br from-[#39AB54] via-[#2E9648] to-[#1a6830] rounded-[1.75rem] p-8 overflow-hidden">
+              {/* Texture blobs */}
+              <div className="absolute top-0 right-0 w-48 h-48 bg-white/8 rounded-full -translate-y-24 translate-x-24 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-36 h-36 bg-black/10 rounded-full translate-y-16 -translate-x-16 pointer-events-none" />
+              <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-white/15 pointer-events-none" />
+
+              <div className="relative">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+                      <PiFlowerBold className="text-white text-base" />
                     </div>
-                    <span className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-sm">
-                      Most Popular
-                    </span>
+                    <span className="font-heading font-black text-base text-white">Pro</span>
                   </div>
-
-                  {/* Quick perks */}
-                  <ul className="space-y-2 mb-6">
-                    {["Unlimited seeds & flowers", "Unlimited Flowy AI messages", "Voice, image & YouTube uploads"].map((perk) => (
-                      <li key={perk} className="flex items-center gap-2.5 text-sm text-white/90 font-medium">
-                        <PiCheckBold className="text-white shrink-0" />
-                        {perk}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA Button */}
-                  <button
-                    onClick={handleUpgrade}
-                    disabled={loading}
-                    className="w-full py-4 rounded-2xl bg-white text-[#39AB54] font-bold text-base hover:bg-[#f7f2ea] hover:-translate-y-0.5 hover:shadow-xl transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="w-4 h-4 rounded-full border-2 border-[#39AB54]/30 border-t-[#39AB54] animate-spin" />
-                        Redirecting to checkout...
-                      </>
-                    ) : (
-                      <>Upgrade to Pro — $5.99/mo <PiArrowRightBold /></>
-                    )}
-                  </button>
-
-                  {error && (
-                    <div className="mt-3 bg-red-500/20 border border-red-300/30 rounded-xl px-4 py-2.5">
-                      <p className="text-red-100 text-xs font-medium text-center">{error}</p>
-                    </div>
-                  )}
+                  <span className="text-[10px] font-black text-white/80 bg-white/15 border border-white/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    Most Popular
+                  </span>
                 </div>
-              </div>
 
-              {/* Trust signals */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {[
-                  { icon: PiLockBold, label: "Secure checkout" },
-                  { icon: PiShieldCheckBold, label: "Cancel anytime" },
-                  { icon: PiCreditCardBold, label: "Stripe secured" },
-                ].map((t) => (
-                  <div key={t.label} className="bg-white rounded-2xl px-3 py-3 border border-[#e5e2db] flex flex-col items-center gap-1.5 text-center">
-                    <t.icon className="text-[#39AB54] text-lg" />
-                    <span className="text-[10px] font-bold text-on-surface-variant leading-tight">{t.label}</span>
+                <div className="flex items-baseline gap-1.5 mb-1">
+                  <span className="font-heading text-5xl font-black text-white">$5.99</span>
+                  <span className="text-white/65 text-sm font-medium">/month</span>
+                </div>
+                <p className="text-white/50 text-xs font-medium mb-7">Billed monthly. Cancel anytime.</p>
+
+                {/* Pro features */}
+                <ul className="space-y-2.5 mb-8">
+                  {PRO_ITEMS.map((item) => (
+                    <li key={item.text} className="flex items-center gap-3 text-sm font-semibold text-white">
+                      <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                        <item.icon className="text-white text-xs" />
+                      </div>
+                      {item.text}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <button
+                  onClick={handleUpgrade}
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-white text-[#1a6830] font-black text-base tracking-tight hover:bg-[#f0faf2] active:scale-[0.98] transition-all duration-200 disabled:opacity-60 flex items-center justify-center gap-2 shadow-xl shadow-black/10"
+                >
+                  {loading ? (
+                    <>
+                      <span className="w-4 h-4 rounded-full border-2 border-[#39AB54]/30 border-t-[#39AB54] animate-spin" />
+                      Redirecting to checkout...
+                    </>
+                  ) : (
+                    <>Upgrade to Pro — $5.99/mo <PiArrowRightBold className="text-lg" /></>
+                  )}
+                </button>
+
+                {error && (
+                  <div className="mt-3 flex items-start gap-2 bg-red-500/20 border border-red-300/20 rounded-xl px-4 py-3">
+                    <PiXBold className="text-red-200 text-sm shrink-0 mt-0.5" />
+                    <p className="text-red-100 text-xs font-medium">{error}</p>
                   </div>
-                ))}
-              </div>
+                )}
 
-              <p className="text-center text-on-surface-variant text-xs font-medium">
-                Questions?{" "}
-                <Link href="/garden" className="text-[#39AB54] font-bold hover:underline">
-                  Return to your garden
-                </Link>
-              </p>
+                <p className="text-white/35 text-xs text-center mt-4">
+                  Secured by Stripe · Apple Pay & Google Pay accepted
+                </p>
+              </div>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Social proof / trust row */}
+        <div className="max-w-4xl mx-auto mt-8 grid grid-cols-3 gap-4">
+          {[
+            { stat: "100%", label: "Secure checkout via Stripe" },
+            { stat: "Cancel", label: "anytime, no questions asked" },
+            { stat: "Instant", label: "access after payment" },
+          ].map((t) => (
+            <div key={t.label} className="bg-white/70 backdrop-blur-sm border border-white/80 rounded-2xl px-4 py-4 text-center">
+              <p className="font-heading font-black text-base text-[#1c1c18] mb-0.5">{t.stat}</p>
+              <p className="text-[11px] text-on-surface-variant font-medium leading-tight">{t.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
