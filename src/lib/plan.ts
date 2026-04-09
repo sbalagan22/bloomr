@@ -27,24 +27,45 @@ export async function getUserPlan(): Promise<Plan> {
   return "free";
 }
 
-/** Returns whether user can plant a new seed. Free = 3/week, Pro = unlimited. */
-export async function checkSeedLimit(): Promise<{ allowed: boolean; used: number; limit: number }> {
+/** Returns the most recent Saturday (00:00:00 UTC) as the start of the current seed week. */
+export function getLastSaturdayUTC(): Date {
+  const now = new Date();
+  // getUTCDay: 0=Sun,1=Mon,...,5=Fri,6=Sat
+  const dayOfWeek = now.getUTCDay();
+  const daysBack = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
+  const sat = new Date(now);
+  sat.setUTCDate(now.getUTCDate() - daysBack);
+  sat.setUTCHours(0, 0, 0, 0);
+  return sat;
+}
+
+/** Returns the next Saturday (00:00:00 UTC) — when the seed count resets. */
+export function getNextSaturdayUTC(): Date {
+  const last = getLastSaturdayUTC();
+  const next = new Date(last);
+  next.setUTCDate(last.getUTCDate() + 7);
+  return next;
+}
+
+/** Returns whether user can plant a new seed. Free = 3/week (resets Saturdays), Pro = unlimited. */
+export async function checkSeedLimit(): Promise<{ allowed: boolean; used: number; limit: number; nextReset: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { allowed: false, used: 0, limit: 3 };
+  const nextReset = getNextSaturdayUTC().toISOString();
+  if (!user) return { allowed: false, used: 0, limit: 3, nextReset };
 
   const plan = await getUserPlan();
-  if (plan === "pro") return { allowed: true, used: 0, limit: Infinity };
+  if (plan === "pro") return { allowed: true, used: 0, limit: Infinity, nextReset };
 
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const since = getLastSaturdayUTC().toISOString();
   const { count } = await supabase
     .from("flowers")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .gte("created_at", weekAgo);
+    .gte("created_at", since);
 
   const used = count ?? 0;
-  return { allowed: used < 3, used, limit: 3 };
+  return { allowed: used < 3, used, limit: 3, nextReset };
 }
 
 /** Returns whether user can send another Flowy message today. Free = 10/day/flower, Pro = unlimited. */

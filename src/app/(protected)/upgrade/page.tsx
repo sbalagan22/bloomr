@@ -61,17 +61,22 @@ export default function UpgradePage() {
     setError(null);
     try {
       const res = await fetch("/api/stripe/checkout", { method: "POST" });
-      const data = await res.json();
+      if (res.status === 401) {
+        router.push("/login?redirect=/upgrade");
+        return;
+      }
+      // Safely parse JSON — a misconfigured server might return HTML
+      let data: { url?: string; error?: string } = {};
+      try { data = await res.json(); } catch { /* non-JSON response */ }
+
       if (res.ok && data.url) {
         window.location.href = data.url;
-      } else if (res.status === 401) {
-        router.push("/login?redirect=/upgrade");
       } else {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        setError(data.error ?? "Checkout failed. Please try again or contact support.");
         setLoading(false);
       }
     } catch {
-      setError("Network error. Please check your connection and try again.");
+      setError("Could not reach the server. Please try again.");
       setLoading(false);
     }
   }

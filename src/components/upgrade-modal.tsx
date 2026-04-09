@@ -31,7 +31,8 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
         window.location.href = "/login?redirect=/upgrade";
         return;
       }
-      const data = await res.json();
+      let data: { url?: string } = {};
+      try { data = await res.json(); } catch { /* non-JSON */ }
       if (data.url) {
         window.location.href = data.url;
       } else {
