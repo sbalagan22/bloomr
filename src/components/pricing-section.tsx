@@ -42,9 +42,17 @@ export function PricingSection() {
     setProLoading(true);
     try {
       const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      if (res.status === 401) {
+        // Not logged in — send them to signup with redirect back to upgrade
+        window.location.href = "/signup?redirect=/upgrade";
+        return;
+      }
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setProLoading(false);
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setProLoading(false);
+      }
     } catch {
       setProLoading(false);
     }

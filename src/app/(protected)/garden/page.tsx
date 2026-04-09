@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState, Suspense, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
-import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiArrowLeftBold } from "react-icons/pi";
+import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiArrowLeftBold, PiSealCheckFill } from "react-icons/pi";
 import * as THREE from "three";
 
 interface Flower {
@@ -230,11 +230,23 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
 
 export default function GardenPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditorMode, setIsEditorMode] = useState(false);
   const [isListView, setIsListView] = useState(false);
   const [dragRejectId, setDragRejectId] = useState<string | null>(null);
+  const [showUpgradedToast, setShowUpgradedToast] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("upgraded") === "true") {
+      setShowUpgradedToast(true);
+      // Remove the query param without reloading
+      router.replace("/garden", { scroll: false });
+      const t = setTimeout(() => setShowUpgradedToast(false), 5000);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadGarden() {
@@ -335,6 +347,16 @@ export default function GardenPage() {
 
   return (
     <div className="w-full h-screen relative bg-[#A4D5EA]">
+      {/* Upgrade success toast */}
+      {showUpgradedToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#1a6830] text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-[#39AB54]/30 border border-white/10 animate-fade-in-up">
+          <PiSealCheckFill className="text-xl shrink-0 text-[#7FD99A]" />
+          <p className="font-bold text-sm">Welcome to Pro! Enjoy unlimited access.</p>
+          <button onClick={() => setShowUpgradedToast(false)} className="ml-2 text-white/50 hover:text-white">
+            <PiXBold className="text-sm" />
+          </button>
+        </div>
+      )}
       {/* 2D UI Overlay */}
       <div className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-start z-10 pointer-events-none">
         

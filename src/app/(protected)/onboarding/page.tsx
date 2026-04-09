@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,8 +35,10 @@ const EDU_LEVELS = [
   { id: "Self-Taught", icon: "🧭", subtitle: "Professional / Lifelong", color: "#3D5EE0" },
 ];
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") ?? "/garden";
   const [step, setStep] = useState(0);
   const [mounted, setMounted] = useState(false);
   
@@ -133,7 +135,7 @@ export default function OnboardingPage() {
 
       if (gardenError) console.error("Garden creation error:", gardenError);
 
-      router.push("/garden");
+      router.push(redirect);
     } catch (err) {
       console.error("Onboarding error:", err);
       setError("Something went wrong. Please try again.");
@@ -351,5 +353,13 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
   );
 }

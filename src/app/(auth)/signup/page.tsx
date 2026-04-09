@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { PiEnvelopeBold, PiLockBold, PiUserBold } from "react-icons/pi";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") ?? "/onboarding";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,7 +35,12 @@ export default function SignupPage() {
       const supabase = createClient();
       const { error: authError } = await supabase.auth.signUp({ email, password });
       if (authError) { setError(authError.message); return; }
-      router.push("/onboarding");
+      // If redirecting to upgrade, go through onboarding first then upgrade
+      if (redirect === "/upgrade") {
+        router.push("/onboarding?redirect=/upgrade");
+      } else {
+        router.push(redirect);
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -95,5 +102,13 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

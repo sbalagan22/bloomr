@@ -27,9 +27,16 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
     setLoading(true);
     try {
       const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      if (res.status === 401) {
+        window.location.href = "/login?redirect=/upgrade";
+        return;
+      }
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setLoading(false);
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setLoading(false);
+      }
     } catch {
       setLoading(false);
     }
