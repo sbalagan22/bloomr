@@ -228,7 +228,7 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
   );
 }
 
-export default function GardenPage() {
+function GardenContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [flowers, setFlowers] = useState<Flower[]>([]);
@@ -482,5 +482,13 @@ export default function GardenPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function GardenPage() {
+  return (
+    <Suspense>
+      <GardenContent />
+    </Suspense>
   );
 }
