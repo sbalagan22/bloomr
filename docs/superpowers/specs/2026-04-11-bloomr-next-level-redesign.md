@@ -91,7 +91,7 @@ All logos must be saved locally before deployment — never reference external u
 - Inside the Canvas, add `<Sky sunPosition={[100, 20, 100]} turbidity={8} rayleigh={2} mieCoefficient={0.005} mieDirectionalG={0.8} />` from `@react-three/drei`.
 - Add `<fog attach="fog" args={['#BDE0F5', 20, 60]} />` for atmospheric depth haze.
 - Add `<ambientLight intensity={1.0} />` and `<directionalLight position={[10, 15, 10]} intensity={1.2} castShadow />`.
-- Add 3–4 `<Cloud>` components from drei at varying positions (y=12–18, scattered x/z) for 3D cloud puffs.
+- Add 3D cloud puffs using drei v10's API — must wrap in `<Clouds>` parent: `<Clouds material={THREE.MeshLambertMaterial}><Cloud position={[x,y,z]} seed={n} segments={20} volume={8} color="white" fade={30} /></Clouds>`. Add 3–4 `<Cloud>` instances at y=12–18, scattered x/z positions. Bare `<Cloud>` without a `<Clouds>` parent renders nothing in drei v10.
 
 ### 2.2 Terrain
 - Replace flat grass `<planeGeometry args={[30, 30]} />` with `<planeGeometry args={[80, 80, 50, 50]} />` (subdivided).
@@ -135,8 +135,11 @@ All logos must be saved locally before deployment — never reference external u
 - The page background color changes from whatever it is currently to `transparent` (canvas shows through).
 
 ### 3.2 Upload Preview (`/upload`)
-- The existing `<Flower3D>` canvas (right panel) gets a sky gradient background via inline `style` on its wrapper div: `background: linear-gradient(to bottom, #BDE0F5, #5AB4E5)`.
-- Inside the canvas, add a simple grass plane `<mesh rotation={[-Math.PI/2,0,0]} position={[0,-0.6,0]}><planeGeometry args={[10,10]} /><meshStandardMaterial color="#4CAF60" roughness={1} /></mesh>`.
+- The `Flower3D` component (`src/components/flower-3d.tsx`) does not currently accept `children` or extra scene elements — its `<Canvas>` renders a fixed scene. Two changes needed:
+  1. Add `showGround?: boolean` prop to `Flower3DProps`. When `true`, render a grass plane inside the Canvas: `<mesh rotation={[-Math.PI/2,0,0]} position={[0,-0.6,0]}><planeGeometry args={[10,10]} /><meshStandardMaterial color="#4CAF60" roughness={1} /></mesh>`.
+  2. Add `background?: string` prop to `Flower3DProps`. When set, apply it as the Canvas background via `style={{ background }}` on the `<Canvas>` wrapper div.
+- The upload preview passes `showGround background="linear-gradient(to bottom, #BDE0F5, #5AB4E5)"` to `<Flower3D>`.
+- The `<Flower3D>` in `hero-flower.tsx` and `flower/[id]` page use default (no ground, no background override) — backward compatible.
 - **Pot variant arrows (NEW):** Below the rarity selector tabs, add a `<PotVariantSelector>` strip: `← [Pot Name / variant X of N] →`. Left/right `<button>` arrows cycle `previewVariant` state (1-indexed, clamped to max variants for that rarity). The Flower3D component receives `potVariant={previewVariant}` and builds the GLB URL dynamically.
 
 ---
@@ -338,7 +341,7 @@ The `/api/stripe/portal` route already exists, returns `{ url: session.url }`, a
 | `src/app/page.tsx` | Sky BG, remove blobs, add cloud layers, hill SVG, university marquee |
 | `src/components/university-marquee.tsx` | NEW — marquee component |
 | `public/logos/` | NEW — self-hosted university logo files |
-| `src/app/(protected)/garden/page.tsx` | Sky Canvas setup, terrain, hedges, CameraController (with OrbitControls ref fix), list redesign |
+| `src/app/(protected)/garden/page.tsx` | Sky Canvas setup, terrain, hedges, CameraController (with OrbitControls ref fix), list redesign. Update line that casts `pot_rarity as "common" \| "uncommon" \| ...` to new union or simply `as Rarity` |
 | `src/app/(protected)/flower/[id]/page.tsx` | Canvas BG, glassmorphism panels, rarity cast update |
 | `src/app/(protected)/flower/[id]/layout.tsx` | Update hardcoded rarity union type cast |
 | `src/app/(protected)/flower/[id]/mastery/page.tsx` | `?? "common"` → `?? "basic"`, update `as Rarity` cast |
@@ -347,7 +350,7 @@ The `/api/stripe/portal` route already exists, returns `{ url: session.url }`, a
 | `src/components/hero-flower.tsx` | `rarity="epic"` → `rarity="antique"` |
 | `src/components/nav-bar.tsx` | Avatar + DropdownMenu, remove inline sign-out, POST to stripe portal |
 | `src/components/flower-icons.tsx` | Replace SVGs with emoji map + backward-compat FLOWER_ICON_MAP as React.FC |
-| `src/components/gacha-opener.tsx` | Update any hardcoded rarity strings |
+| `src/components/gacha-opener.tsx` | Update old rarity string literals and copy: `"common"→"basic"`, `"uncommon"→"vintage"`, `"epic"→"antique"`, `"legendary"→"relic"`. Update flavor text constants mapped to `"antique"`/`"relic"` (e.g. "A mythical pattern appears!" stays on relic, update the rarity key it's keyed on). Update `useState<Rarity>("common")` default to `useState<Rarity>("basic")`. |
 | `src/lib/rarity.ts` | New type, new names, new drop rates |
 | `src/app/api/process/route.ts` | Pity logic, variant roll, new rarity keys, pity_count guard |
 | `src/app/api/dev/auto-pass/route.ts` | Update rarity strings produced/consumed |
