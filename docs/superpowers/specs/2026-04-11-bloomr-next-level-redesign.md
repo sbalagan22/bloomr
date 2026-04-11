@@ -58,24 +58,28 @@ Every surface must feel like one continuous world.
 **Component:** `src/components/university-marquee.tsx`  
 **Placement:** Between `<PricingSection />` and the footer `<CTA section>`.
 
-**Logos (official CDN URLs, grayscale → color on hover):**
-| University | Logo URL |
-|---|---|
-| University of Toronto | `https://www.utoronto.ca/sites/default/files/UofT_Logo.svg` |
-| University of Waterloo | `https://uwaterloo.ca/brand/sites/ca.brand/files/uploads/images/universityofwaterloo_logo_horiz_rgb.png` |
-| UBC | `https://brand.ubc.ca/files/2018/09/UBC-logo-2018-crest-only-blue-rgb72.png` |
-| McGill | `https://www.mcgill.ca/files/mcgill-logo.png` |
-| Harvard | `https://www.harvard.edu/wp-content/uploads/2022/01/harvard-logo.svg` |
-| MIT | `https://web.mit.edu/graphicidentity/images/mit-logo.svg` |
-| Caltech | `https://www.caltech.edu/sites/default/files/2021-01/caltech-logo.svg` |
-| Stanford | `https://identity.stanford.edu/wp-content/uploads/sites/3/2020/07/block-s-right.png` |
-| Carnegie Mellon | `https://www.cmu.edu/marcom/brand-standards/images/logos-colors-type/wordmark_660x80.png` |
-| Oxford | `https://www.ox.ac.uk/sites/files/oxford/styles/ow_medium_feature/s3/field/field_image_main/oxford-logo.png` |
+**Logos — self-hosted in `/public/logos/` (do NOT hotlink university CDNs — those URLs are unstable and may violate usage policies):**
+
+Download the following logos at implementation time and place them at `/public/logos/<filename>`:
+| University | Filename | Source to download from |
+|---|---|---|
+| University of Toronto | `uoft.svg` | utoronto.ca official brand page |
+| University of Waterloo | `waterloo.png` | uwaterloo.ca official brand page |
+| UBC | `ubc.png` | brand.ubc.ca |
+| McGill | `mcgill.png` | mcgill.ca brand standards |
+| Harvard | `harvard.svg` | harvard.edu brand standards |
+| MIT | `mit.svg` | web.mit.edu graphic identity |
+| Caltech | `caltech.svg` | caltech.edu brand |
+| Stanford | `stanford.png` | identity.stanford.edu |
+| Carnegie Mellon | `cmu.png` | cmu.edu marcom |
+| Oxford | `oxford.png` | ox.ac.uk brand |
+
+All logos must be saved locally before deployment — never reference external university domains at runtime.
 
 **Implementation:**
 - Duplicate the logo row to create a seamless loop: `[logos] [logos]`.
 - CSS animation: `@keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }` at 30s linear infinite.
-- Each logo: `<Image>` or `<img>`, height 28px, `filter: grayscale(100%)`, transition to `filter: grayscale(0%)` on hover.
+- Each logo: `<Image>` with `src="/logos/<filename>"`, height 28px, `filter: grayscale(100%)`, transition to `filter: grayscale(0%)` on hover. Use `next/image` with `unoptimized` if SVG.
 - Section header: `"Trusted by students at top schools"` — small all-caps tracking-widest label above the strip.
 
 ---
@@ -101,11 +105,16 @@ Every surface must feel like one continuous world.
 - Slight Y-rotation variation per hedge unit for an organic hedge feel.
 
 ### 2.4 Editor Mode — Bird's Eye Camera
-- Add a `useRef<THREE.PerspectiveCamera>` for the camera.
-- On `isEditorMode` toggle, use `useFrame` to lerp `camera.position` to `[0, 28, 0.1]` over ~40 frames (smooth transition, not instant).
-- `OrbitControls` in editor mode: `enableRotate={false}`, `enablePan={true}`, `maxPolarAngle={Math.PI / 6}` (locks overhead).
-- On editor mode exit, lerp camera back to `[0, 10, 20]`.
-- Implement via a `<CameraController isEditorMode={isEditorMode} />` child component inside the Canvas.
+**Important:** `OrbitControls` with `makeDefault` owns the camera every frame via its own `useFrame` call. A naive `camera.position.lerp()` in a sibling component will fight OrbitControls and snap back every frame. The correct approach:
+
+- Remove `makeDefault` from `<OrbitControls>`.
+- Store OrbitControls in a `useRef` via the `ref` prop: `const controlsRef = useRef<OrbitControls>(null)`.
+- Create `<CameraController isEditorMode={isEditorMode} controlsRef={controlsRef} />` as a child component inside the Canvas.
+- Inside `CameraController`, use `useFrame` to lerp `camera.position` toward the target. After each lerp step, call `controlsRef.current?.update()` so OrbitControls stays in sync with the new camera position.
+- Target positions: editor on → `[0, 28, 0.1]`; editor off → `[0, 10, 20]`.
+- Lerp speed: `0.06` per frame (~40 frames to settle).
+- `OrbitControls` prop changes in editor mode: `enableRotate={false}`, `enablePan={true}`, `maxPolarAngle={Math.PI / 6}`.
+- Normal mode: `enableRotate={true}`, `maxPolarAngle={Math.PI / 2 - 0.05}` (restore original).
 
 ### 2.5 List View Redesign
 - Replace `bg-white/95` panel with `bg-white/10 backdrop-blur-2xl border border-white/30 ring-1 ring-white/20`.
@@ -164,7 +173,24 @@ END
 WHERE pot_rarity IN ('common','uncommon','rare','epic','legendary');
 ```
 
-**Update all TypeScript references** across: `rarity.ts`, `flower-3d.tsx`, `gacha-opener.tsx`, `upload/page.tsx`, `garden/page.tsx`, `flower/[id]/page.tsx`, `api/process/route.ts`.
+**Update all TypeScript references** across every file that references old rarity string literals or the old `Rarity` type. Complete file list:
+
+| File | What to change |
+|---|---|
+| `src/lib/rarity.ts` | Redefine `Rarity` type and `RARITIES` map |
+| `src/components/flower-3d.tsx` | `POT_GLB_URLS` → `POT_RARITY_FILE_PREFIX`, update `TINTABLE_RARITIES` to `["basic", "vintage", "rare"]` |
+| `src/components/gacha-opener.tsx` | Any hardcoded rarity strings |
+| `src/app/(protected)/upload/page.tsx` | Rarity references in preview logic |
+| `src/app/(protected)/garden/page.tsx` | `FlowerModel` rarity prop pass-through |
+| `src/app/(protected)/flower/[id]/page.tsx` | `pot_rarity as Rarity` cast |
+| `src/app/(protected)/flower/[id]/layout.tsx` | Hardcoded union type cast on rarity |
+| `src/app/(protected)/flower/[id]/mastery/page.tsx` | `?? "common"` fallback → `?? "basic"`, `as Rarity` cast |
+| `src/components/hero-flower.tsx` | `rarity="epic"` → `rarity="antique"` |
+| `src/app/flower/demo/page.tsx` | `pot_rarity: "legendary"` → `"relic"` |
+| `src/app/api/process/route.ts` | Pity logic, variant roll, rarity key generation |
+| `src/app/api/dev/auto-pass/route.ts` | Any rarity strings produced or consumed |
+
+**Note on `rare` tier:** The key `"rare"` is unchanged (old value `"rare"` maps to new value `"rare"`). This is intentional — the mid-tier rarity key stays the same. The DB migration WHERE clause already handles this correctly (it leaves `"rare"` rows untouched).
 
 ### 4.2 Pity System
 
@@ -172,16 +198,17 @@ WHERE pot_rarity IN ('common','uncommon','rare','epic','legendary');
 
 **Server-side logic (in `/api/process/route.ts` where pot is rolled):**
 ```
-1. Fetch learner_profile.pity_count for the user
-2. Roll rarity using rollRarity()
-3. If pity_count >= 9 (10th plant) AND result is not 'antique' or 'relic':
+1. Fetch learner_profile for the user (already fetched earlier in the route)
+2. If no learner_profile row exists: treat pity_count = 0, skip pity write
+3. Roll rarity using rollRarity()
+4. If pity_count >= 9 (10th plant) AND result is not 'antique' or 'relic':
    → Override result = 'antique'
-   → SET pity_count = 0
-4. Else if result IS 'antique' or 'relic':
-   → SET pity_count = 0
-5. Else:
-   → SET pity_count = pity_count + 1
-6. Save updated pity_count to learner_profiles
+   → new_pity_count = 0
+5. Else if result IS 'antique' or 'relic':
+   → new_pity_count = 0
+6. Else:
+   → new_pity_count = pity_count + 1
+7. If learner_profile exists: UPDATE learner_profiles SET pity_count = new_pity_count WHERE user_id = user.id
 ```
 
 ### 4.3 Diverse Pots
@@ -236,7 +263,18 @@ export const FLOWER_EMOJI_MAP: Record<string, string> = {
 };
 ```
 
-Keep `FLOWER_ICON_MAP` as a backward-compat alias that returns a `<span>` wrapper around the emoji.
+Keep `FLOWER_ICON_MAP` as a backward-compat alias. **Important:** every callsite uses `FLOWER_ICON_MAP` as a React component function (`const Icon = FLOWER_ICON_MAP[type]; <Icon className="..." />`). The alias must remain `Record<string, React.FC<IconProps>>` — each value is a component function that renders a `<span>` containing the emoji, not a raw JSX element:
+
+```ts
+export const FLOWER_ICON_MAP: Record<string, React.FC<IconProps>> = Object.fromEntries(
+  Object.entries(FLOWER_EMOJI_MAP).map(([key, emoji]) => [
+    key,
+    ({ className = "w-10 h-10" }: IconProps) => (
+      <span className={`flex items-center justify-center text-3xl ${className}`}>{emoji}</span>
+    ),
+  ])
+);
+```
 
 **Update usages:**
 - Upload species selector grid: use emoji in the selection button.
@@ -273,12 +311,13 @@ Keep `FLOWER_ICON_MAP` as a backward-compat alias that returns a `<span>` wrappe
 **Manage subscription implementation:**
 ```ts
 async function handleManageSubscription() {
-  const res = await fetch('/api/stripe/portal');
+  // Route exports POST only — must use method: 'POST'
+  const res = await fetch('/api/stripe/portal', { method: 'POST' });
   const { url } = await res.json();
   window.location.href = url;
 }
 ```
-The `/api/stripe/portal` route already exists — verify it returns `{ url }`.
+The `/api/stripe/portal` route already exists, returns `{ url: session.url }`, and is auth-gated. It accepts **POST only** — do not use GET.
 
 ---
 
@@ -298,14 +337,21 @@ The `/api/stripe/portal` route already exists — verify it returns `{ url }`.
 |---|---|
 | `src/app/page.tsx` | Sky BG, remove blobs, add cloud layers, hill SVG, university marquee |
 | `src/components/university-marquee.tsx` | NEW — marquee component |
-| `src/app/(protected)/garden/page.tsx` | Sky Canvas setup, terrain, hedges, CameraController, list redesign |
-| `src/app/(protected)/flower/[id]/page.tsx` | Canvas BG, glassmorphism panels |
+| `public/logos/` | NEW — self-hosted university logo files |
+| `src/app/(protected)/garden/page.tsx` | Sky Canvas setup, terrain, hedges, CameraController (with OrbitControls ref fix), list redesign |
+| `src/app/(protected)/flower/[id]/page.tsx` | Canvas BG, glassmorphism panels, rarity cast update |
+| `src/app/(protected)/flower/[id]/layout.tsx` | Update hardcoded rarity union type cast |
+| `src/app/(protected)/flower/[id]/mastery/page.tsx` | `?? "common"` → `?? "basic"`, update `as Rarity` cast |
 | `src/app/(protected)/upload/page.tsx` | Sky canvas wrapper, PotVariantSelector arrows |
-| `src/components/flower-3d.tsx` | Dynamic GLB URL with variant, accept potVariant prop |
-| `src/components/nav-bar.tsx` | Avatar + DropdownMenu, remove inline sign-out |
-| `src/components/flower-icons.tsx` | Replace SVGs with emoji map |
+| `src/components/flower-3d.tsx` | Dynamic GLB URL with variant, potVariant prop, update TINTABLE_RARITIES, update POT_GLB_URLS |
+| `src/components/hero-flower.tsx` | `rarity="epic"` → `rarity="antique"` |
+| `src/components/nav-bar.tsx` | Avatar + DropdownMenu, remove inline sign-out, POST to stripe portal |
+| `src/components/flower-icons.tsx` | Replace SVGs with emoji map + backward-compat FLOWER_ICON_MAP as React.FC |
+| `src/components/gacha-opener.tsx` | Update any hardcoded rarity strings |
 | `src/lib/rarity.ts` | New type, new names, new drop rates |
-| `src/app/api/process/route.ts` | Pity logic, variant roll, new rarity keys |
+| `src/app/api/process/route.ts` | Pity logic, variant roll, new rarity keys, pity_count guard |
+| `src/app/api/dev/auto-pass/route.ts` | Update rarity strings produced/consumed |
+| `src/app/flower/demo/page.tsx` | `pot_rarity: "legendary"` → `"relic"` |
 | DB migration | pot_variant, pity_count columns + rarity value rename |
 
 ---
