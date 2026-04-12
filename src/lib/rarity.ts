@@ -1,4 +1,4 @@
-export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+export type Rarity = "basic" | "vintage" | "rare" | "antique" | "relic";
 
 export interface RarityConfig {
   name: string;
@@ -11,23 +11,23 @@ export interface RarityConfig {
 }
 
 export const RARITIES: Record<Rarity, RarityConfig> = {
-  common: {
-    name: "Common",
+  basic: {
+    name: "Basic",
     color: "#9CA3AF",
     glowColor: "#9CA3AF",
     bgClass: "bg-gray-100",
     borderClass: "border-gray-300",
     textClass: "text-gray-500",
-    dropRate: 50,
+    dropRate: 40,
   },
-  uncommon: {
-    name: "Uncommon",
+  vintage: {
+    name: "Vintage",
     color: "#3B82F6",
     glowColor: "#60A5FA",
     bgClass: "bg-blue-50",
     borderClass: "border-blue-200",
     textClass: "text-blue-500",
-    dropRate: 25,
+    dropRate: 30,
   },
   rare: {
     name: "Rare",
@@ -38,35 +38,35 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
     textClass: "text-purple-600",
     dropRate: 15,
   },
-  epic: {
-    name: "Epic",
+  antique: {
+    name: "Antique",
     color: "#EC4899",
     glowColor: "#F472B6",
     bgClass: "bg-pink-50",
     borderClass: "border-pink-200",
     textClass: "text-pink-500",
-    dropRate: 9,
+    dropRate: 10,
   },
-  legendary: {
-    name: "Legendary",
+  relic: {
+    name: "Relic",
     color: "#F59E0B",
     glowColor: "#FBBF24",
     bgClass: "bg-amber-50",
     borderClass: "border-amber-200",
     textClass: "text-amber-500",
-    dropRate: 1,
+    dropRate: 5,
   },
 };
 
 export const RARITY_ORDER: Rarity[] = [
-  "common",
-  "uncommon",
+  "basic",
+  "vintage",
   "rare",
-  "epic",
-  "legendary",
+  "antique",
+  "relic",
 ];
 
-/** Roll a random rarity based on drop rates (50/25/15/9/1) */
+/** Roll a random rarity based on drop rates (40/30/15/10/5) */
 export function rollRarity(): Rarity {
   const roll = Math.random() * 100;
   let cumulative = 0;
@@ -74,7 +74,7 @@ export function rollRarity(): Rarity {
     cumulative += RARITIES[rarity].dropRate;
     if (roll < cumulative) return rarity;
   }
-  return "common";
+  return "basic";
 }
 
 /** Generate a random hex color string */

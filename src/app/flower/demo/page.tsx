@@ -12,7 +12,7 @@ export default function DemoFlowerPage() {
     flower_type: "rose",
     growth_stage: 4,
     status: "bloomed",
-    pot_rarity: "legendary",
+    pot_rarity: "relic",
     pot_color: "#1c1c18",
   };
 

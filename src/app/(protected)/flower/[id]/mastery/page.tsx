@@ -59,7 +59,7 @@ export default function MasteryTestPage() {
   const [flowerTopic, setFlowerTopic] = useState("");
   const [flowerProgressed, setFlowerProgressed] = useState(false);
   const [showGacha, setShowGacha] = useState(false);
-  const [gachaRarity, setGachaRarity] = useState<Rarity>("common");
+  const [gachaRarity, setGachaRarity] = useState<Rarity>("basic");
   const [gachaColor, setGachaColor] = useState<string>("#39AB54");
   const [gachaComplete, setGachaComplete] = useState(false);
   const [mathMode, setMathMode] = useState(false);
@@ -71,7 +71,7 @@ export default function MasteryTestPage() {
       const { data: flower } = await supabase.from("flowers").select("topic_name, pot_rarity, pot_color").eq("id", flowerId).single();
       if (flower) {
         setFlowerTopic(flower.topic_name);
-        setGachaRarity((flower.pot_rarity as Rarity) ?? "common");
+        setGachaRarity((flower.pot_rarity as Rarity) ?? "basic");
         if (flower.pot_color) setGachaColor(flower.pot_color);
       }
 

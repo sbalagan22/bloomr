@@ -35,15 +35,15 @@ const POT_TARGET_H = 1.1;
 const POT_SOIL_Y = -0.6 + 0.9 * (POT_TARGET_H - 0.015); // ≈ 0.377
 
 const POT_GLB_URLS: Record<Rarity, string> = {
-  common:    "/models/pots/pot_common_1.glb",
-  uncommon:  "/models/pots/pot_uncommon_1.glb",
-  rare:      "/models/pots/pot_rare_1.glb",
-  epic:      "/models/pots/pot_epic_1.glb",
-  legendary: "/models/pots/pot_legendary_1.glb",
+  basic:   "/models/pots/pot_common_1.glb",
+  vintage: "/models/pots/pot_uncommon_1.glb",
+  rare:    "/models/pots/pot_rare_1.glb",
+  antique: "/models/pots/pot_epic_1.glb",
+  relic:   "/models/pots/pot_legendary_1.glb",
 };
 
 // Only these rarities receive the player's custom potColor tint
-const TINTABLE_RARITIES = new Set<Rarity>(["common", "uncommon", "rare"]);
+const TINTABLE_RARITIES = new Set<Rarity>(["basic", "vintage", "rare"]);
 
 function PotGLBModel({ url, potColor }: { url: string; potColor?: string }) {
   const { scene } = useGLTF(url);
@@ -104,8 +104,8 @@ function PotGLBModel({ url, potColor }: { url: string; potColor?: string }) {
 }
 
 function RarityPot({ rarity, potColor }: { rarity: Rarity; potColor?: string }) {
-  const url = POT_GLB_URLS[rarity] ?? POT_GLB_URLS.common;
-  // Only tint pots for common/uncommon/rare; epic/legendary keep their GLB colors
+  const url = POT_GLB_URLS[rarity] ?? POT_GLB_URLS.basic;
+  // Only tint pots for basic/vintage/rare; antique/relic keep their GLB colors
   const colorOverride = TINTABLE_RARITIES.has(rarity) ? potColor : undefined;
   return (
     <Suspense fallback={null}>
@@ -264,7 +264,7 @@ FLOWER_GLB_TYPES.forEach((type) => useGLTF.preload(`/models/${type}.glb`));
 export function FlowerModel({
   flowerType,
   growthStage,
-  rarity: rarityProp = "common",
+  rarity: rarityProp = "basic",
   potColor,
   isEditorMode = false,
 }: {
@@ -335,7 +335,7 @@ export function FlowerModel({
 export function Flower3D({
   flowerType,
   growthStage,
-  rarity = "common",
+  rarity = "basic",
   potColor,
   size = "md",
   interactive = true,

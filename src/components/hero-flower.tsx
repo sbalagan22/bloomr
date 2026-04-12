@@ -12,7 +12,7 @@ export function HeroFlower() {
     <Flower3D
       flowerType="rose"
       growthStage={4}
-      rarity="epic"
+      rarity="antique"
       interactive={true}
       size="full"
     />

@@ -88,7 +88,7 @@ export default function UploadPage() {
 
   // Preview states
   const [previewStage, setPreviewStage] = useState(3);
-  const [previewRarity, setPreviewRarity] = useState<Rarity>("common");
+  const [previewRarity, setPreviewRarity] = useState<Rarity>("basic");
   const [activePreviewId, setActivePreviewId] = useState<string>("base");
   const [customPotColor, setCustomPotColor] = useState<string>("#C8682B");
 
@@ -662,7 +662,7 @@ export default function UploadPage() {
                     >
                       <span className={`${config.textClass} flex items-center gap-1.5`}>
                         <div
-                          className={`w-2.5 h-2.5 rounded-full ${rarity === "legendary" ? "shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse" : ""}`}
+                          className={`w-2.5 h-2.5 rounded-full ${rarity === "relic" ? "shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse" : ""}`}
                           style={{ backgroundColor: config.color }}
                         />
                         {config.name}

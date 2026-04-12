@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
+import { type Rarity } from "@/lib/rarity";
 
 const Flower3D = dynamic(
   () => import("@/components/flower-3d").then((mod) => ({ default: mod.Flower3D })),
@@ -59,7 +60,7 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
               <Flower3D
                 flowerType={flower.flower_type}
                 growthStage={flower.growth_stage}
-                rarity={(flower.pot_rarity as "common" | "uncommon" | "rare" | "epic" | "legendary") ?? "common"}
+                rarity={(flower.pot_rarity as Rarity) ?? "basic"}
                 potColor={flower.pot_color ?? undefined}
                 size="full"
                 interactive={true}

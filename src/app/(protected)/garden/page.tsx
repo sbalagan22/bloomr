@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
+import { type Rarity } from "@/lib/rarity";
 import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiSealCheckFill } from "react-icons/pi";
 import { ProCelebration } from "@/components/pro-celebration";
 import * as THREE from "three";
@@ -117,7 +118,7 @@ function DraggableFlower({
       <FlowerModel
         flowerType={flower.flower_type?.toLowerCase() || "daisy"}
         growthStage={flower.growth_stage}
-        rarity={(flower.pot_rarity?.toLowerCase() as "common" | "uncommon" | "rare" | "epic" | "legendary") ?? "common"}
+        rarity={(flower.pot_rarity?.toLowerCase() as Rarity) ?? "basic"}
         potColor={flower.pot_color ?? undefined}
         isEditorMode={isEditorMode}
       />

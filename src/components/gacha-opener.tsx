@@ -25,7 +25,7 @@ const ITEM_WIDTH = 140; // px per slot
 
 export function GachaOpener({ fixedRarity, fixedColor, onComplete, open }: GachaOpenerProps) {
   const [phase, setPhase] = useState<"idle" | "spinning" | "reveal">("idle");
-  const [finalRarity, setFinalRarity] = useState<Rarity>("common");
+  const [finalRarity, setFinalRarity] = useState<Rarity>("basic");
   const [reelItems, setReelItems] = useState<Rarity[]>([]);
   const [translateX, setTranslateX] = useState(0);
   const reelRef = useRef<HTMLDivElement>(null);
@@ -142,7 +142,7 @@ export function GachaOpener({ fixedRarity, fixedColor, onComplete, open }: Gacha
               <div
                 className="w-48 h-48 sm:w-64 sm:h-64 rounded-full shadow-2xl flex items-center justify-center border-4 border-white/30 relative bg-black/20 overflow-hidden"
               >
-                {(finalRarity === "legendary" || finalRarity === "epic") && (
+                {(finalRarity === "relic" || finalRarity === "antique") && (
                   <div
                     className="absolute -inset-4 rounded-full animate-pulse"
                     style={{ boxShadow: `inset 0 0 50px ${config.glowColor}80` }}
@@ -168,15 +168,15 @@ export function GachaOpener({ fixedRarity, fixedColor, onComplete, open }: Gacha
                 </div>
                 
                 <p className="text-white/80 text-sm mt-2 font-medium max-w-xs mx-auto">
-                  {finalRarity === "legendary"
-                    ? "UNBELIEVABLE! A mythical pattern appears!"
-                    : finalRarity === "epic"
-                      ? "Incredible ornate detail. What a lucky drop!"
+                  {finalRarity === "relic"
+                    ? "UNBELIEVABLE! A mythical Relic appears!"
+                    : finalRarity === "antique"
+                      ? "Incredible Antique detail. What a lucky drop!"
                       : finalRarity === "rare"
-                        ? "A beautiful pedestal-style pot!"
-                        : finalRarity === "uncommon"
-                          ? "A lovely round belly pot."
-                          : "Classic terracotta style."}
+                        ? "A beautiful Rare pedestal-style pot!"
+                        : finalRarity === "vintage"
+                          ? "A lovely Vintage round belly pot."
+                          : "Classic Basic terracotta style."}
                 </p>
                 <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 border border-white/10">
                   <div className="w-4 h-4 rounded-full border border-white/50 shadow-inner" style={{ backgroundColor: fixedColor ?? config.color }} />
