@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
 import { FlowerModel } from "@/components/flower-3d";
+import { FLOWER_EMOJI_MAP } from "@/components/flower-icons";
 import { type Rarity } from "@/lib/rarity";
 import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiSealCheckFill } from "react-icons/pi";
 import { ProCelebration } from "@/components/pro-celebration";
@@ -435,7 +436,7 @@ function GardenContent() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm" style={{ backgroundColor: `${FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"]}15`, color: FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"] }}>
-                        {flower.status === "bloomed" ? "🌸" : "🌱"}
+                        {FLOWER_EMOJI_MAP[flower.flower_type?.toLowerCase()] ?? (flower.status === "bloomed" ? "🌸" : "🌱")}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-bold text-[#1c1c18] text-sm group-hover:text-[#39AB54] transition-colors truncate">{flower.topic_name}</h3>
