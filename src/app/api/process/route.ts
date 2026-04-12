@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     // 3. Fetch learner profile
     const { data: profile } = await supabase
       .from("learner_profiles")
-      .select("primary_language, learning_style, preferences_json")
+      .select("primary_language, learning_style, preferences_json, pity_count")
       .eq("user_id", user.id)
       .single();
 
@@ -368,8 +368,36 @@ Rules:
 
     // 7c. Create flower with random rarity, pot color, and pattern
     const patternId = Math.floor(Math.random() * 5) + 1;
-    const potRarity = rollRarity();
     const potColor = randomHexColor();
+
+    // --- Pity system + rarity roll ---
+    const currentPity = profile?.pity_count ?? 0;
+    let potRarity = rollRarity();
+
+    let newPity: number;
+    if (currentPity >= 9 && potRarity !== "antique" && potRarity !== "relic") {
+      // Force antique on the 10th roll without a high-tier result
+      potRarity = "antique";
+      newPity = 0;
+    } else if (potRarity === "antique" || potRarity === "relic") {
+      newPity = 0;
+    } else {
+      newPity = currentPity + 1;
+    }
+
+    // Update pity_count only if a profile row exists
+    if (profile) {
+      await supabase
+        .from("learner_profiles")
+        .update({ pity_count: newPity })
+        .eq("user_id", user.id);
+    }
+
+    // --- Variant roll ---
+    const VARIANT_COUNTS_API: Record<string, number> = {
+      basic: 1, vintage: 1, rare: 2, antique: 2, relic: 3,
+    };
+    const potVariant = Math.floor(Math.random() * (VARIANT_COUNTS_API[potRarity] ?? 1)) + 1;
 
     const { data: flower, error: flowerError } = await supabase
       .from("flowers")
@@ -383,6 +411,7 @@ Rules:
         pattern_offset_y: Math.random(),
         pot_rarity: potRarity,
         pot_color: potColor,
+        pot_variant: potVariant,
         pos_x: spawnX,
         pos_z: spawnZ,
         growth_stage: 0,
