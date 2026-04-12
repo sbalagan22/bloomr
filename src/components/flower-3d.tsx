@@ -381,7 +381,7 @@ export function Flower3D({
         {showGround && (
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
             <planeGeometry args={[10, 10]} />
-            <meshStandardMaterial color="#4CAF60" roughness={1} />
+            <meshStandardMaterial color="#4CAF60" roughness={1} metalness={0} envMapIntensity={0} />
           </mesh>
         )}
         {interactive && (
