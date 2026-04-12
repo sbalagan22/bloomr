@@ -13,6 +13,9 @@ interface Flower3DProps {
   potColor?: string;
   size?: "sm" | "md" | "lg" | "full";
   interactive?: boolean;
+  potVariant?: number;
+  showGround?: boolean;
+  background?: string;
 }
 
 const SOIL_DARK = "#2B1A0E";
@@ -34,13 +37,23 @@ const POT_TARGET_H = 1.1;
 // Pot soil surface Y in FlowerModel world space (stage 4) — used for flower clipping
 const POT_SOIL_Y = -0.6 + 0.9 * (POT_TARGET_H - 0.015); // ≈ 0.377
 
-const POT_GLB_URLS: Record<Rarity, string> = {
-  basic:   "/models/pots/pot_common_1.glb",
-  vintage: "/models/pots/pot_uncommon_1.glb",
-  rare:    "/models/pots/pot_rare_1.glb",
-  antique: "/models/pots/pot_epic_1.glb",
-  relic:   "/models/pots/pot_legendary_1.glb",
+const POT_RARITY_FILE_PREFIX: Record<Rarity, string> = {
+  basic:   "pot_common",
+  vintage: "pot_uncommon",
+  rare:    "pot_rare",
+  antique: "pot_epic",
+  relic:   "pot_legendary",
 };
+
+const VARIANT_COUNTS: Record<Rarity, number> = {
+  basic: 1, vintage: 1, rare: 2, antique: 2, relic: 3,
+};
+
+function getPotGLBUrl(rarity: Rarity, variant: number): string {
+  const prefix = POT_RARITY_FILE_PREFIX[rarity];
+  const clampedVariant = Math.max(1, Math.min(variant, VARIANT_COUNTS[rarity]));
+  return `/models/pots/${prefix}_${clampedVariant}.glb`;
+}
 
 // Only these rarities receive the player's custom potColor tint
 const TINTABLE_RARITIES = new Set<Rarity>(["basic", "vintage", "rare"]);
@@ -103,9 +116,8 @@ function PotGLBModel({ url, potColor }: { url: string; potColor?: string }) {
   );
 }
 
-function RarityPot({ rarity, potColor }: { rarity: Rarity; potColor?: string }) {
-  const url = POT_GLB_URLS[rarity] ?? POT_GLB_URLS.basic;
-  // Only tint pots for basic/vintage/rare; antique/relic keep their GLB colors
+function RarityPot({ rarity, potColor, potVariant = 1 }: { rarity: Rarity; potColor?: string; potVariant?: number }) {
+  const url = getPotGLBUrl(rarity, potVariant);
   const colorOverride = TINTABLE_RARITIES.has(rarity) ? potColor : undefined;
   return (
     <Suspense fallback={null}>
@@ -114,14 +126,12 @@ function RarityPot({ rarity, potColor }: { rarity: Rarity; potColor?: string }) 
   );
 }
 
-// Preload all pot GLBs
-[
-  "/models/pots/pot_common_1.glb",
-  "/models/pots/pot_uncommon_1.glb",
-  "/models/pots/pot_rare_1.glb",
-  "/models/pots/pot_epic_1.glb",
-  "/models/pots/pot_legendary_1.glb",
-].forEach((url) => useGLTF.preload(url));
+// Preload all pot GLB variants
+(["basic","vintage","rare","antique","relic"] as Rarity[]).forEach((rarity) => {
+  for (let v = 1; v <= VARIANT_COUNTS[rarity]; v++) {
+    useGLTF.preload(getPotGLBUrl(rarity, v));
+  }
+});
 
 /* ═══════════════════════════════════════════════════
    STL FLOWER LOADER
@@ -266,12 +276,14 @@ export function FlowerModel({
   growthStage,
   rarity: rarityProp = "basic",
   potColor,
+  potVariant = 1,
   isEditorMode = false,
 }: {
   flowerType: string;
   growthStage: number;
   rarity?: Rarity;
   potColor?: string;
+  potVariant?: number;
   isEditorMode?: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -293,7 +305,7 @@ export function FlowerModel({
       {/* Pot (stage 4) or soil mound (stages 0–3) */}
       {growthStage >= 4 ? (
         <group position={[0, -0.6, 0]} scale={0.9}>
-          <RarityPot rarity={rarity} potColor={potColor} />
+          <RarityPot rarity={rarity} potColor={potColor} potVariant={potVariant} />
         </group>
       ) : (
         <mesh material={soilMat} position={[0, -0.5, 0]} receiveShadow>
@@ -339,6 +351,9 @@ export function Flower3D({
   potColor,
   size = "md",
   interactive = true,
+  potVariant = 1,
+  showGround = false,
+  background,
 }: Flower3DProps) {
   const sizeMap = {
     sm:   "h-32 w-32",
@@ -348,7 +363,10 @@ export function Flower3D({
   };
 
   return (
-    <div className={`${sizeMap[size]} ${size !== "full" ? "rounded-2xl overflow-hidden" : ""}`}>
+    <div
+      style={background ? { background } : undefined}
+      className={`${sizeMap[size]} ${size !== "full" ? "rounded-2xl overflow-hidden" : ""}`}
+    >
       <Canvas camera={{ position: [2, 4, 6], fov: 45 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }} onCreated={({ gl }) => { gl.localClippingEnabled = true; }}>
         <ambientLight intensity={0.8} />
         <directionalLight position={[5, 8, 5]} intensity={1.0} castShadow />
@@ -358,7 +376,14 @@ export function Flower3D({
           growthStage={growthStage}
           rarity={rarity}
           potColor={potColor}
+          potVariant={potVariant}
         />
+        {showGround && (
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
+            <planeGeometry args={[10, 10]} />
+            <meshStandardMaterial color="#4CAF60" roughness={1} />
+          </mesh>
+        )}
         {interactive && (
           <OrbitControls
             enableZoom={size === "full"}
