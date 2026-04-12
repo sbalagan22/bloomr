@@ -42,6 +42,10 @@ const FLOWER_TYPES = [
 type FlowerType = (typeof FLOWER_TYPES)[number]["name"];
 type SourceType = "pdf" | "image" | "voice" | "youtube";
 
+const PREVIEW_VARIANT_COUNTS: Record<Rarity, number> = {
+  basic: 1, vintage: 1, rare: 2, antique: 2, relic: 3,
+};
+
 const SOURCE_TABS: { id: SourceType; label: string; icon: React.ComponentType<{ className?: string }>; proOnly?: boolean }[] = [
   { id: "pdf", label: "PDF", icon: PiFilePdfBold },
   { id: "image", label: "Image", icon: PiImageBold, proOnly: true },
@@ -91,6 +95,7 @@ export default function UploadPage() {
   const [previewRarity, setPreviewRarity] = useState<Rarity>("basic");
   const [activePreviewId, setActivePreviewId] = useState<string>("base");
   const [customPotColor, setCustomPotColor] = useState<string>("#C8682B");
+  const [previewVariant, setPreviewVariant] = useState(1);
 
   const handlePreviewRarity = (id: string) => {
     setActivePreviewId(id);
@@ -100,6 +105,7 @@ export default function UploadPage() {
       setPreviewStage(4);
       setPreviewRarity(id as Rarity);
     }
+    setPreviewVariant(1);
   };
 
   useEffect(() => {
@@ -622,7 +628,7 @@ export default function UploadPage() {
       </div>
 
       {/* Right Panel: 3D Preview */}
-      <div className="hidden lg:block lg:w-1/2 h-full relative bg-[#E6F4EA] overflow-hidden rounded-l-[3rem] shadow-[inset_10px_0_30px_rgba(0,0,0,0.05)]">
+      <div className="hidden lg:block lg:w-1/2 h-full relative overflow-hidden rounded-l-[3rem] shadow-[inset_10px_0_30px_rgba(0,0,0,0.05)]" style={{ background: "linear-gradient(to bottom, #BDE0F5, #5AB4E5 60%, #3E9FD5 90%, #4CAF60 100%)" }}>
         <div className="absolute top-10 left-10 text-4xl font-heading font-extrabold text-[#39AB54]/20 tracking-tighter mix-blend-multiply">Bloomr Setup</div>
 
         {flowerType ? (
@@ -633,6 +639,8 @@ export default function UploadPage() {
                 growthStage={previewStage}
                 rarity={previewRarity}
                 potColor={customPotColor}
+                potVariant={previewVariant}
+                showGround
                 size="full"
                 interactive={true}
               />
@@ -692,6 +700,31 @@ export default function UploadPage() {
                       Color is chosen <span className="font-bold">randomly</span> upon bloom. The picker above is just for testing!
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* Pot variant arrows */}
+              {activePreviewId !== "base" && PREVIEW_VARIANT_COUNTS[previewRarity] > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-3">
+                  <button
+                    onClick={() => setPreviewVariant((v) => Math.max(1, v - 1))}
+                    disabled={previewVariant <= 1}
+                    className="w-8 h-8 rounded-full bg-white/80 border border-[#e5e2db] flex items-center justify-center disabled:opacity-30 hover:bg-white transition text-lg font-bold"
+                    aria-label="Previous pot variant"
+                  >
+                    ‹
+                  </button>
+                  <span className="text-xs font-bold text-on-surface-variant">
+                    Pot {previewVariant} of {PREVIEW_VARIANT_COUNTS[previewRarity]}
+                  </span>
+                  <button
+                    onClick={() => setPreviewVariant((v) => Math.min(PREVIEW_VARIANT_COUNTS[previewRarity], v + 1))}
+                    disabled={previewVariant >= PREVIEW_VARIANT_COUNTS[previewRarity]}
+                    className="w-8 h-8 rounded-full bg-white/80 border border-[#e5e2db] flex items-center justify-center disabled:opacity-30 hover:bg-white transition text-lg font-bold"
+                    aria-label="Next pot variant"
+                  >
+                    ›
+                  </button>
                 </div>
               )}
             </div>
