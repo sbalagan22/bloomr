@@ -3,13 +3,23 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   PiFlowerBold, PiUploadSimpleBold, PiSignOutBold,
-  PiSparkle, PiInfinityBold, PiPlantBold,
+  PiSparkle, PiInfinityBold, PiPlantBold, PiUserBold,
 } from "react-icons/pi";
 import { usePlan } from "@/hooks/use-plan";
 import { useSeedCount } from "@/hooks/use-seed-count";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NAV_ITEMS = [
   { href: "/garden", label: "Garden", icon: PiFlowerBold },
@@ -21,6 +31,20 @@ export function NavBar() {
   const router = useRouter();
   const { plan, loading: planLoading } = usePlan();
   const { remaining, usage, loading: seedLoading } = useSeedCount();
+
+  const [user, setUser] = useState<{ email?: string; avatar_url?: string } | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUser({
+          email: user.email,
+          avatar_url: user.user_metadata?.avatar_url,
+        });
+      }
+    });
+  }, []);
 
   const seedTooltip = (() => {
     if (!usage?.nextReset) return "Resets every Saturday";
@@ -40,11 +64,17 @@ export function NavBar() {
     router.push("/login");
   };
 
+  const handleManageSubscription = async () => {
+    const res = await fetch('/api/stripe/portal', { method: 'POST' });
+    const { url } = await res.json();
+    if (url) window.location.href = url;
+  };
+
   const showSeeds = !planLoading && !seedLoading && plan === "free";
   const seedsOut = showSeeds && remaining === 0;
 
   return (
-    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-4xl bg-surface/80 glass-morphism rounded-full shadow-lg border border-white/50 px-6 py-3 transition-all">
+    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-4xl bg-surface/80 glass-morphism rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(255,255,255,0.35)] border border-white/60 px-6 py-3.5 transition-all">
       <div className="flex w-full items-center justify-between">
         {/* Logo — links to landing page, user stays signed in */}
         <Link href="/" className="flex items-center gap-2 group">
@@ -115,13 +145,32 @@ export function NavBar() {
             )
           )}
 
-          <button
-            onClick={handleSignOut}
-            className="ml-1 flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high transition-all"
-          >
-            <PiSignOutBold className="text-lg" />
-            <span className="hidden sm:inline">Sign out</span>
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="ml-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#39AB54]">
+              <Avatar className="w-9 h-9">
+                {user?.avatar_url && <AvatarImage src={user.avatar_url} alt="Profile" />}
+                <AvatarFallback className="bg-[#39AB54] text-white font-bold text-sm">
+                  {user?.email?.[0]?.toUpperCase() ?? <PiUserBold />}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal truncate">
+                {user?.email ?? "Account"}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                <PiSignOutBold className="mr-2 text-base" />
+                Sign out
+              </DropdownMenuItem>
+              {plan === "pro" && (
+                <DropdownMenuItem onClick={handleManageSubscription} className="cursor-pointer">
+                  <PiSparkle className="mr-2 text-base" />
+                  Manage subscription
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </nav>
