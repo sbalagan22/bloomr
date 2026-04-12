@@ -43,6 +43,8 @@ export function NavBar() {
           avatar_url: user.user_metadata?.avatar_url,
         });
       }
+    }).catch((err) => {
+      console.error('Failed to fetch user:', err);
     });
   }, []);
 
@@ -65,9 +67,17 @@ export function NavBar() {
   };
 
   const handleManageSubscription = async () => {
-    const res = await fetch('/api/stripe/portal', { method: 'POST' });
-    const { url } = await res.json();
-    if (url) window.location.href = url;
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' });
+      if (!res.ok) {
+        console.error('Failed to fetch portal URL:', res.status);
+        return;
+      }
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch (err) {
+      console.error('Error opening subscription portal:', err);
+    }
   };
 
   const showSeeds = !planLoading && !seedLoading && plan === "free";
