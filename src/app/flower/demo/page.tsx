@@ -62,7 +62,7 @@ export default function DemoFlowerPage() {
             <div className="mt-5 flex items-center gap-3 bg-surface-container-low rounded-xl px-4 py-3 border border-white/50">
               <div className="w-6 h-6 rounded-lg shadow-[0_0_10px_rgba(251,191,36,0.8)] border border-amber-300" style={{ backgroundColor: flower.pot_color! }} />
               <div className="flex-1">
-                <span className="text-xs font-bold text-amber-500">Legendary Pot</span>
+                <span className="text-xs font-bold text-amber-500">Relic Pot</span>
                 <span className="text-[10px] font-mono text-on-surface-variant ml-2">{flower.pot_color!.toUpperCase()}</span>
               </div>
             </div>
