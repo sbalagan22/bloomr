@@ -123,7 +123,7 @@ export function PricingSection() {
         </div>
 
         {/* Pro Card */}
-        <div className="relative bg-linear-to-br from-[#39AB54] to-[#1a6830] rounded-[2rem] p-8 flex flex-col shadow-2xl shadow-[#39AB54]/25 overflow-hidden">
+        <div className="relative bg-linear-to-br from-[#39AB54] to-[#1a6830] rounded-[2rem] p-8 flex flex-col shadow-2xl shadow-[#39AB54]/25 overflow-hidden animate-border-shimmer">
           {/* Decorative blobs */}
           <div className="absolute top-0 right-0 w-56 h-56 bg-white/8 rounded-full -translate-y-28 translate-x-28 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full translate-y-20 -translate-x-20 pointer-events-none" />

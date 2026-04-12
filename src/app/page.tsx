@@ -4,17 +4,27 @@ import { PiPottedPlantFill, PiSparkle, PiDropHalfBottom, PiFlower, PiBrainBold, 
 import { HiArrowRight } from "react-icons/hi2";
 import { HeroFlower } from "@/components/hero-flower";
 import { PricingSection } from "@/components/pricing-section";
+import { UniversityMarquee } from "@/components/university-marquee";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-parchment relative overflow-hidden">
-      {/* Ambient background blobs */}
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: "linear-gradient(to bottom, #FFFFFF 0%, #BDE0F5 25%, #5AB4E5 55%, #3E9FD5 80%, #4CAF60 100%)" }}
+    >
+      {/* Cloud layer 1 — slow drift */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-64 -right-64 w-[800px] h-[800px] bg-[#C8EDCF]/25 animate-blob opacity-60" />
-        <div className="absolute top-1/3 -left-96 w-[600px] h-[600px] bg-[#F5D03B]/8 animate-blob opacity-40" style={{ animationDelay: "5s" }} />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#E8637A]/5 animate-blob opacity-30" style={{ animationDelay: "10s" }} />
+        <div
+          className="absolute top-[8%] left-0 h-[18%] animate-drift-slow"
+          style={{ width: "200%", backgroundImage: "url('/clouds_1.png')", backgroundSize: "50% auto", backgroundRepeat: "repeat-x", opacity: 0.7 }}
+        />
+        {/* Cloud layer 2 — fast drift */}
+        <div
+          className="absolute top-[15%] left-0 h-[14%] animate-drift-fast"
+          style={{ width: "200%", backgroundImage: "url('/clouds_2.png')", backgroundSize: "50% auto", backgroundRepeat: "repeat-x", opacity: 0.5 }}
+        />
       </div>
-      
+
       {/* TopNavBar — floating frosted pill */}
       <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-5xl bg-white/70 glass-morphism rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/80 px-8 py-3.5 flex justify-between items-center transition-all hover:shadow-[0_12px_48px_rgba(0,0,0,0.12)]">
         <Link href="/" className="flex items-center gap-3 group">
@@ -34,8 +44,8 @@ export default function LandingPage() {
 
       <main className="relative z-10">
         {/* ═══════════════════ HERO ═══════════════════ */}
-        <section className="max-w-7xl mx-auto px-6 pt-36 pb-16 md:pt-44 md:pb-24 flex flex-col lg:flex-row items-center gap-16 lg:gap-12 min-h-[85vh]">
-          
+        <section className="max-w-7xl mx-auto px-6 pt-36 pb-20 md:pt-44 md:pb-24 flex flex-col lg:flex-row items-center gap-16 lg:gap-12 min-h-[85vh] relative">
+
           {/* Left Text */}
           <div className="flex-1 w-full text-center lg:text-left z-10">
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black text-[#1c1c18] tracking-tighter leading-[0.95] mb-8 animate-fade-in-up">
@@ -45,12 +55,12 @@ export default function LandingPage() {
             </h1>
 
             <p className="max-w-xl mx-auto lg:mx-0 text-lg md:text-xl text-on-surface-variant mb-12 leading-relaxed font-medium animate-fade-in-up-delay-1">
-              Transform lectures, PDFs, and notes into a living 3D botanical garden. The more you study, the more it grows. 
+              Transform lectures, PDFs, and notes into a living 3D botanical garden. The more you study, the more it grows.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up-delay-2">
               <Link href="/signup" className="group px-10 py-5 bg-[#39AB54] text-white rounded-full font-bold text-lg shadow-xl shadow-[#39AB54]/25 hover:shadow-2xl hover:shadow-[#39AB54]/30 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3">
-                <PiPottedPlantFill className="text-2xl group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" /> 
+                <PiPottedPlantFill className="text-2xl group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
                 Start Growing Free
                 <HiArrowRight className="text-xl group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -60,12 +70,17 @@ export default function LandingPage() {
           {/* Right 3D Block */}
           <div className="flex-1 w-full max-w-lg lg:max-w-[550px] h-[400px] sm:h-[500px] lg:h-[600px] relative animate-scale-in">
             <div className="absolute inset-[-60px] bg-[#C8EDCF]/20 rounded-full blur-3xl animate-blob pointer-events-none" />
-            <div className="relative h-full w-full animate-glow-pulse rounded-[3rem]">
-              <HeroFlower />
-            </div>
+            <HeroFlower />
             <div className="absolute bottom-4 right-4 lg:bottom-8 lg:right-8 bg-white/90 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-lg border border-white font-bold text-sm text-[#1c1c18] flex items-center gap-3 animate-float">
               <span className="text-2xl">🌹</span> Drag to interact
             </div>
+          </div>
+
+          {/* Grassy hill silhouette */}
+          <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ height: "80px" }}>
+            <svg viewBox="0 0 1440 80" preserveAspectRatio="none" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,60 Q180,10 360,40 Q540,70 720,30 Q900,0 1080,35 Q1260,65 1440,45 L1440,80 L0,80 Z" fill="#39AB54" />
+            </svg>
           </div>
         </section>
 
@@ -89,16 +104,21 @@ export default function LandingPage() {
               <div className="w-full h-full rounded-full bg-linear-to-b from-[#C8EDCF] via-[#39AB54] to-[#F5D03B]" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-6 relative z-10">
+            <div className="relative grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-6 relative z-10">
               {[
-                { icon: PiPottedPlantFill, title: "Plant", desc: "Upload your PDFs, YouTube links, or lecture text.", num: "01", color: "#39AB54" },
-                { icon: PiSparkle, title: "Germinate", desc: "AI breaks down topics into digestible study units.", num: "02", color: "#F5D03B" },
-                { icon: PiDropHalfBottom, title: "Water", desc: "Engage with quizzes and audio recaps to build memory.", num: "03", color: "#7B6CB5" },
-                { icon: PiFlower, title: "Bloom", desc: "Your flower reaches full bloom as you master the material.", num: "04", color: "#E8637A" },
+                { icon: PiPottedPlantFill, title: "Plant",     desc: "Upload your PDFs, YouTube links, or lecture text.", num: "01", color: "#39AB54", lgShift: "lg:-translate-y-5" },
+                { icon: PiSparkle,         title: "Germinate", desc: "AI breaks down topics into digestible study units.", num: "02", color: "#F5D03B", lgShift: "lg:translate-y-5" },
+                { icon: PiDropHalfBottom,  title: "Water",     desc: "Engage with quizzes and audio recaps to build memory.", num: "03", color: "#7B6CB5", lgShift: "lg:-translate-y-5" },
+                { icon: PiFlower,          title: "Bloom",     desc: "Your flower reaches full bloom as you master the material.", num: "04", color: "#E8637A", lgShift: "lg:translate-y-5" },
               ].map((step, idx) => (
-                <div key={idx} className="flex lg:flex-col items-start lg:items-center text-left lg:text-center gap-6 lg:gap-0 group">
-                  {/* Numbered circle on the line */}
-                  <div className="w-14 h-14 lg:w-[72px] lg:h-[72px] lg:mb-8 rounded-full flex items-center justify-center bg-white border-[3px] shadow-lg shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500" style={{ borderColor: step.color }}>
+                <div
+                  key={idx}
+                  className={`flex lg:flex-col items-start lg:items-center text-left lg:text-center gap-6 lg:gap-0 group ${step.lgShift}`}
+                >
+                  <div
+                    className="w-16 h-16 lg:w-20 lg:h-20 lg:mb-8 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500"
+                    style={{ backgroundColor: `${step.color}20`, border: `3px solid ${step.color}` }}
+                  >
                     <step.icon className="text-2xl lg:text-3xl" style={{ color: step.color }} />
                   </div>
                   <div>
@@ -130,8 +150,8 @@ export default function LandingPage() {
               { icon: PiHeadphonesBold, title: "Audio Recaps", desc: "Listen to AI-generated audio summaries of your study units on the go.", color: "#7B6CB5" },
               { icon: PiShootingStarBold, title: "AI Tutor Chatbot", desc: "Ask Flowy anything about your material. Get instant, context-aware explanations.", color: "#D4722A" },
             ].map((feature, idx) => (
-              <div key={idx} className="bg-white border-2 border-[#e5e2db] rounded-[1.75rem] p-8 flex flex-col items-start hover:border-[#39AB54]/20 hover:shadow-lg hover:-translate-y-1 transition-all duration-500 group">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500" style={{ backgroundColor: `${feature.color}15` }}>
+              <div key={idx} className="bg-white border-2 border-[#e5e2db] rounded-[1.75rem] p-8 flex flex-col items-start hover:border-[#39AB54]/20 hover:shadow-lg hover:-translate-y-1 hover:rotate-1 hover:ring-2 transition-all duration-500 group">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 group-hover:-translate-y-1 transition-transform duration-500" style={{ backgroundColor: `${feature.color}15` }}>
                   <feature.icon className="text-2xl" style={{ color: feature.color }} />
                 </div>
                 <h4 className="font-heading font-bold text-lg text-[#1c1c18] mb-2">{feature.title}</h4>
@@ -143,6 +163,7 @@ export default function LandingPage() {
 
         {/* ═══════════════════ PRICING ═══════════════════ */}
         <PricingSection />
+        <UniversityMarquee />
 
       </main>
 
@@ -158,7 +179,7 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
-        
+
         {/* Divider */}
         <div className="border-t border-white/15 mx-6" />
 
@@ -174,10 +195,10 @@ export default function LandingPage() {
                 Transform your notes into a living, interactive garden of knowledge.
               </p>
             </div>
-            
+
 
           </div>
-          
+
           <div className="border-t border-white/15 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
             <p className="text-xs text-white/35 font-medium">
               © 2026 Bloomr. All rights reserved.

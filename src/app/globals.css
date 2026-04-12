@@ -338,3 +338,37 @@
 .stagger-8 { animation-delay: 0.4s; }
 .stagger-9 { animation-delay: 0.45s; }
 
+/* Cloud drift animation */
+@keyframes drift-slow {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes drift-fast {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-drift-slow {
+  animation: drift-slow 60s linear infinite;
+}
+.animate-drift-fast {
+  animation: drift-fast 90s linear infinite;
+}
+
+/* University marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Pro card shimmer border */
+@keyframes border-shimmer {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
+  50%       { box-shadow: 0 0 0 2px rgba(255,255,255,0.45); }
+}
+.animate-border-shimmer {
+  animation: border-shimmer 3s ease-in-out infinite;
+}
+
