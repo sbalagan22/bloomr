@@ -182,8 +182,11 @@ function CameraController({
 
   useFrame(() => {
     const target = isEditorMode ? editorPos : normalPos;
-    camera.position.lerp(target, 0.06);
-    controlsRef.current?.update();
+    const dist = camera.position.distanceTo(target);
+    if (dist > 0.01) {
+      camera.position.lerp(target, 0.06);
+      controlsRef.current?.update();
+    }
   });
 
   return null;
