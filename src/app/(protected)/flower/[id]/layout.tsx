@@ -16,6 +16,7 @@ interface Flower {
   growth_stage: number;
   pot_rarity: string | null;
   pot_color: string | null;
+  pot_variant?: number | null;
 }
 
 export default function FlowerLayout({ children }: { children: React.ReactNode }) {
@@ -27,7 +28,7 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
     const supabase = createClient();
     
     // Initial fetch
-    supabase.from("flowers").select("flower_type, growth_stage, pot_rarity, pot_color").eq("id", flowerId).single()
+    supabase.from("flowers").select("flower_type, growth_stage, pot_rarity, pot_color, pot_variant").eq("id", flowerId).single()
       .then(({ data }) => { if (data) setFlower(data); });
 
     // Live update subscription
@@ -50,10 +51,12 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
   }, [flowerId]);
 
   return (
-    <div className="relative min-h-screen">
+    <div
+      className="relative min-h-screen"
+      style={{ background: "linear-gradient(to bottom, #BDE0F5 0%, #5AB4E5 40%, #3E9FD5 70%, #4CAF60 100%)" }}
+    >
       {/* Background 3D Flower */}
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center pt-16">
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-surface-container to-transparent z-0 opacity-50" />
         <div className="absolute inset-0 opacity-90 animate-fade-in pointer-events-auto">
           {flower && (
             <Suspense fallback={null}>
@@ -62,6 +65,7 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
                 growthStage={flower.growth_stage}
                 rarity={(flower.pot_rarity as Rarity) ?? "basic"}
                 potColor={flower.pot_color ?? undefined}
+                potVariant={flower.pot_variant ?? 1}
                 size="full"
                 interactive={true}
               />

@@ -168,7 +168,7 @@ export default function FlowerDetailPage() {
         
         {/* Navigation / Back */}
         <div className="flex items-center justify-between">
-          <Link href="/garden" className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-primary-deep transition-colors bg-white/70 backdrop-blur-xl px-5 py-2.5 rounded-full shadow-sm border border-white/40">
+          <Link href="/garden" className="inline-flex items-center gap-2 text-sm font-bold text-white/80 hover:text-white transition-colors bg-white/20 backdrop-blur-xl px-5 py-2.5 rounded-full shadow-sm border border-white/40">
             <PiArrowLeftBold /> Back to Garden
           </Link>
           <button 
@@ -182,8 +182,8 @@ export default function FlowerDetailPage() {
         </div>
 
         {/* Info Card */}
-        <div className="bg-surface/85 backdrop-blur-xl pebble-shadow rounded-3xl p-8 border border-white/20">
-          <h1 className="font-heading text-3xl font-extrabold text-on-surface tracking-tight leading-tight">{flower.topic_name}</h1>
+        <div className="bg-white/15 backdrop-blur-2xl pebble-shadow rounded-3xl p-8 border border-white/25">
+          <h1 className="font-heading text-3xl font-extrabold text-white tracking-tight leading-tight">{flower.topic_name}</h1>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="capitalize rounded-full border-2 bg-white/50 px-3 py-1" style={{ borderColor: flowerColor, color: flowerColor }}>{flower.flower_type}</Badge>
             <Badge variant="secondary" className={`rounded-full px-3 py-1 font-bold ${isBloomed ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container-high text-on-surface-variant"}`}>
@@ -226,7 +226,7 @@ export default function FlowerDetailPage() {
 
         {/* Areas to Review */}
         {aggregatedWeakAreas.length > 0 && (
-          <div className="rounded-3xl bg-amber-50/90 backdrop-blur-xl pebble-shadow border border-amber-200 p-6">
+          <div className="rounded-3xl bg-amber-50/20 backdrop-blur-xl pebble-shadow border border-amber-200/50 p-6">
             <div className="flex items-center gap-2 mb-4">
               <PiWarningBold className="text-amber-500 text-lg shrink-0" />
               <h2 className="font-heading text-base font-bold text-amber-900">Areas to Review</h2>
@@ -252,12 +252,12 @@ export default function FlowerDetailPage() {
 
         {/* Units Scroll List */}
         <div className="flex flex-col gap-4">
-          <h2 className="font-heading text-xl font-bold text-on-surface bg-surface/85 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white/20 pebble-shadow flex items-center gap-2 sticky top-0 z-10">
+          <h2 className="font-heading text-xl font-bold text-white bg-white/15 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white/20 pebble-shadow flex items-center gap-2 sticky top-0 z-10">
             Study Material
           </h2>
 
           {units.map((unit, index) => (
-            <div key={unit.id} className="group rounded-[1.5rem] bg-surface/90 backdrop-blur-md pebble-shadow p-5 transition-all hover:scale-[1.02] border border-white/20 flex flex-col gap-4">
+            <div key={unit.id} className="group rounded-[1.5rem] bg-white/10 backdrop-blur-md pebble-shadow p-5 transition-all hover:scale-[1.02] border border-white/15 flex flex-col gap-4">
               <div className="flex items-start gap-4">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold text-sm shadow-sm ${
                   unit.completed ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container-highest text-on-surface-variant"
