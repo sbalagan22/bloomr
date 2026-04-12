@@ -186,7 +186,7 @@ export default function FlowerDetailPage() {
           <h1 className="font-heading text-3xl font-extrabold text-white tracking-tight leading-tight">{flower.topic_name}</h1>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="capitalize rounded-full border-2 bg-white/50 px-3 py-1" style={{ borderColor: flowerColor, color: flowerColor }}>{flower.flower_type}</Badge>
-            <Badge variant="secondary" className={`rounded-full px-3 py-1 font-bold ${isBloomed ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container-high text-on-surface-variant"}`}>
+            <Badge variant="secondary" className={`rounded-full px-3 py-1 font-bold ${isBloomed ? "bg-primary-fixed text-on-primary-fixed" : "bg-white/20 text-white/70"}`}>
               {GROWTH_LABELS[flower.growth_stage]}
             </Badge>
           </div>
@@ -196,11 +196,11 @@ export default function FlowerDetailPage() {
             const rarityKey = flower.pot_rarity as Rarity;
             const config = RARITIES[rarityKey];
             return (
-              <div className="mt-5 flex items-center gap-3 bg-surface-container-low rounded-xl px-4 py-3">
+              <div className="mt-5 flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
                 <div className="w-6 h-6 rounded-lg shadow-inner border border-black/10" style={{ backgroundColor: flower.pot_color! }} />
                 <div className="flex-1">
                   <span className="text-xs font-bold" style={{ color: config?.color }}>{config?.name ?? "Common"} Pot</span>
-                  <span className="text-[10px] font-mono text-on-surface-variant ml-2">{flower.pot_color!.toUpperCase()}</span>
+                  <span className="text-[10px] font-mono text-white/70 ml-2">{flower.pot_color!.toUpperCase()}</span>
                 </div>
               </div>
             );
@@ -209,10 +209,10 @@ export default function FlowerDetailPage() {
           {/* Growth Progress */}
           <div className="mt-8">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-on-surface flex items-center gap-2">Growth Progress</span>
+              <span className="text-sm font-bold text-white/90 flex items-center gap-2">Growth Progress</span>
               <span className="font-bold text-primary-deep bg-primary-deep/10 px-2 py-0.5 rounded-md text-xs">{completedCount}/{units.length} Units</span>
             </div>
-            <div className="h-4 w-full rounded-full bg-surface-container-high overflow-hidden shadow-inner relative">
+            <div className="h-4 w-full rounded-full bg-white/20 overflow-hidden shadow-inner relative">
               <div className="h-full rounded-full transition-all duration-1000 ease-out gradient-cta" style={{ width: `${(Math.max(0.05, flower.growth_stage / 4)) * 100}%` }} />
             </div>
           </div>
@@ -260,19 +260,19 @@ export default function FlowerDetailPage() {
             <div key={unit.id} className="group rounded-[1.5rem] bg-white/10 backdrop-blur-md pebble-shadow p-5 transition-all hover:scale-[1.02] border border-white/15 flex flex-col gap-4">
               <div className="flex items-start gap-4">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold text-sm shadow-sm ${
-                  unit.completed ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container-highest text-on-surface-variant"
+                  unit.completed ? "bg-primary-fixed text-on-primary-fixed" : "bg-white/20 text-white/70"
                 }`}>
                   {unit.completed ? "✓" : index + 1}
                 </div>
                 <div className="flex-1 mt-0.5 flex flex-col">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39AB54] mb-1">Chapter {index + 1}</span>
-                  <h3 className="font-heading font-extrabold text-[#3D2B1F] text-[16px] leading-snug">{unit.title}</h3>
+                  <h3 className="font-heading font-extrabold text-white text-[16px] leading-snug">{unit.title}</h3>
                 </div>
               </div>
 
               <div className="flex gap-2 w-full mt-1">
                 <Link href={`/flower/${flowerId}/units/${unit.id}`} className="flex-1">
-                  <button className="w-full h-10 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant font-bold text-sm flex items-center justify-center gap-2 transition-colors">
+                  <button className="w-full h-10 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors">
                     <PiBookOpenBold /> Study
                   </button>
                 </Link>
@@ -286,9 +286,9 @@ export default function FlowerDetailPage() {
           ))}
 
           {units.length > 0 && completedCount === units.length && !isBloomed && (
-            <div className="mt-2 rounded-[1.5rem] bg-surface/90 backdrop-blur-md pebble-shadow p-6 border-2 border-primary-deep/50 flex flex-col gap-3 text-center items-center animate-fade-in-up">
-              <h3 className="font-heading text-lg font-bold text-on-surface">Ready for Full Bloom?</h3>
-              <p className="text-xs text-on-surface-variant">Pass the Mastery Test across all units to reach Stage 4!</p>
+            <div className="mt-2 rounded-[1.5rem] bg-white/10 backdrop-blur-md pebble-shadow p-6 border-2 border-white/30 flex flex-col gap-3 text-center items-center animate-fade-in-up">
+              <h3 className="font-heading text-lg font-bold text-white">Ready for Full Bloom?</h3>
+              <p className="text-xs text-white/70">Pass the Mastery Test across all units to reach Stage 4!</p>
               <Link href={`/flower/${flowerId}/mastery`} className="w-full mt-2">
                 <button className="w-full h-12 rounded-xl gradient-cta text-white font-bold text-base shadow-lg hover:shadow-xl transition-all">
                   Take Mastery Test 🌸
@@ -298,8 +298,8 @@ export default function FlowerDetailPage() {
           )}
 
           {units.length === 0 && (
-            <div className="rounded-3xl bg-surface/50 backdrop-blur-md p-8 text-center border border-white/20 pebble-shadow">
-              <p className="text-on-surface-variant font-medium text-sm">No units available yet.</p>
+            <div className="rounded-3xl bg-white/10 backdrop-blur-md p-8 text-center border border-white/20 pebble-shadow">
+              <p className="text-white/70 font-medium text-sm">No units available yet.</p>
             </div>
           )}
         </div>
