@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Text, DragControls, Grid, Billboard } from "@react-three/drei";
+import { OrbitControls, Text, DragControls, Grid, Billboard, Sky, Clouds, Cloud } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { FlowerModel } from "@/components/flower-3d";
 import { FLOWER_EMOJI_MAP } from "@/components/flower-icons";
 import { type Rarity } from "@/lib/rarity";
@@ -22,6 +24,7 @@ interface Flower {
   pattern_id: number;
   pot_rarity: string | null;
   pot_color: string | null;
+  pot_variant?: number | null;
   pos_x?: number | null;
   pos_z?: number | null;
   created_at: string;
@@ -39,35 +42,33 @@ const FLOWER_COLORS: Record<string, string> = {
 
 const GRID_SPACING = 3;
 
-// --- Fences ---
-function FencePerimeter() {
-  const material = useMemo(() => new THREE.MeshStandardMaterial({ color: "#7B5539", roughness: 0.9 }), []);
+// --- Hedge Perimeter ---
+function HedgePerimeter() {
+  const hedgeMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: "#1A6830", roughness: 0.9 }),
+    []
+  );
+  const side = (length: number, posX: number, posZ: number, rotY: number) =>
+    Array.from({ length }).map((_, i) => {
+      const jitter = 0.15 + (Math.sin(i * 7.3) * 0.5 + 0.5) * 0.3;
+      return (
+        <mesh
+          key={i}
+          position={[posX + (rotY === 0 ? -length + i * 2 : 0), 0.1 + jitter / 2, posZ + (rotY !== 0 ? -length + i * 2 : 0)]}
+          material={hedgeMat}
+          castShadow
+        >
+          <boxGeometry args={[1.8, 1.2 + jitter, 1.2]} />
+        </mesh>
+      );
+    });
+
   return (
     <group position={[0, -0.6, 0]}>
-      {/* Rails */}
-      <mesh position={[0, 0.5, -15]} material={material} castShadow><boxGeometry args={[30.5, 0.2, 0.1]} /></mesh>
-      <mesh position={[0, 0.5, 15]} material={material} castShadow><boxGeometry args={[30.5, 0.2, 0.1]} /></mesh>
-      <mesh position={[-15, 0.5, 0]} material={material} castShadow><boxGeometry args={[0.1, 0.2, 30.5]} /></mesh>
-      <mesh position={[15, 0.5, 0]} material={material} castShadow><boxGeometry args={[0.1, 0.2, 30.5]} /></mesh>
-      
-      <mesh position={[0, 0.25, -15]} material={material} castShadow><boxGeometry args={[30.5, 0.15, 0.05]} /></mesh>
-      <mesh position={[0, 0.25, 15]} material={material} castShadow><boxGeometry args={[30.5, 0.15, 0.05]} /></mesh>
-      <mesh position={[-15, 0.25, 0]} material={material} castShadow><boxGeometry args={[0.05, 0.15, 30.5]} /></mesh>
-      <mesh position={[15, 0.25, 0]} material={material} castShadow><boxGeometry args={[0.05, 0.15, 30.5]} /></mesh>
-
-      {/* Posts */}
-      {Array.from({length: 16}).map((_, i) => (
-        <mesh key={`pt-n-${i}`} position={[-15 + i*2, 0.25, -15]} material={material} castShadow><boxGeometry args={[0.3, 1, 0.3]} /></mesh>
-      ))}
-      {Array.from({length: 16}).map((_, i) => (
-        <mesh key={`pt-s-${i}`} position={[-15 + i*2, 0.25, 15]} material={material} castShadow><boxGeometry args={[0.3, 1, 0.3]} /></mesh>
-      ))}
-      {Array.from({length: 14}).map((_, i) => (
-        <mesh key={`pt-w-${i}`} position={[-15, 0.25, -13 + i*2]} material={material} castShadow><boxGeometry args={[0.3, 1, 0.3]} /></mesh>
-      ))}
-      {Array.from({length: 14}).map((_, i) => (
-        <mesh key={`pt-e-${i}`} position={[15, 0.25, -13 + i*2]} material={material} castShadow><boxGeometry args={[0.3, 1, 0.3]} /></mesh>
-      ))}
+      {side(16, 0, -15, 0)}
+      {side(16, 0, 15, 0)}
+      {side(16, -15, 0, 1)}
+      {side(16, 15, 0, 1)}
     </group>
   );
 }
@@ -121,6 +122,7 @@ function DraggableFlower({
         growthStage={flower.growth_stage}
         rarity={(flower.pot_rarity?.toLowerCase() as Rarity) ?? "basic"}
         potColor={flower.pot_color ?? undefined}
+        potVariant={flower.pot_variant ?? 1}
         isEditorMode={isEditorMode}
       />
 
@@ -167,10 +169,29 @@ function DraggableFlower({
 }
 
 
-function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flower[], isEditorMode: boolean, onSavePosition: (id: string, x: number, z: number) => void }) {
+function CameraController({
+  isEditorMode,
+  controlsRef,
+}: {
+  isEditorMode: boolean;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+}) {
+  const { camera } = useThree();
+  const normalPos = useMemo(() => new THREE.Vector3(0, 10, 20), []);
+  const editorPos = useMemo(() => new THREE.Vector3(0, 28, 0.1), []);
+
+  useFrame(() => {
+    const target = isEditorMode ? editorPos : normalPos;
+    camera.position.lerp(target, 0.06);
+    controlsRef.current?.update();
+  });
+
+  return null;
+}
+
+function GardenScene({ flowers, isEditorMode, onSavePosition, controlsRef }: { flowers: Flower[], isEditorMode: boolean, onSavePosition: (id: string, x: number, z: number) => void, controlsRef: React.RefObject<OrbitControlsImpl | null> }) {
   const router = useRouter();
   const cols = 9; // Grid limits
-  const centerZ = 0;
 
   return (
     <>
@@ -178,23 +199,46 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
       <directionalLight position={[5, 8, 5]} intensity={1.0} castShadow />
       <pointLight position={[-3, 4, -3]} intensity={0.4} color="#C8EDCF" />
       
-      {/* Massive Outer Pavement */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, 0]} receiveShadow>
-        <planeGeometry args={[120, 120]} />
-        <meshStandardMaterial color="#9CA3AF" roughness={0.9} />
+      {/* Sky */}
+      <Sky sunPosition={[100, 20, 100]} turbidity={8} rayleigh={2} mieCoefficient={0.005} mieDirectionalG={0.8} />
+
+      {/* Atmospheric fog */}
+      <fog attach="fog" args={["#BDE0F5", 20, 60]} />
+
+      {/* Terrain */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.65, 0]}
+        receiveShadow
+        onUpdate={(mesh) => {
+          const geo = mesh.geometry as THREE.PlaneGeometry;
+          const pos = geo.attributes.position;
+          for (let i = 0; i < pos.count; i++) {
+            const x = pos.getX(i);
+            const z = pos.getY(i);
+            pos.setZ(i, Math.sin(x * 0.3) * Math.cos(z * 0.3) * 0.3);
+          }
+          pos.needsUpdate = true;
+          geo.computeVertexNormals();
+        }}
+      >
+        <planeGeometry args={[80, 80, 50, 50]} />
+        <meshStandardMaterial color="#4CAF60" roughness={1} />
       </mesh>
 
-      {/* Inner Grass Ground (10x10 squares mapped to 30x30 plane) */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]} receiveShadow>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#39AB54" roughness={1} />
-      </mesh>
+      {/* 3D Clouds */}
+      <Clouds material={THREE.MeshLambertMaterial}>
+        <Cloud position={[-15, 14, -20]} seed={1} segments={20} volume={8} color="white" fade={30} />
+        <Cloud position={[20, 16, -15]}  seed={2} segments={15} volume={6} color="white" fade={25} />
+        <Cloud position={[0, 18, -30]}   seed={3} segments={18} volume={10} color="white" fade={35} />
+        <Cloud position={[-25, 15, 10]}  seed={4} segments={12} volume={7} color="white" fade={28} />
+      </Clouds>
 
       {isEditorMode && (
          <Grid position={[1.5, -0.59, 1.5]} cellColor="#ffffff" sectionColor="#ffffff" sectionSize={GRID_SPACING} cellSize={GRID_SPACING} args={[30, 30]} />
       )}
 
-      <FencePerimeter />
+      <HedgePerimeter />
 
       {flowers.map((flower, index) => {
         // Fallback default coordinates if pos_x/z are missing
@@ -217,16 +261,16 @@ function GardenScene({ flowers, isEditorMode, onSavePosition }: { flowers: Flowe
       })}
 
       <OrbitControls
-        makeDefault
+        ref={controlsRef}
         enableRotate={!isEditorMode}
         enablePan={true}
-        enableZoom={true}
-        minPolarAngle={0}
-        maxPolarAngle={Math.PI / 2 - 0.05}
+        enableZoom={!isEditorMode}
+        maxPolarAngle={isEditorMode ? Math.PI / 6 : Math.PI / 2 - 0.05}
         minDistance={3}
         maxDistance={35}
-        target={[0, 0, centerZ]}
+        target={[0, 0, 0]}
       />
+      <CameraController isEditorMode={isEditorMode} controlsRef={controlsRef} />
     </>
   );
 }
@@ -241,6 +285,7 @@ function GardenContent() {
   const [dragRejectId, setDragRejectId] = useState<string | null>(null);
   const [showUpgradedToast, setShowUpgradedToast] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
   useEffect(() => {
     if (searchParams.get("upgraded") === "true") {
@@ -355,7 +400,7 @@ function GardenContent() {
   const renderFlowers = dragRejectId ? flowers.map(f => ({...f, _refresh: Date.now()})) : flowers;
 
   return (
-    <div className="w-full h-screen relative bg-[#A4D5EA]">
+    <div className="w-full h-screen relative" style={{ background: "linear-gradient(to bottom, #BDE0F5 0%, #5AB4E5 60%, #3E9FD5 100%)" }}>
       {showCelebration && <ProCelebration onDone={() => setShowCelebration(false)} />}
       {/* Upgrade success toast */}
       {showUpgradedToast && (
@@ -417,47 +462,48 @@ function GardenContent() {
       </div>
 
       {isListView && (
-        <div className="absolute inset-x-3 inset-y-20 md:inset-x-16 md:inset-y-20 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-[#e5e2db] z-20 pointer-events-auto flex flex-col overflow-hidden animate-fade-in-up">
-          <div className="px-6 py-5 border-b border-[#e5e2db] flex justify-between items-center bg-[#faf8f4]">
+        <div className="absolute inset-x-3 inset-y-20 md:inset-x-16 md:inset-y-20 bg-white/10 backdrop-blur-2xl rounded-2xl shadow-xl border border-white/30 ring-1 ring-white/20 z-20 pointer-events-auto flex flex-col overflow-hidden animate-fade-in-up">
+          <div className="px-6 py-5 border-b border-white/20 flex justify-between items-center">
             <div>
-              <h2 className="font-heading text-xl font-black text-[#1c1c18]">All Flowers</h2>
-              <p className="text-xs text-on-surface-variant mt-0.5 font-medium">{flowers.length} total · {flowers.filter(f => f.status === 'bloomed').length} bloomed</p>
+              <h2 className="font-heading text-xl font-black text-white">All Flowers</h2>
+              <p className="text-xs text-white/70 mt-0.5 font-medium">{flowers.length} total · {flowers.filter(f => f.status === 'bloomed').length} bloomed</p>
             </div>
-            <button onClick={() => setIsListView(false)} className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-[#e5e2db] hover:bg-[#f1eee7] transition-colors text-on-surface-variant">
+            <button onClick={() => setIsListView(false)} className="h-9 w-9 flex items-center justify-center rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 transition-colors">
               <PiXBold className="text-lg" />
             </button>
           </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-2.5 bg-[#faf8f4]/50">
+
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-2.5">
             {flowers.map((flower) => {
               const progress = (flower.growth_stage / 4) * 100;
               return (
-                <Link key={flower.id} href={`/flower/${flower.id}`} className="group block bg-white rounded-xl p-4 border border-[#e5e2db] hover:border-[#39AB54]/30 transition-all hover:shadow-md">
+                <Link key={flower.id} href={`/flower/${flower.id}`} className="group block bg-white/15 hover:bg-white/25 rounded-xl p-4 border border-white/20 transition-all hover:shadow-md">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm" style={{ backgroundColor: `${FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"]}15`, color: FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"] }}>
+                      <div className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm" style={{ backgroundColor: `${FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"]}30`, color: FLOWER_COLORS[flower.flower_type?.toLowerCase() || "daisy"] }}>
                         {FLOWER_EMOJI_MAP[flower.flower_type?.toLowerCase()] ?? (flower.status === "bloomed" ? "🌸" : "🌱")}
                       </div>
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${flower.status === 'bloomed' ? 'bg-[#39AB54] animate-pulse' : 'bg-white/40'}`} />
                       <div className="min-w-0">
-                        <h3 className="font-bold text-[#1c1c18] text-sm group-hover:text-[#39AB54] transition-colors truncate">{flower.topic_name}</h3>
+                        <h3 className="font-bold text-white text-sm group-hover:text-[#7FD99A] transition-colors truncate">{flower.topic_name}</h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#f1eee7] text-on-surface-variant capitalize">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/20 text-white/80 capitalize">
                             {flower.flower_type}
                           </span>
-                          <span className="text-[10px] text-on-surface-variant font-medium">{GROWTH_LABELS[flower.growth_stage]}</span>
+                          <span className="text-[10px] text-white/60 font-medium">{GROWTH_LABELS[flower.growth_stage]}</span>
                           {flower.pot_color && (
                             <span className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full inline-block border border-black/10" style={{ backgroundColor: flower.pot_color }} />
+                              <span className="w-2 h-2 rounded-full inline-block border border-white/20" style={{ backgroundColor: flower.pot_color }} />
                             </span>
                           )}
                         </div>
                         {/* Mini progress bar */}
-                        <div className="mt-2 h-1.5 w-32 bg-[#e5e2db] rounded-full overflow-hidden">
+                        <div className="mt-2 h-1.5 w-32 bg-white/20 rounded-full overflow-hidden">
                           <div className="h-full rounded-full gradient-cta transition-all duration-500" style={{ width: `${Math.max(5, progress)}%` }} />
                         </div>
                       </div>
                     </div>
-                    <PiCaretRightBold className="text-[#e5e2db] group-hover:text-[#39AB54] group-hover:translate-x-1 transition-all shrink-0" />
+                    <PiCaretRightBold className="text-white/30 group-hover:text-[#7FD99A] group-hover:translate-x-1 transition-all shrink-0" />
                   </div>
                 </Link>
               );
@@ -478,7 +524,7 @@ function GardenContent() {
       <div className={`w-full h-full ${isEditorMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"}`}>
         <Canvas camera={{ position: [0, 10, 20], fov: 45 }} shadows dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }} onCreated={({ gl }) => { gl.localClippingEnabled = true; }}>
           <Suspense fallback={null}>
-            <GardenScene flowers={renderFlowers} isEditorMode={isEditorMode} onSavePosition={handleSavePosition} />
+            <GardenScene flowers={renderFlowers} isEditorMode={isEditorMode} onSavePosition={handleSavePosition} controlsRef={controlsRef} />
           </Suspense>
         </Canvas>
       </div>
