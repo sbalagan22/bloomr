@@ -387,10 +387,13 @@ Rules:
 
     // Update pity_count only if a profile row exists
     if (profile) {
-      await supabase
+      const { error: pityError } = await supabase
         .from("learner_profiles")
         .update({ pity_count: newPity })
         .eq("user_id", user.id);
+      if (pityError) {
+        console.error("Failed to update pity_count:", pityError);
+      }
     }
 
     // --- Variant roll ---
