@@ -10,8 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { AudioPlayer } from "@/components/audio-player";
-import { PiGraphBold, PiBookmarksBold, PiArrowLeftBold, PiArrowRightBold } from "react-icons/pi";
+import { PiGraphBold, PiBookmarksBold, PiArrowLeftBold, PiArrowRightBold, PiDownloadSimpleBold, PiBookOpenBold } from "react-icons/pi";
 import { FlowerLoader } from "@/components/ui/flower-loader";
+import { usePlan } from "@/hooks/use-plan";
 
 interface UnitData {
   id: string;
@@ -42,6 +43,7 @@ export default function UnitViewerPage() {
   const [flower, setFlower] = useState<FlowerData | null>(null);
   const [allUnits, setAllUnits] = useState<{ id: string; title: string; order_index: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const { plan } = usePlan();
 
   useEffect(() => {
     async function loadUnit() {
@@ -107,15 +109,15 @@ export default function UnitViewerPage() {
       }
 
       return (
-        <p key={i} className="text-[#3D2B1F] leading-[1.8] mb-6 text-lg">
+        <p key={i} className="text-[#1A4D2E]/90 leading-[1.8] mb-6 text-lg font-medium">
           {parts.map((part, j) => {
             if (typeof part === "string") return <span key={j}>{part}</span>;
             return (
               <Tooltip key={j}>
-                <TooltipTrigger className="cursor-help rounded-md bg-[#39AB54]/10 px-1.5 py-0.5 text-[#2A8040] font-bold decoration-dotted underline underline-offset-4 inline transition-colors hover:bg-[#39AB54]/20">
+                <TooltipTrigger className="cursor-help rounded-md bg-[#39AB54]/15 px-1.5 py-0.5 text-[#2A8040] font-bold decoration-dotted underline underline-offset-4 inline transition-colors hover:bg-[#39AB54]/30">
                   {part.term}
                 </TooltipTrigger>
-                <TooltipContent className="max-w-sm bg-[#3D2B1F] text-white p-3 rounded-xl shadow-xl">
+                <TooltipContent className="max-w-sm bg-[#1A4D2E] text-white p-3 rounded-xl shadow-2xl border border-white/10">
                   <p className="text-sm font-medium leading-relaxed">{part.definition}</p>
                 </TooltipContent>
               </Tooltip>
@@ -127,84 +129,104 @@ export default function UnitViewerPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 animate-fade-in-up bg-surface/90 backdrop-blur-2xl rounded-[3rem] mt-6 lg:mt-10 border border-white/40 pebble-shadow pointer-events-auto mb-12">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 md:px-8 animate-fade-in-up bg-white rounded-[3rem] mt-6 lg:mt-10 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] pointer-events-auto mb-12">
       {/* Header & Breadcrumb */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <Link href={`/flower/${flowerId}`} className="inline-flex items-center gap-2 text-sm font-bold text-[#6B4C35] hover:text-[#39AB54] transition-colors mb-2 bg-white/50 px-3 py-1 rounded-full w-fit">
+          <Link href={`/flower/${flowerId}`} className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#39AB54] transition-colors mb-2 bg-gray-50 px-4 py-1.5 rounded-full w-fit border border-gray-200 shadow-sm">
             <PiArrowLeftBold /> {flower.topic_name}
           </Link>
-          <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-[#3D2B1F] tracking-tight">
+          <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-[#0D2419] tracking-tight mt-1">
             {unit.title}
           </h1>
         </div>
         
-        {/* Progress Badge */}
-        <div className="flex flex-col items-end shrink-0 bg-white/50 p-4 rounded-2xl border border-white/50">
-          <span className="text-xs font-bold text-[#6B4C35] mb-2">Lesson {currentIndex + 1} of {allUnits.length}</span>
-          <div className="w-32 h-2.5 bg-[#C4BAA8]/30 rounded-full overflow-hidden shadow-inner">
-            <div className="h-full bg-[#39AB54] rounded-full transition-all duration-700" style={{ width: `${((currentIndex + 1) / allUnits.length) * 100}%` }} />
+        {/* Progress Badge + Export */}
+        <div className="flex items-center gap-3 shrink-0">
+          {plan === "pro" && (
+            <button
+              onClick={() => window.print()}
+              title="Export as PDF"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-[#0D2419] shadow-sm text-sm font-bold hover:border-[#39AB54]/40 hover:bg-[#39AB54]/5 transition-all print:hidden"
+            >
+              <PiDownloadSimpleBold className="text-[#39AB54]" /> Export PDF
+            </button>
+          )}
+          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-sm min-w-[200px]">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Lesson {currentIndex + 1} of {allUnits.length}</span>
+            <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+              <div className="h-full bg-[#39AB54] rounded-full transition-all duration-700" style={{ width: `${((currentIndex + 1) / allUnits.length) * 100}%` }} />
+            </div>
           </div>
         </div>
       </div>
 
       <Separator className="bg-black/10 mb-8" />
 
-      {/* Main Study Area - Top to Bottom Vertical Sequence */}
-      <div className="flex flex-col gap-12 max-w-5xl mx-auto">
-        
-        {/* Top: Notes & Audio */}
-        <div className="w-full">
-          <div className="mb-8 sticky top-4 z-20">
-            <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-2 shadow-sm border border-white/60 pebble-shadow pointer-events-auto">
-              <AudioPlayer unitId={unit.id} text={unit.content_json.content} />
-            </div>
-          </div>
+      {/* ── LISTEN (TOP) ── */}
+      <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm mb-8">
+        <h3 className="font-heading text-lg font-bold text-[#0D2419] mb-4 flex items-center gap-2">
+          Listen to Lesson
+        </h3>
+        <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-200">
+          <AudioPlayer unitId={unit.id} text={unit.content_json.content} />
+        </div>
+      </div>
 
-          <div className="prose prose-lg max-w-none px-2">
+      {/* Main Content Column */}
+      <div className="flex flex-col gap-10">
+
+        {/* Notes Content */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-8 md:p-12 shadow-sm relative">
+          <div className="absolute top-0 left-0 w-2 h-full bg-[#39AB54] rounded-l-3xl" />
+          <h3 className="font-heading text-2xl font-bold text-[#0D2419] mb-8 flex items-center gap-3">
+            <PiBookOpenBold className="text-[#39AB54]" /> Reading Material
+          </h3>
+          <div className="prose prose-lg max-w-none text-gray-700">
             {renderContent()}
           </div>
         </div>
 
-        {/* Middle: Visual Diagram Span */}
+        {/* Key Vocabulary */}
+        {unit.content_json.key_terms && unit.content_json.key_terms.length > 0 && (
+          <div className="bg-amber-50 rounded-3xl p-8 border border-amber-100 shadow-sm">
+            <h3 className="font-heading text-xl font-bold text-amber-900 mb-6 flex items-center gap-3">
+              <PiBookmarksBold className="text-amber-500 text-2xl" />
+              Key Vocabulary
+            </h3>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {unit.content_json.key_terms.map((kt, i) => (
+                <li key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-amber-50 hover:border-amber-200 transition-colors flex flex-col justify-start">
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 rounded-md font-bold mb-3 text-sm px-3 py-1 w-fit shadow-sm">
+                    {kt.term}
+                  </Badge>
+                  <p className="text-[14px] font-medium text-gray-600 leading-relaxed">{kt.definition}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Concept Map — bottom of content */}
         {unit.diagram_mermaid && (
-          <div className="w-full bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/60 pebble-shadow">
-            <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-6 flex items-center gap-2">
-              <div className="p-2 bg-[#39AB54]/10 rounded-xl"><PiGraphBold className="text-[#39AB54] text-xl" /></div>
+          <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100 shadow-sm">
+            <h3 className="font-heading text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+              <PiGraphBold className="text-blue-500 text-xl" />
               Concept Map
             </h3>
-            <div className="bg-white rounded-2xl p-6 overflow-x-auto shadow-inner border border-black/5 min-h-[400px] flex items-center justify-center">
+            <div className="bg-white rounded-2xl p-4 overflow-x-auto shadow-sm border border-blue-50 min-h-[300px] flex items-center justify-center">
               <MermaidDiagram chart={unit.diagram_mermaid} />
             </div>
           </div>
         )}
+
       </div>
 
-      {/* Bottom: Study Vocabulary */}
-      {unit.content_json.key_terms && unit.content_json.key_terms.length > 0 && (
-        <div className="mt-12 max-w-5xl mx-auto bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/60 pebble-shadow">
-          <h3 className="font-heading text-xl font-extrabold text-[#3D2B1F] mb-6 flex items-center gap-2">
-            <div className="p-2 bg-[#F5D03B]/20 rounded-xl"><PiBookmarksBold className="text-[#D4722A] text-xl" /></div>
-            Study Vocabulary
-          </h3>
-          <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {unit.content_json.key_terms.map((kt, i) => (
-              <li key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-black/5 hover:border-[#39AB54]/30 transition-colors flex flex-col justify-start">
-                <Badge className="bg-[#C8EDCF] text-[#2A8040] hover:bg-[#C8EDCF] rounded-md font-bold mb-3 text-sm px-3 py-1 w-fit">
-                  {kt.term}
-                </Badge>
-                <p className="text-[15px] font-medium text-[#6B4C35] leading-relaxed">{kt.definition}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* Navigation Buttons */}
-      <div className="mt-16 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-black/10 pt-8">
+      <div className="mt-16 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-black/5 pt-8">
         {prevUnit ? (
           <Link href={`/flower/${flowerId}/units/${prevUnit.id}`} className="w-full sm:w-auto">
-            <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
+            <Button variant="outline" className="w-full sm:w-auto rounded-full border-gray-200 text-[#0D2419] bg-white hover:bg-gray-50 h-12 px-6 font-bold shadow-sm">
               <PiArrowLeftBold className="mr-2" /> {prevUnit.title}
             </Button>
           </Link>
@@ -218,7 +240,7 @@ export default function UnitViewerPage() {
 
         {nextUnit ? (
           <Link href={`/flower/${flowerId}/units/${nextUnit.id}`} className="w-full sm:w-auto">
-            <Button variant="outline" className="w-full sm:w-auto rounded-full border-[#C4BAA8] text-[#3D2B1F] hover:bg-[#EDE8DE] h-12 px-6 font-bold">
+            <Button variant="outline" className="w-full sm:w-auto rounded-full border-gray-200 text-[#0D2419] bg-white hover:bg-gray-50 h-12 px-6 font-bold shadow-sm">
               {nextUnit.title} <PiArrowRightBold className="ml-2" />
             </Button>
           </Link>

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bloomr Pro — Grow Without Limits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green:        #39AB54;
+  --green-light:  #5CC873;
+  --green-dark:   #2A8040;
+  --green-muted:  #C8EDCF;
+  --green-deep:   #1A2318;
+  --soil:         #3D2B1F;
+  --bark:         #6B4C35;
+  --parchment:    #F7F2EA;
+  --cream:        #EDE8DE;
+  --stone:        #C4BAA8;
+  --rose:         #E8637A;
+  --tulip:        #F4A44E;
+  --sunflower:    #F5D03B;
+  --lavender:     #B09FD8;
+  --font-display: 'Lora', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+  --font-mono:    'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--parchment);
+  color: var(--soil);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── NAV ── */
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem; height: 64px;
+  background: rgba(247,242,234,.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(196,186,168,.35);
+  position: sticky; top: 0; z-index: 50;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: .5rem;
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 600;
+  color: var(--soil); text-decoration: none;
+}
+.nav-logo img { height: 26px; }
+.nav-back {
+  display: flex; align-items: center; gap: .4rem;
+  color: var(--bark); font-size: .875rem; text-decoration: none;
+  transition: color .15s;
+}
+.nav-back:hover { color: var(--soil); }
+.nav-badge {
+  background: var(--green-muted); color: var(--green-dark);
+  border-radius: 99px; padding: .25rem .75rem;
+  font-size: .72rem; font-family: var(--font-mono); font-weight: 500;
+}
+
+/* ── HERO ── */
+.upgrade-hero {
+  background: var(--green-deep);
+  padding: 5rem 5vw 4rem;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.upgrade-hero::before {
+  content: '';
+  position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 500px;
+  background: radial-gradient(ellipse, rgba(57,171,84,.18) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* Particle orbs */
+.orb {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, rgba(92,200,115,.3), transparent 70%);
+  animation: orb-drift ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes orb-drift {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%  { transform: translate(20px,-30px) scale(1.05); }
+  66%  { transform: translate(-15px,15px) scale(.95); }
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: .45rem;
+  background: rgba(92,200,115,.15); border: 1px solid rgba(92,200,115,.3);
+  color: var(--green-light); border-radius: 99px;
+  padding: .3rem 1rem; font-size: .75rem; font-family: var(--font-mono);
+  margin-bottom: 1.5rem; position: relative; z-index: 1;
+}
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-light); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  font-weight: 700; color: white; line-height: 1.1;
+  position: relative; z-index: 1;
+}
+.hero-title em { color: var(--green-light); font-style: italic; }
+
+.hero-sub {
+  margin-top: 1rem; font-size: 1.05rem;
+  color: rgba(255,255,255,.55); max-width: 460px;
+  margin-left: auto; margin-right: auto; line-height: 1.65;
+  position: relative; z-index: 1;
+}
+
+/* Floating flower row */
+.hero-flowers {
+  margin-top: 2.5rem; display: flex; align-items: flex-end;
+  justify-content: center; gap: 1.5rem;
+  position: relative; z-index: 1;
+}
+.hf-item { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.hf-item img {
+  object-fit: contain;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.5));
+  animation: float-flower ease-in-out infinite;
+}
+@keyframes float-flower { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.hf-label {
+  font-size: .65rem; color: rgba(255,255,255,.35); font-family: var(--font-mono);
+}
+.hf-stage {
+  display: flex; gap: 3px;
+}
+.hf-stage-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,.15);
+}
+.hf-stage-dot.filled { background: var(--green-light); }
+
+/* scroll hint */
+.scroll-hint {
+  margin-top: 2rem; display: flex; flex-direction: column;
+  align-items: center; gap: .3rem; opacity: .35;
+  animation: bounce-hint 2s ease-in-out infinite;
+  position: relative; z-index: 1;
+}
+@keyframes bounce-hint { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+.scroll-hint span { font-size: .7rem; color: white; font-family: var(--font-mono); }
+.scroll-hint svg { width: 16px; height: 16px; stroke: white; fill: none; stroke-width: 2; }
+
+/* ── UNLOCK STRIP ── */
+.unlock-strip {
+  background: var(--green);
+  padding: 1rem 5vw;
+  display: flex; align-items: center; justify-content: center; gap: 2.5rem;
+  flex-wrap: wrap;
+}
+.unlock-item {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .85rem; color: white; font-weight: 500;
+}
+.unlock-item svg { width: 16px; height: 16px; stroke: white; fill: none; stroke-width: 2.5; flex-shrink: 0; }
+
+/* ── MAIN CONTENT ── */
+.upgrade-body {
+  max-width: 1100px; margin: 0 auto;
+  padding: 5rem 2rem;
+}
+
+/* ── BILLING TOGGLE ── */
+.billing-toggle {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1rem; margin-bottom: 3rem;
+}
+.billing-label { font-size: .9rem; color: var(--bark); cursor: pointer; }
+.billing-label.active { color: var(--soil); font-weight: 500; }
+.toggle-track {
+  width: 48px; height: 26px; border-radius: 99px;
+  background: var(--green); position: relative; cursor: pointer;
+  transition: background .2s;
+  border: none; padding: 0;
+}
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white; transition: transform .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.toggle-track.yearly .toggle-thumb { transform: translateX(22px); }
+.save-badge {
+  background: var(--sunflower); color: var(--soil);
+  border-radius: 99px; padding: .15rem .55rem;
+  font-size: .68rem; font-weight: 600; font-family: var(--font-mono);
+}
+
+/* ── PRICING CARDS ── */
+.pricing-row {
+  display: grid; grid-template-columns: 1fr 1.1fr; gap: 1.5rem;
+  align-items: start;
+}
+
+.plan-card {
+  border-radius: 24px; padding: 2rem;
+  border: 1.5px solid var(--stone);
+  background: white;
+  position: relative; overflow: hidden;
+  transition: transform .25s, box-shadow .25s;
+}
+.plan-card:hover { transform: translateY(-2px); }
+
+.plan-card.pro-card {
+  background: var(--green-deep);
+  border-color: rgba(57,171,84,.3);
+  box-shadow: 0 20px 80px rgba(26,35,24,.4), 0 0 0 1px rgba(92,200,115,.1);
+}
+
+/* glow border animation on pro */
+.pro-card::after {
+  content: '';
+  position: absolute; inset: -1px; border-radius: 25px;
+  background: linear-gradient(135deg, rgba(92,200,115,.4), transparent 40%, rgba(57,171,84,.2) 80%, transparent);
+  z-index: 0; pointer-events: none;
+  animation: glow-rotate 4s linear infinite;
+}
+@keyframes glow-rotate { from { opacity: .5; } 50% { opacity: 1; } to { opacity: .5; } }
+
+.plan-card > * { position: relative; z-index: 1; }
+
+.plan-badge {
+  position: absolute; top: 20px; right: 20px; z-index: 2;
+  background: var(--sunflower); color: var(--soil);
+  border-radius: 99px; padding: .25rem .7rem;
+  font-size: .68rem; font-weight: 600; font-family: var(--font-mono);
+}
+
+.plan-name {
+  font-family: var(--font-mono); font-size: .75rem; color: var(--bark);
+  font-weight: 500; margin-bottom: .4rem;
+}
+.pro-card .plan-name { color: rgba(255,255,255,.5); }
+
+.plan-price {
+  font-family: var(--font-display); font-size: 3rem; font-weight: 700;
+  color: var(--soil); line-height: 1;
+  display: flex; align-items: flex-start; gap: .1rem;
+}
+.pro-card .plan-price { color: white; }
+.plan-price sup { font-size: 1.4rem; margin-top: .4rem; }
+.plan-price sub { font-size: .9rem; font-weight: 400; font-family: var(--font-body); align-self: flex-end; margin-bottom: .2rem; color: var(--bark); }
+.pro-card .plan-price sub { color: rgba(255,255,255,.5); }
+
+.plan-desc { margin-top: .5rem; font-size: .88rem; color: var(--bark); line-height: 1.55; }
+.pro-card .plan-desc { color: rgba(255,255,255,.55); }
+
+.plan-divider { margin: 1.5rem 0; height: 1px; background: var(--cream); }
+.pro-card .plan-divider { background: rgba(255,255,255,.1); }
+
+.plan-features { display: flex; flex-direction: column; gap: .65rem; }
+.pf {
+  display: flex; align-items: flex-start; gap: .6rem;
+  font-size: .875rem; color: var(--bark); line-height: 1.45;
+}
+.pro-card .pf { color: rgba(255,255,255,.8); }
+.pf-icon { flex-shrink: 0; width: 16px; height: 16px; margin-top: 1px; }
+.pf-icon.check { color: var(--green); }
+.pro-card .pf-icon.check { color: var(--green-light); }
+.pf-icon.x { color: var(--stone); }
+.pf strong { font-weight: 500; color: var(--soil); }
+.pro-card .pf strong { color: white; }
+
+.plan-cta { margin-top: 1.75rem; }
+.btn-free {
+  width: 100%; padding: .7rem; border-radius: 999px;
+  border: 1.5px solid var(--stone); background: transparent;
+  color: var(--bark); font-size: .9rem; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer; transition: all .15s;
+}
+.btn-free:hover { border-color: var(--green); color: var(--green); background: var(--green-muted); }
+
+.btn-pro {
+  width: 100%; padding: .85rem; border-radius: 999px;
+  background: var(--green); color: white; border: none;
+  font-size: 1rem; font-weight: 600; font-family: var(--font-body);
+  cursor: pointer; transition: all .2s;
+  box-shadow: 0 4px 24px rgba(57,171,84,.5);
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+}
+.btn-pro:hover { background: var(--green-light); transform: translateY(-2px); box-shadow: 0 8px 40px rgba(57,171,84,.6); }
+.btn-pro-note { margin-top: .75rem; text-align: center; font-size: .72rem; color: rgba(255,255,255,.35); font-family: var(--font-mono); }
+
+/* ── FEATURE TABLE ── */
+.feature-table-section { margin-top: 5rem; }
+.ft-title {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
+  color: var(--soil); margin-bottom: 1.75rem; text-align: center;
+}
+.ft-header {
+  display: grid; grid-template-columns: 1fr 120px 120px;
+  padding: .5rem 1rem; margin-bottom: .25rem;
+}
+.ft-header-cell {
+  text-align: center; font-family: var(--font-mono);
+  font-size: .72rem; font-weight: 500; color: var(--bark);
+}
+.ft-header-cell.pro { color: var(--green-dark); }
+
+.ft-group { margin-bottom: 1.5rem; }
+.ft-group-label {
+  font-family: var(--font-mono); font-size: .7rem; font-weight: 500;
+  color: var(--stone); text-transform: uppercase; letter-spacing: .08em;
+  padding: .5rem 1rem; margin-bottom: .25rem;
+}
+.ft-row {
+  display: grid; grid-template-columns: 1fr 120px 120px;
+  padding: .75rem 1rem; border-radius: 10px;
+  align-items: center; transition: background .15s;
+}
+.ft-row:hover { background: var(--cream); }
+.ft-row:nth-child(even) { background: rgba(196,186,168,.08); }
+.ft-row:nth-child(even):hover { background: var(--cream); }
+.ft-feature { font-size: .875rem; color: var(--soil); }
+.ft-feature small { display: block; font-size: .75rem; color: var(--bark); margin-top: .1rem; font-family: var(--font-mono); }
+.ft-cell { text-align: center; font-size: .85rem; }
+.ft-check { color: var(--green); font-size: 1rem; }
+.ft-x { color: var(--stone); }
+.ft-val { font-family: var(--font-mono); font-size: .75rem; color: var(--bark); }
+.ft-val.pro { color: var(--green-dark); font-weight: 500; }
+
+/* ── FAQ ── */
+.faq-section { margin-top: 5rem; max-width: 640px; margin-left: auto; margin-right: auto; }
+.faq-title { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; color: var(--soil); text-align: center; margin-bottom: 2rem; }
+.faq-item { border-bottom: 1px solid var(--cream); }
+.faq-q {
+  width: 100%; text-align: left; padding: 1.1rem 0;
+  background: none; border: none; cursor: pointer;
+  font-size: .95rem; font-weight: 500; color: var(--soil);
+  font-family: var(--font-body); display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem;
+}
+.faq-q:hover { color: var(--green); }
+.faq-chevron { flex-shrink: 0; transition: transform .25s; color: var(--stone); font-size: .8rem; }
+.faq-item.open .faq-chevron { transform: rotate(180deg); color: var(--green); }
+.faq-a {
+  max-height: 0; overflow: hidden;
+  transition: max-height .3s ease, padding .3s;
+  font-size: .875rem; color: var(--bark); line-height: 1.7;
+}
+.faq-item.open .faq-a { max-height: 200px; padding-bottom: 1rem; }
+
+/* ── BOTTOM CTA ── */
+.bottom-cta {
+  margin-top: 5rem; background: var(--green-deep);
+  border-radius: 28px; padding: 3.5rem; text-align: center;
+  position: relative; overflow: hidden;
+}
+.bottom-cta::before {
+  content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+  width: 500px; height: 300px;
+  background: radial-gradient(ellipse, rgba(57,171,84,.2) 0%, transparent 70%);
+}
+.bc-title { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: white; position: relative; z-index: 1; }
+.bc-title em { color: var(--green-light); font-style: italic; }
+.bc-sub { margin-top: .75rem; color: rgba(255,255,255,.5); font-size: .95rem; position: relative; z-index: 1; }
+.bc-btn {
+  margin-top: 1.75rem; display: inline-flex; align-items: center; gap: .5rem;
+  background: var(--green); color: white; border: none; border-radius: 999px;
+  padding: .85rem 2.2rem; font-size: 1rem; font-weight: 600;
+  font-family: var(--font-body); cursor: pointer;
+  box-shadow: 0 4px 24px rgba(57,171,84,.5);
+  transition: all .2s; position: relative; z-index: 1;
+}
+.bc-btn:hover { background: var(--green-light); transform: translateY(-2px); }
+
+/* ── FOOTER ── */
+footer {
+  margin-top: 3rem; padding: 2rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--cream); max-width: 1100px; margin-left: auto; margin-right: auto;
+}
+.footer-links { display: flex; gap: 1.5rem; }
+.footer-links a { font-size: .8rem; color: var(--stone); text-decoration: none; transition: color .15s; }
+.footer-links a:hover { color: var(--bark); }
+.footer-copy { font-size: .75rem; color: var(--stone); font-family: var(--font-mono); }
+
+/* reveal */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-delay-1 { transition-delay: .1s; }
+.reveal-delay-2 { transition-delay: .2s; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="Landing Page.html">
+    <img src="assets/bloomr_logo.png" alt="Bloomr" />
+  </a>
+  <a class="nav-back" href="Landing Page.html">← Back to home</a>
+  <span class="nav-badge">Pro Upgrade</span>
+</nav>
+
+<!-- HERO -->
+<section class="upgrade-hero" id="hero">
+  <!-- Orbs -->
+  <div class="orb" style="width:300px;height:300px;top:-80px;left:5%;animation-duration:8s;animation-delay:0s"></div>
+  <div class="orb" style="width:200px;height:200px;top:20px;right:8%;animation-duration:10s;animation-delay:2s"></div>
+  <div class="orb" style="width:150px;height:150px;bottom:0;left:35%;animation-duration:7s;animation-delay:1s"></div>
+
+  <div class="hero-eyebrow">
+    <span class="eyebrow-dot"></span>
+    Bloomr Pro
+  </div>
+
+  <h1 class="hero-title">
+    Grow without<br><em>any limits.</em>
+  </h1>
+  <p class="hero-sub">Unlimited seeds, unlimited Flowy messages, and every upload type — so your entire curriculum can bloom.</p>
+
+  <div class="hero-flowers">
+    <div class="hf-item" style="animation-delay:0s">
+      <img src="assets/flowers/lilly.png" style="width:60px;height:75px;animation-duration:4.5s" alt="lily" />
+      <div class="hf-stage">
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot filled"></div>
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot"></div>
+      </div>
+      <div class="hf-label">history</div>
+    </div>
+    <div class="hf-item" style="animation-delay:.6s">
+      <img src="assets/flowers/rose.png" style="width:70px;height:88px;animation-duration:5s" alt="rose" />
+      <div class="hf-stage">
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot filled"></div>
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot filled"></div>
+      </div>
+      <div class="hf-label">biology</div>
+    </div>
+    <div class="hf-item" style="animation-delay:0s">
+      <img src="assets/flowers/sunflower.png" style="width:88px;height:110px;animation-duration:4s" alt="sunflower" />
+      <div class="hf-stage">
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot filled"></div>
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot filled"></div>
+      </div>
+      <div class="hf-label">economics</div>
+    </div>
+    <div class="hf-item" style="animation-delay:.9s">
+      <img src="assets/flowers/tulip.png" style="width:66px;height:82px;animation-duration:5.5s" alt="tulip" />
+      <div class="hf-stage">
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot filled"></div>
+        <div class="hf-stage-dot"></div><div class="hf-stage-dot"></div>
+      </div>
+      <div class="hf-label">chemistry</div>
+    </div>
+    <div class="hf-item" style="animation-delay:1.2s">
+      <img src="assets/flowers/daisy.png" style="width:58px;height:70px;animation-duration:4.8s" alt="daisy" />
+      <div class="hf-stage">
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot filled"></div>
+        <div class="hf-stage-dot filled"></div><div class="hf-stage-dot"></div>
+      </div>
+      <div class="hf-label">psych 101</div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>see plans</span>
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+  </div>
+</section>
+
+<!-- UNLOCK STRIP -->
+<div class="unlock-strip">
+  <div class="unlock-item">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Unlimited seeds
+  </div>
+  <div class="unlock-item">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    YouTube &amp; voice uploads
+  </div>
+  <div class="unlock-item">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Unlimited Flowy messages
+  </div>
+  <div class="unlock-item">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Export notes as PDF
+  </div>
+  <div class="unlock-item">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Image uploads
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="upgrade-body">
+
+  <!-- BILLING TOGGLE -->
+  <div class="billing-toggle reveal">
+    <span class="billing-label active" id="lbl-monthly">Monthly</span>
+    <button class="toggle-track" id="billing-toggle" aria-label="Toggle billing period">
+      <div class="toggle-thumb"></div>
+    </button>
+    <span class="billing-label" id="lbl-yearly">
+      Yearly <span class="save-badge" id="save-badge" style="display:none">Save 20%</span>
+    </span>
+  </div>
+
+  <!-- PRICING CARDS -->
+  <div class="pricing-row reveal">
+
+    <!-- FREE -->
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price"><sup>$</sup>0<sub>/month</sub></div>
+      <div class="plan-desc">Everything you need to get started and try Bloomr with no commitment.</div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span><strong>3 seeds</strong> per week</span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>PDF uploads</span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>All study units &amp; quizzes</span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>Audio recaps &amp; concept maps</span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>Flowy — <strong>10 msgs/day</strong> per flower</span></div>
+        <div class="pf"><svg class="pf-icon x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="3" x2="13" y2="13"></line><line x1="13" y1="3" x2="3" y2="13"></line></svg><span style="opacity:.5">Voice &amp; image uploads</span></div>
+        <div class="pf"><svg class="pf-icon x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="3" x2="13" y2="13"></line><line x1="13" y1="3" x2="3" y2="13"></line></svg><span style="opacity:.5">YouTube link uploads</span></div>
+        <div class="pf"><svg class="pf-icon x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="3" x2="13" y2="13"></line><line x1="13" y1="3" x2="3" y2="13"></line></svg><span style="opacity:.5">Export notes as PDF</span></div>
+      </div>
+      <div class="plan-cta">
+        <button class="btn-free">Continue with Free</button>
+      </div>
+    </div>
+
+    <!-- PRO -->
+    <div class="plan-card pro-card">
+      <div class="plan-badge">Most Popular</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price" id="pro-price"><sup>$</sup><span id="price-num">5.99</span><sub>/month</sub></div>
+      <div class="plan-desc">Your whole curriculum, fully bloomed. No caps, no compromises.</div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span><strong>Unlimited seeds</strong></span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>PDF uploads</span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>All study units &amp; quizzes</span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>Audio recaps &amp; concept maps</span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span>Flowy — <strong>unlimited messages</strong></span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span><strong>Voice &amp; image uploads</strong></span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span><strong>YouTube link uploads</strong></span></div>
+        <div class="pf"><svg class="pf-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"></polyline></svg><span><strong>Export notes as PDF</strong></span></div>
+      </div>
+      <div class="plan-cta">
+        <button class="btn-pro">🌱 Upgrade to Pro</button>
+        <div class="btn-pro-note" id="pro-note">Cancel anytime · No commitment</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FEATURE TABLE -->
+  <div class="feature-table-section reveal">
+    <h2 class="ft-title">Everything side by side</h2>
+
+    <div class="ft-header">
+      <div></div>
+      <div class="ft-header-cell">Free</div>
+      <div class="ft-header-cell pro">Pro</div>
+    </div>
+
+    <div class="ft-group">
+      <div class="ft-group-label">Seeds &amp; Uploads</div>
+      <div class="ft-row">
+        <div class="ft-feature">Seeds per week<small>One seed = one flower / topic</small></div>
+        <div class="ft-cell"><span class="ft-val">3</span></div>
+        <div class="ft-cell"><span class="ft-val pro">Unlimited</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">PDF uploads</div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">Voice recordings</div>
+        <div class="ft-cell"><span class="ft-x">—</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">Image uploads<small>AI reads and transcribes your notes</small></div>
+        <div class="ft-cell"><span class="ft-x">—</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">YouTube links<small>Paste any lecture URL</small></div>
+        <div class="ft-cell"><span class="ft-x">—</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+    </div>
+
+    <div class="ft-group">
+      <div class="ft-group-label">Study Tools</div>
+      <div class="ft-row">
+        <div class="ft-feature">AI study notes &amp; key terms</div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">MC &amp; short answer quizzes</div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">Audio recaps<small>ElevenLabs TTS per unit</small></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">Concept maps</div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">Export notes as PDF</div>
+        <div class="ft-cell"><span class="ft-x">—</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+    </div>
+
+    <div class="ft-group">
+      <div class="ft-group-label">Flowy AI Tutor</div>
+      <div class="ft-row">
+        <div class="ft-feature">Flowy messages<small>Context-aware per flower</small></div>
+        <div class="ft-cell"><span class="ft-val">10/day</span></div>
+        <div class="ft-cell"><span class="ft-val pro">Unlimited</span></div>
+      </div>
+    </div>
+
+    <div class="ft-group">
+      <div class="ft-group-label">Garden</div>
+      <div class="ft-row">
+        <div class="ft-feature">3D garden &amp; all flower types</div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">Collectible pots (gacha)</div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+      <div class="ft-row">
+        <div class="ft-feature">Drag &amp; rearrange garden</div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+        <div class="ft-cell"><span class="ft-check">✓</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section reveal">
+    <h2 class="faq-title">Common questions</h2>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Can I cancel anytime?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-a">Yes — cancel from your account settings at any time. You keep Pro access until the end of your billing period. No questions asked.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        What happens to my flowers if I cancel?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-a">Your flowers are permanent. Every flower you've grown stays in your garden forever, regardless of your plan. You'll just be limited to 3 new seeds per week on the free plan.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Is the yearly plan billed upfront?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-a">Yes, the yearly plan is billed as one payment of $57.50/year (equivalent to $4.79/month — a 20% saving vs monthly). You can switch back to monthly at renewal.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        How does the seed limit work on Free?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-a">Free users can plant 3 new flowers per week. Seeds reset every Monday. There's no limit on studying existing flowers — only on creating new ones.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        What file formats are supported?
+        <span class="faq-chevron">▾</span>
+      </button>
+      <div class="faq-a">Free: PDF. Pro: PDF, MP3/WAV voice recordings, JPG/PNG images of notes, and any YouTube video URL. More formats coming soon.</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM CTA -->
+  <div class="bottom-cta reveal">
+    <h2 class="bc-title">Your whole curriculum,<br><em>fully bloomed.</em></h2>
+    <p class="bc-sub">Join thousands of students who unlocked their full garden.</p>
+    <button class="bc-btn">🌱 Upgrade to Pro — $5.99/mo</button>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+  </div>
+  <div class="footer-copy">© 2026 Bloomr. All rights reserved.</div>
+</footer>
+
+<script>
+// Reveal on scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Billing toggle
+let isYearly = false;
+const toggle = document.getElementById('billing-toggle');
+const priceNum = document.getElementById('price-num');
+const proNote = document.getElementById('pro-note');
+const saveBadge = document.getElementById('save-badge');
+const lblMonthly = document.getElementById('lbl-monthly');
+const lblYearly = document.getElementById('lbl-yearly');
+
+toggle.addEventListener('click', () => {
+  isYearly = !isYearly;
+  toggle.classList.toggle('yearly', isYearly);
+  priceNum.textContent = isYearly ? '4.79' : '5.99';
+  saveBadge.style.display = isYearly ? 'inline' : 'none';
+  lblMonthly.classList.toggle('active', !isYearly);
+  lblYearly.classList.toggle('active', isYearly);
+  proNote.textContent = isYearly ? 'Billed as $57.50/year · Cancel anytime' : 'Cancel anytime · No commitment';
+  document.querySelector('.bc-btn').textContent = isYearly
+    ? '🌱 Upgrade to Pro — $4.79/mo'
+    : '🌱 Upgrade to Pro — $5.99/mo';
+});
+
+// FAQ accordion
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!wasOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>

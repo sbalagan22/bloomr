@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { PiBookOpenBold, PiLightningBold, PiArrowLeftBold, PiWarningBold } from "react-icons/pi";
-import { RARITIES } from "@/lib/rarity";
+
 
 export default function DemoFlowerPage() {
   const flower = {
@@ -30,7 +30,7 @@ export default function DemoFlowerPage() {
     <div className="w-full min-h-screen bg-parchment pt-24 px-6 md:px-12 flex flex-col items-center">
       
       {/* Demo Nav */}
-      <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl bg-surface/80 glass-morphism rounded-full shadow-lg border border-white/50 px-6 py-4 flex justify-between items-center">
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl bg-white rounded-full shadow-md border border-gray-200 px-6 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3">
           <Image src="/bloomr_icon.svg" alt="Bloomr" width={32} height={32} className="drop-shadow-sm" />
           <span className="text-2xl text-primary-container tracking-tighter font-logo mt-1">Bloomr</span>
@@ -44,12 +44,12 @@ export default function DemoFlowerPage() {
         <div className="w-full lg:w-[450px] shrink-0 flex flex-col gap-6 animate-fade-in-up h-full overflow-y-auto pb-12 scrollbar-hide">
           
           <div className="flex items-center justify-between">
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-primary-deep transition-colors bg-white/70 backdrop-blur-xl px-5 py-2.5 rounded-full shadow-sm border border-white/40">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-primary-deep transition-colors bg-white px-5 py-2.5 rounded-full shadow-sm border border-gray-200">
               <PiArrowLeftBold /> Home
             </Link>
           </div>
 
-          <div className="bg-surface/85 backdrop-blur-xl pebble-shadow rounded-3xl p-8 border border-white/20 relative overflow-hidden">
+          <div className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-3xl p-8 border border-gray-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-primary-fixed text-on-primary-fixed px-3 py-1 rounded-bl-xl font-bold text-xs">DEMO GARDEN</div>
             <h1 className="font-heading text-3xl font-extrabold text-on-surface tracking-tight leading-tight">{flower.topic_name}</h1>
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -82,7 +82,7 @@ export default function DemoFlowerPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-amber-50/90 backdrop-blur-xl pebble-shadow border border-amber-200 p-6">
+          <div className="rounded-3xl bg-amber-50 shadow-sm border border-amber-200 p-6">
             <div className="flex items-center gap-2 mb-4">
               <PiWarningBold className="text-amber-500 text-lg shrink-0" />
               <h2 className="font-heading text-base font-bold text-amber-900">Areas to Review</h2>
@@ -99,12 +99,12 @@ export default function DemoFlowerPage() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <h2 className="font-heading text-xl font-bold text-on-surface bg-surface/85 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white/20 pebble-shadow flex items-center gap-2 sticky top-0 z-10">
+            <h2 className="font-heading text-xl font-bold text-on-surface bg-white px-6 py-4 rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] flex items-center gap-2 sticky top-0 z-10">
               Study Material
             </h2>
 
             {units.map((unit, index) => (
-              <div key={unit.id} className="group rounded-[1.5rem] bg-surface/90 backdrop-blur-md pebble-shadow p-5 transition-all hover:scale-[1.02] border border-white/20 flex flex-col gap-4">
+              <div key={unit.id} className="group rounded-[1.5rem] bg-white shadow-[0_4px_15px_rgb(0,0,0,0.03)] p-5 transition-all hover:scale-[1.02] border border-gray-100 flex flex-col gap-4">
                 <div className="flex items-start gap-4">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold text-sm shadow-sm ${
                     unit.completed ? "bg-[#39AB54] text-white" : "bg-surface-container-highest text-on-surface-variant"
@@ -131,17 +131,17 @@ export default function DemoFlowerPage() {
         </div>
 
         {/* RIGHT PANEL: Floating Fake Demo Render */}
-        <div className="hidden lg:flex flex-1 rounded-[3rem] bg-white/50 backdrop-blur-xl border-4 border-white pebble-shadow relative overflow-hidden items-center justify-center">
+        <div className="hidden lg:flex flex-1 rounded-[3rem] bg-white border-4 border-gray-50 shadow-[0_20px_60px_rgb(0,0,0,0.05)] relative overflow-hidden items-center justify-center">
             <div className="absolute inset-0 bg-linear-to-b from-[#C8EDCF]/20 to-transparent" />
             <div className="absolute top-8 text-center animate-fade-in-down z-10">
-              <h3 className="font-heading text-2xl font-black text-on-surface tracking-tight bg-white/50 backdrop-blur-md px-6 py-2 rounded-full border border-white/40 shadow-sm">
+              <h3 className="font-heading text-2xl font-black text-on-surface tracking-tight bg-white px-6 py-2 rounded-full border border-gray-100 shadow-sm">
                 Live 3D Garden View
               </h3>
             </div>
             
             {/* We mock the static Flower with the Hero flower so it runs flawlessly with no params */}
             <div className="w-[600px] h-[600px] pointer-events-none mt-16 scale-125">
-              <img src="/design/flowers/2.png" className="w-full h-full object-contain drop-shadow-2xl opacity-60 mix-blend-multiply blur-3xl absolute inset-0" alt="demo" />
+              <Image src="/design/flowers/2.png" width={600} height={600} className="w-full h-full object-contain drop-shadow-2xl opacity-60 mix-blend-multiply blur-3xl absolute inset-0" alt="demo" />
               <div className="flex flex-col items-center justify-center h-full w-full">
                 <span className="text-9xl mb-8 animate-pulse">🌹</span>
                 <p className="font-heading font-bold text-on-surface-variant text-lg">Interactive 3D Demo Preview</p>

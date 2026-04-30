@@ -81,19 +81,19 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
   const remaining = FREE_DAILY_LIMIT - dailyUsed;
 
   return (
-    <div className="flex flex-col h-full w-full bg-surface/85 backdrop-blur-xl rounded-3xl border border-white/20 pebble-shadow overflow-hidden pointer-events-auto">
+    <div className="flex flex-col h-full w-full bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden pointer-events-auto">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/10 bg-white/10 flex items-center gap-3">
-        <div className="bg-primary-fixed text-on-primary-fixed p-2 rounded-xl shadow-sm">
+      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+        <div className="bg-[#39AB54] text-white p-2 rounded-xl shadow-sm">
           <PiFlowerBold className="text-xl" />
         </div>
         <div className="flex-1">
-          <h3 className="font-heading font-bold text-on-surface">Flowy</h3>
-          <p className="text-xs text-on-surface-variant">Your personal AI assistant</p>
+          <h3 className="font-heading font-bold text-[#0D2419]">Flowy</h3>
+          <p className="text-xs text-[#0D2419]/60">Your personal AI assistant</p>
         </div>
         {plan === "free" && (
           <div className="text-right">
-            <p className="text-[10px] font-bold text-on-surface-variant">
+            <p className="text-[10px] font-bold text-[#0D2419]/70">
               {remaining > 0 ? `${remaining} msgs left today` : "Limit reached"}
             </p>
           </div>
@@ -104,17 +104,17 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
       <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-            <div className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center shadow-sm ${
-              msg.role === "user" ? "bg-bloom-lavender text-white" : "bg-primary-fixed text-on-primary-fixed"
+            <div className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center shadow-sm border ${
+              msg.role === "user" ? "bg-gray-100 text-[#0D2419] border-gray-200" : "bg-[#39AB54] text-white border-[#39AB54]/50"
             }`}>
               {msg.role === "user" ? <PiUserBold /> : <PiFlowerBold />}
             </div>
-            <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+            <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm border ${
               msg.role === "user"
-                ? "bg-bloom-lavender text-white rounded-tr-sm"
-                : "bg-surface-container-high text-on-surface rounded-tl-sm"
+                ? "bg-[#39AB54]/10 text-[#0D2419] rounded-tr-sm border-[#39AB54]/20 shadow-sm"
+                : "bg-white text-[#0D2419] rounded-tl-sm border-gray-100 shadow-sm"
             }`}>
-              <div className="whitespace-pre-wrap">
+              <div className="whitespace-pre-wrap flex flex-col">
                 {msg.role === "user" ? msg.content : <MathText text={msg.content} />}
               </div>
             </div>
@@ -122,13 +122,13 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
         ))}
         {loading && (
           <div className="flex gap-3">
-            <div className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center bg-primary-fixed text-on-primary-fixed shadow-sm">
+            <div className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center bg-[#39AB54] text-white shadow-sm border border-[#39AB54]/50">
               <PiFlowerBold />
             </div>
-            <div className="bg-surface-container-high text-on-surface rounded-2xl rounded-tl-sm px-4 py-3 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-on-surface-variant/50 animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 rounded-full bg-on-surface-variant/50 animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 rounded-full bg-on-surface-variant/50 animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="bg-white border border-gray-100 text-[#0D2419] rounded-2xl rounded-tl-sm px-4 py-3 text-sm flex items-center gap-1 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#39AB54]/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 rounded-full bg-[#39AB54]/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 rounded-full bg-[#39AB54]/60 animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
           </div>
         )}
@@ -151,7 +151,7 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
       )}
 
       {/* Input */}
-      <div className="p-4 bg-surface-container-low border-t border-white/10">
+      <div className="p-4 bg-gray-50/50 border-t border-gray-100">
         <div className="flex gap-2">
           <input
             type="text"
@@ -160,12 +160,12 @@ export function ChatTutor({ flowerId }: ChatTutorProps) {
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder={isAtLimit ? "Upgrade for unlimited messages..." : "Ask a question..."}
             disabled={isAtLimit}
-            className="flex-1 bg-surface-container-lowest border border-white/20 rounded-full px-4 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed transition-all placeholder:text-on-surface-variant/50 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2 text-sm text-[#0D2419] focus:outline-none focus:ring-2 focus:ring-[#39AB54] transition-all placeholder:text-[#0D2419]/40 disabled:opacity-40 disabled:cursor-not-allowed shadow-inner"
           />
           <button
             onClick={isAtLimit ? () => setShowUpgrade(true) : handleSend}
             disabled={(!input.trim() && !isAtLimit) || loading}
-            className="h-10 w-10 shrink-0 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 w-10 shrink-0 rounded-full bg-[#39AB54] text-white flex items-center justify-center shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-[#39AB54]/50"
           >
             {isAtLimit ? <PiSparkle /> : <PiPaperPlaneRightBold />}
           </button>

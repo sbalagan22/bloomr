@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   type Rarity,
   RARITIES,
@@ -33,10 +33,11 @@ export function GachaOpener({ fixedRarity, fixedColor, onComplete, open }: Gacha
   // Generate the reel on open
   useEffect(() => {
     if (!open) {
-      setPhase("idle");
-      return;
+      const t = setTimeout(() => setPhase("idle"), 0);
+      return () => clearTimeout(t);
     }
     const result = fixedRarity ?? rollRarity();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFinalRarity(result);
 
     // Build reel: random rarities with the result placed near the end (slot 35)

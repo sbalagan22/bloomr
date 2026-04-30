@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 require('dotenv').config({ path: '.env.local' });
 
 async function test() {

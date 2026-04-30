@@ -53,7 +53,7 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
   return (
     <div
       className="relative min-h-screen"
-      style={{ background: "linear-gradient(to bottom, #BDE0F5 0%, #5AB4E5 40%, #3E9FD5 70%, #4CAF60 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #5AADDF 0%, #A8D8F0 40%, #7BCF88 70%, #4CAF60 100%)" }}
     >
       {/* Background 3D Flower */}
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center pt-16">
@@ -68,6 +68,7 @@ export default function FlowerLayout({ children }: { children: React.ReactNode }
                 potVariant={flower.pot_variant ?? 1}
                 size="full"
                 interactive={true}
+                showGround={true}
               />
             </Suspense>
           )}

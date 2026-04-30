@@ -1,0 +1,112 @@
+
+> bloomr@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.0.0.174:3000
+- Environments: .env.local
+✓ Ready in 289ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+ GET / 200 in 1169ms (next.js: 369ms, proxy.ts: 565ms, application-code: 235ms)
+[browser] Image with src "/bloomr_icon.svg" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET / 200 in 236ms (next.js: 4ms, proxy.ts: 133ms, application-code: 100ms)
+ GET / 200 in 117ms (next.js: 3ms, proxy.ts: 5ms, application-code: 109ms)
+✓ Compiled in 1128ms
+ GET / 200 in 466ms (next.js: 37ms, proxy.ts: 389ms, application-code: 40ms)
+ GET / 200 in 582ms (next.js: 8ms, proxy.ts: 249ms, application-code: 325ms)
+ GET / 200 in 879ms (next.js: 83ms, proxy.ts: 539ms, application-code: 257ms)
+[browser] Image with src "/bloomr_icon.svg" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET / 200 in 261ms (next.js: 3ms, proxy.ts: 157ms, application-code: 102ms)
+ GET / 200 in 299ms (next.js: 4ms, proxy.ts: 205ms, application-code: 89ms)
+✓ Compiled in 1521ms
+[browser] Image with src "/bloomr_icon.svg" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET / 200 in 365ms (next.js: 9ms, proxy.ts: 298ms, application-code: 58ms)
+[browser] Image with src "/bloomr_icon.svg" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /garden 200 in 2.3s (next.js: 1983ms, proxy.ts: 114ms, application-code: 231ms)
+ GET / 200 in 197ms (next.js: 39ms, proxy.ts: 121ms, application-code: 38ms)
+ GET / 200 in 131ms (next.js: 2ms, proxy.ts: 101ms, application-code: 28ms)
+ GET / 200 in 127ms (next.js: 2ms, proxy.ts: 97ms, application-code: 27ms)
+ GET /garden 200 in 444ms (next.js: 10ms, proxy.ts: 408ms, application-code: 26ms)
+ GET / 200 in 135ms (next.js: 5ms, proxy.ts: 108ms, application-code: 23ms)
+ GET /garden 200 in 157ms (next.js: 3ms, proxy.ts: 113ms, application-code: 41ms)
+ GET / 200 in 122ms (next.js: 3ms, proxy.ts: 99ms, application-code: 20ms)
+ GET /garden 200 in 136ms (next.js: 2ms, proxy.ts: 102ms, application-code: 32ms)
+ GET / 200 in 127ms (next.js: 6ms, proxy.ts: 99ms, application-code: 22ms)
+ GET /garden 200 in 144ms (next.js: 1460µs, proxy.ts: 115ms, application-code: 28ms)
+ GET / 200 in 132ms (next.js: 4ms, proxy.ts: 104ms, application-code: 24ms)
+ GET /garden 200 in 196ms (next.js: 4ms, proxy.ts: 104ms, application-code: 88ms)
+ GET / 200 in 166ms (next.js: 4ms, proxy.ts: 111ms, application-code: 52ms)
+ GET /garden 200 in 178ms (next.js: 3ms, proxy.ts: 116ms, application-code: 59ms)
+ GET / 200 in 144ms (next.js: 1999µs, proxy.ts: 122ms, application-code: 21ms)
+ GET /garden 200 in 160ms (next.js: 3ms, proxy.ts: 108ms, application-code: 50ms)
+ GET / 200 in 142ms (next.js: 1928µs, proxy.ts: 117ms, application-code: 23ms)
+ GET /garden 200 in 124ms (next.js: 4ms, proxy.ts: 97ms, application-code: 23ms)
+ GET / 200 in 131ms (next.js: 1942µs, proxy.ts: 103ms, application-code: 26ms)
+ GET /garden 200 in 134ms (next.js: 1950µs, proxy.ts: 109ms, application-code: 23ms)
+ GET / 200 in 131ms (next.js: 4ms, proxy.ts: 107ms, application-code: 20ms)
+ GET /garden 200 in 165ms (next.js: 3ms, proxy.ts: 109ms, application-code: 53ms)
+ GET / 200 in 137ms (next.js: 4ms, proxy.ts: 111ms, application-code: 23ms)
+ GET /garden 200 in 157ms (next.js: 2ms, proxy.ts: 108ms, application-code: 46ms)
+ GET / 200 in 134ms (next.js: 2ms, proxy.ts: 113ms, application-code: 19ms)
+ GET /garden 200 in 149ms (next.js: 3ms, proxy.ts: 107ms, application-code: 39ms)
+ GET / 200 in 127ms (next.js: 1617µs, proxy.ts: 106ms, application-code: 18ms)
+ GET /garden 200 in 132ms (next.js: 2ms, proxy.ts: 108ms, application-code: 21ms)
+ GET /garden 200 in 136ms (next.js: 4ms, proxy.ts: 110ms, application-code: 22ms)
+ GET /garden 200 in 117ms (next.js: 3ms, proxy.ts: 95ms, application-code: 20ms)
+ GET / 200 in 131ms (next.js: 2ms, proxy.ts: 116ms, application-code: 12ms)
+ GET /api/seeds/usage 200 in 866ms (next.js: 118ms, proxy.ts: 108ms, application-code: 640ms)
+ GET /garden 200 in 128ms (next.js: 5ms, proxy.ts: 97ms, application-code: 26ms)
+ GET /api/seeds/usage 200 in 550ms (next.js: 3ms, proxy.ts: 110ms, application-code: 437ms)
+ GET /api/seeds/usage 200 in 643ms (next.js: 4ms, proxy.ts: 110ms, application-code: 530ms)
+ GET / 200 in 213ms (next.js: 36ms, proxy.ts: 145ms, application-code: 33ms)
+ GET / 200 in 158ms (next.js: 9ms, proxy.ts: 111ms, application-code: 39ms)
+ GET /flower/8c9c9df5-5fb6-40ad-a51f-6356f530ba08 200 in 1697ms (next.js: 1454ms, proxy.ts: 184ms, application-code: 59ms)
+ GET / 200 in 163ms (next.js: 6ms, proxy.ts: 124ms, application-code: 34ms)
+ GET /garden 200 in 170ms (next.js: 12ms, proxy.ts: 127ms, application-code: 31ms)
+ GET /flower/8c9c9df5-5fb6-40ad-a51f-6356f530ba08 200 in 284ms (next.js: 12ms, proxy.ts: 213ms, application-code: 58ms)
+ GET / 200 in 224ms (next.js: 5ms, proxy.ts: 189ms, application-code: 30ms)
+ GET /garden 200 in 159ms (next.js: 5ms, proxy.ts: 120ms, application-code: 34ms)
+ GET / 200 in 145ms (next.js: 4ms, proxy.ts: 110ms, application-code: 31ms)
+ GET /garden 200 in 171ms (next.js: 4ms, proxy.ts: 114ms, application-code: 53ms)
+ GET / 200 in 244ms (next.js: 8ms, proxy.ts: 107ms, application-code: 128ms)
+ GET /garden 200 in 179ms (next.js: 5ms, proxy.ts: 138ms, application-code: 36ms)
+ GET / 200 in 189ms (next.js: 4ms, proxy.ts: 112ms, application-code: 73ms)
+ GET /garden 200 in 170ms (next.js: 6ms, proxy.ts: 120ms, application-code: 43ms)
+ GET / 200 in 209ms (next.js: 6ms, proxy.ts: 127ms, application-code: 77ms)
+ GET /garden 200 in 159ms (next.js: 6ms, proxy.ts: 116ms, application-code: 36ms)
+ GET / 200 in 147ms (next.js: 4ms, proxy.ts: 120ms, application-code: 24ms)
+ GET /garden 200 in 151ms (next.js: 6ms, proxy.ts: 115ms, application-code: 29ms)
+ GET / 200 in 175ms (next.js: 5ms, proxy.ts: 126ms, application-code: 43ms)
+ GET /garden 200 in 135ms (next.js: 3ms, proxy.ts: 103ms, application-code: 29ms)
+ GET / 200 in 130ms (next.js: 3ms, proxy.ts: 111ms, application-code: 16ms)
+ GET /garden 200 in 134ms (next.js: 2ms, proxy.ts: 107ms, application-code: 24ms)
+ GET / 200 in 130ms (next.js: 1962µs, proxy.ts: 115ms, application-code: 13ms)
+ GET /garden 200 in 134ms (next.js: 4ms, proxy.ts: 109ms, application-code: 22ms)
+ GET /garden 200 in 126ms (next.js: 5ms, proxy.ts: 104ms, application-code: 17ms)
+ GET /garden 200 in 134ms (next.js: 3ms, proxy.ts: 111ms, application-code: 20ms)
+ GET /garden 200 in 527ms (next.js: 5ms, proxy.ts: 502ms, application-code: 19ms)
+ GET /api/seeds/usage 200 in 691ms (next.js: 39ms, proxy.ts: 107ms, application-code: 544ms)
+ GET /api/seeds/usage 200 in 690ms (next.js: 5ms, proxy.ts: 120ms, application-code: 565ms)
+ GET /upgrade 200 in 1579ms (next.js: 1254ms, proxy.ts: 210ms, application-code: 115ms)
+ GET / 200 in 216ms (next.js: 12ms, proxy.ts: 168ms, application-code: 36ms)
+ GET /upgrade 200 in 220ms (next.js: 4ms, proxy.ts: 175ms, application-code: 41ms)
+ GET / 200 in 156ms (next.js: 3ms, proxy.ts: 117ms, application-code: 35ms)
+ GET /upgrade 200 in 174ms (next.js: 4ms, proxy.ts: 131ms, application-code: 39ms)
+ GET / 200 in 164ms (next.js: 4ms, proxy.ts: 115ms, application-code: 45ms)
+ GET /upgrade 200 in 150ms (next.js: 5ms, proxy.ts: 116ms, application-code: 29ms)
+ GET / 200 in 167ms (next.js: 3ms, proxy.ts: 131ms, application-code: 33ms)
+ GET /upgrade 200 in 138ms (next.js: 3ms, proxy.ts: 108ms, application-code: 27ms)
+ GET / 200 in 215ms (next.js: 4ms, proxy.ts: 127ms, application-code: 83ms)
+ GET /upgrade 200 in 177ms (next.js: 4ms, proxy.ts: 144ms, application-code: 28ms)
+ GET / 200 in 144ms (next.js: 3ms, proxy.ts: 110ms, application-code: 32ms)
+ GET /upgrade 200 in 162ms (next.js: 6ms, proxy.ts: 127ms, application-code: 29ms)
+ GET / 200 in 172ms (next.js: 5ms, proxy.ts: 114ms, application-code: 52ms)
+ GET /upgrade 200 in 210ms (next.js: 19ms, proxy.ts: 121ms, application-code: 70ms)
+[browser] Image with src "http://localhost:3000/bloomr_icon.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+ GET / 200 in 263ms (next.js: 5ms, proxy.ts: 240ms, application-code: 18ms)

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import {
-  PiUploadSimpleBold,
   PiPlantBold,
   PiGiftBold,
   PiFilePdfBold,
@@ -91,9 +91,9 @@ export default function UploadPage() {
   const { plan } = usePlan();
 
   // Preview states
-  const [previewStage, setPreviewStage] = useState(3);
+  const [previewStage, setPreviewStage] = useState(4);
   const [previewRarity, setPreviewRarity] = useState<Rarity>("basic");
-  const [activePreviewId, setActivePreviewId] = useState<string>("base");
+  const [activePreviewId, setActivePreviewId] = useState<string>("basic");
   const [customPotColor, setCustomPotColor] = useState<string>("#C8682B");
   const [previewVariant, setPreviewVariant] = useState(1);
 
@@ -462,7 +462,7 @@ export default function UploadPage() {
                   >
                     {imagePreview ? (
                       <div className="text-center">
-                        <img src={imagePreview} alt="Preview" className="max-h-32 rounded-xl mx-auto mb-3 shadow-md" />
+                        <Image src={imagePreview} alt="Preview" width={128} height={128} className="max-h-32 rounded-xl mx-auto mb-3 shadow-md object-contain" />
                         <p className="font-bold text-[#3D2B1F] text-sm">{imageFile?.name}</p>
                         <p className="mt-2 text-xs font-bold text-[#39AB54] opacity-80">Click to replace</p>
                       </div>
@@ -628,8 +628,8 @@ export default function UploadPage() {
       </div>
 
       {/* Right Panel: 3D Preview */}
-      <div className="hidden lg:block lg:w-1/2 h-full relative overflow-hidden rounded-l-[3rem] shadow-[inset_10px_0_30px_rgba(0,0,0,0.05)]" style={{ background: "linear-gradient(to bottom, #BDE0F5, #5AB4E5 60%, #3E9FD5 90%, #4CAF60 100%)" }}>
-        <div className="absolute top-10 left-10 text-4xl font-heading font-extrabold text-[#39AB54]/20 tracking-tighter mix-blend-multiply">Bloomr Setup</div>
+      <div className="hidden lg:block lg:w-1/2 h-full relative overflow-hidden rounded-l-[3rem] bg-[#87CEEB] shadow-[inset_10px_0_40px_rgba(0,0,0,0.15)]">
+        <div className="absolute top-10 left-10 text-4xl font-heading font-extrabold text-[#1A4D2E]/20 tracking-tighter mix-blend-multiply drop-shadow-sm">Bloomr Setup</div>
 
         {flowerType ? (
           <div className="w-full h-full cursor-grab active:cursor-grabbing animate-fade-in">
@@ -658,6 +658,7 @@ export default function UploadPage() {
                 </button>
                 {RARITY_ORDER.map((rarity) => {
                   const config = RARITIES[rarity];
+                  if (!config) return null;
                   return (
                     <button
                       key={rarity}
@@ -685,7 +686,7 @@ export default function UploadPage() {
               </p>
 
               {/* Color picker */}
-              {activePreviewId !== "base" && (
+              {activePreviewId !== "base" && activePreviewId !== "antique" && activePreviewId !== "relic" && (
                 <div className="mt-4 pt-4 border-t border-black/5">
                   <label className="text-[10px] font-bold text-[#8B6E59] uppercase tracking-wider block mb-2">Test Pot Color</label>
                   <input

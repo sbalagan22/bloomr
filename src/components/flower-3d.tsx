@@ -2,9 +2,11 @@
 
 import { useRef, useMemo, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls, useGLTF, Sky, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { type Rarity, RARITIES } from "@/lib/rarity";
+import { useTimeOfDay, getSkyConfig } from "@/hooks/use-time-of-day";
+
 
 interface Flower3DProps {
   flowerType: string;
@@ -13,6 +15,7 @@ interface Flower3DProps {
   potColor?: string;
   size?: "sm" | "md" | "lg" | "full";
   interactive?: boolean;
+  disableZoom?: boolean;
   potVariant?: number;
   showGround?: boolean;
   background?: string;
@@ -35,7 +38,7 @@ function useSoilMat() {
 
 const POT_TARGET_H = 1.1;
 // Pot soil surface Y in FlowerModel world space (stage 4) — used for flower clipping
-const POT_SOIL_Y = -0.6 + 0.9 * (POT_TARGET_H - 0.015); // ≈ 0.377
+const POT_SOIL_Y = 0.9 * (POT_TARGET_H - 0.015);
 
 const POT_RARITY_FILE_PREFIX: Record<Rarity, string> = {
   basic:   "pot_common",
@@ -168,6 +171,7 @@ const STAGE_TARGET_H = [0, 1.2, 1.8, 2.4, 2.4] as const;
  */
 function FlowerGLBMesh({
   url,
+  flowerType,
   growthStage,
 }: {
   url: string;
@@ -213,10 +217,70 @@ function FlowerGLBMesh({
     const targetH = STAGE_TARGET_H[Math.min(growthStage, 4)] ?? 2.4;
     const s = size.y > 0 ? targetH / size.y : 1;
     geo.scale(s, s, s);
+    
+    geo.computeBoundingBox();
+    const finalBox = geo.boundingBox!;
+    const h = finalBox.max.y - finalBox.min.y;
+    // Calculate approximate XZ center and radius for petal center detection
+    const cx = (finalBox.max.x + finalBox.min.x) / 2;
+    const cz = (finalBox.max.z + finalBox.min.z) / 2;
+    const maxRadiusSq = Math.max((finalBox.max.x - cx)**2, (finalBox.max.z - cz)**2);
+
+    const pos = geo.attributes.position;
+    if (pos && h > 0) {
+      const colors = new Float32Array(pos.count * 3);
+      const color = new THREE.Color();
+      
+      const targetPetalColor = new THREE.Color(0xffffff);
+      const centerColor = new THREE.Color();
+      let hasCenterColor = false;
+      
+      if (flowerType === "daisy") {
+        targetPetalColor.setHex(0xffffff);
+        centerColor.setHex(0xffcc00); // Yellow center
+        hasCenterColor = true;
+      } else if (flowerType === "sunflower") {
+        targetPetalColor.setHex(0xffcc00);
+        centerColor.setHex(0x4a2e15); // Dark brown center
+        hasCenterColor = true;
+      } else if (flowerType === "rose") targetPetalColor.setHex(0xe6192b);
+      else if (flowerType === "tulip") targetPetalColor.setHex(0x2a52be);
+      else if (flowerType === "lily") targetPetalColor.setHex(0xff69b4);
+      else targetPetalColor.setHex(0xe8637a);
+      
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        const z = pos.getZ(i);
+        const normY = (y - finalBox.min.y) / h;
+        const radSq = (x - cx)**2 + (z - cz)**2;
+        
+        if (normY < 0.03) {
+          color.setHex(0x4a3424); // soil brown
+        } else if (normY < 0.70) {
+          color.setHex(0x2d8a39); // green stem/leaves
+        } else if (normY < 0.85) {
+          color.setHex(0x2d8a39).lerp(targetPetalColor, (normY - 0.70) / 0.15); // blend zone
+        } else {
+          // upper zone -> petal color
+          if (hasCenterColor && normY > 0.88 && radSq < maxRadiusSq * 0.15) {
+             // It's in the top area and close to the center (radius squared < 15% of max radius squared)
+             color.copy(centerColor);
+          } else {
+             color.copy(targetPetalColor).offsetHSL(0, 0, (normY - 0.85) * 0.4);
+          }
+        }
+        
+        colors[i * 3] = color.r;
+        colors[i * 3 + 1] = color.g;
+        colors[i * 3 + 2] = color.b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    }
 
     geo.computeVertexNormals();
     return geo;
-  }, [scene, nodeName, growthStage]);
+  }, [scene, nodeName, growthStage, flowerType]);
 
   const material = useMemo(() => {
     const mat = new THREE.MeshPhongMaterial({
@@ -235,7 +299,7 @@ function FlowerGLBMesh({
 
   if (!processedGeo) return null;
 
-  const yPos = growthStage >= 4 ? 0.0 : -0.50;
+  const yPos = growthStage >= 4 ? 0.6 : -0.50;
 
   return (
     <mesh
@@ -300,11 +364,11 @@ export function FlowerModel({
   const scale    = scaleMap[Math.max(0, Math.min(4, growthStage))];
 
   return (
-    <group ref={groupRef} scale={scale} position={[0, growthStage >= 4 ? 0 : -0.8, 0]}>
+    <group ref={groupRef} scale={scale} position={[0, 0, 0]}>
 
       {/* Pot (stage 4) or soil mound (stages 0–3) */}
       {growthStage >= 4 ? (
-        <group position={[0, -0.6, 0]} scale={0.9}>
+        <group position={[0, 0, 0]} scale={0.9}>
           <RarityPot rarity={rarity} potColor={potColor} potVariant={potVariant} />
         </group>
       ) : (
@@ -330,13 +394,68 @@ export function FlowerModel({
         const a  = (i / 6) * Math.PI * 2;
         const gc = RARITIES[rarity].glowColor;
         return (
-          <mesh key={`p${i}`} position={[Math.cos(a) * 0.8, 1.5 + Math.sin(i * 0.7) * 0.3, Math.sin(a) * 0.8]}>
+          <mesh key={`p${i}`} position={[Math.cos(a) * 0.8, 2.1 + Math.sin(i * 0.7) * 0.3, Math.sin(a) * 0.8]}>
             <sphereGeometry args={[0.03, 6, 4]} />
             <meshStandardMaterial color={gc} emissive={gc} emissiveIntensity={1.2} />
           </mesh>
         );
       })}
     </group>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   ENDLESS TERRAIN
+   ═══════════════════════════════════════════════════ */
+
+function EndlessTerrain() {
+  const timeOfDay = useTimeOfDay();
+  const skyConfig = getSkyConfig(timeOfDay);
+
+  // Slight tint: day = bright green, sunset = slightly warm, night = slightly muted (not dark)
+  const groundColor = timeOfDay === 'night'
+    ? "#3A8A44"
+    : timeOfDay === 'sunset'
+      ? "#4DB558"
+      : "#4CAF60";
+
+  const grassTexture = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = groundColor;
+    ctx.fillRect(0, 0, 512, 512);
+    // Add subtle noise
+    for (let i = 0; i < 20000; i++) {
+      // eslint-disable-next-line react-hooks/purity
+      ctx.fillStyle = Math.random() > 0.5 ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.08)";
+      // eslint-disable-next-line react-hooks/purity
+      ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(150, 150);
+    return texture;
+  }, [groundColor]);
+
+  return (
+    <>
+      {timeOfDay === 'night' && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+      <Sky 
+        sunPosition={skyConfig.sunPosition} 
+        turbidity={skyConfig.turbidity} 
+        rayleigh={skyConfig.rayleigh} 
+        mieCoefficient={skyConfig.mieCoefficient} 
+        mieDirectionalG={skyConfig.mieDirectionalG} 
+      />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, 0]} receiveShadow>
+        <planeGeometry args={[1500, 1500, 1, 1]} />
+        <meshStandardMaterial map={grassTexture} roughness={1} />
+      </mesh>
+    </>
   );
 }
 
@@ -351,6 +470,7 @@ export function Flower3D({
   potColor,
   size = "md",
   interactive = true,
+  disableZoom = false,
   potVariant = 1,
   showGround = false,
   background,
@@ -362,14 +482,15 @@ export function Flower3D({
     full: "w-full h-full absolute inset-0",
   };
 
+
   return (
     <div
       style={background ? { background } : undefined}
       className={`${sizeMap[size]} ${size !== "full" ? "rounded-2xl overflow-hidden" : ""}`}
     >
-      <Canvas camera={{ position: [2, 4, 6], fov: 45 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }} onCreated={({ gl }) => { gl.localClippingEnabled = true; }}>
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 8, 5]} intensity={1.0} castShadow />
+      <Canvas camera={{ position: [0, 1.8, 6], fov: 42 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }} onCreated={({ gl }) => { gl.localClippingEnabled = true; }}>
+        <ambientLight intensity={1.0} />
+        <directionalLight position={[5, 8, 5]} intensity={1.2} color="#FFFFFF" castShadow />
         <pointLight position={[-3, 4, -3]} intensity={0.4} color="#C8EDCF" />
         <FlowerModel
           flowerType={flowerType}
@@ -378,15 +499,11 @@ export function Flower3D({
           potColor={potColor}
           potVariant={potVariant}
         />
-        {showGround && (
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
-            <planeGeometry args={[10, 10]} />
-            <meshStandardMaterial color="#4CAF60" roughness={1} metalness={0} envMapIntensity={0} />
-          </mesh>
-        )}
+        {showGround ? <EndlessTerrain /> : null}
         {interactive && (
           <OrbitControls
-            enableZoom={size === "full"}
+            target={[0, 1.0, 0]}
+            enableZoom={!disableZoom && size === "full"}
             enablePan={false}
             minDistance={2}
             maxDistance={8}

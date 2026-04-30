@@ -38,7 +38,7 @@ export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
         
         // Auto-fix broken unquoted nodes that contain parentheses (e.g. A[Title (text)] -> A["Title (text)"])
         // Only matches if it's not already quoted.
-        let sanitizedChart = chart.replace(/([A-Za-z0-9_-]+)\[([^"\]]+)\]/g, '$1["$2"]');
+        const sanitizedChart = chart.replace(/([A-Za-z0-9_-]+)\[([^"\]]+)\]/g, '$1["$2"]');
 
         const { svg } = await mermaid.render(id, sanitizedChart);
 

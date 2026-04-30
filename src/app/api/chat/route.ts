@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       units.forEach((u, i) => {
         contextString += `--- Unit ${i + 1}: ${u.title} ---\n`;
         if (u.content_json && typeof u.content_json === 'object') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const content = (u.content_json as any).content || "";
           contextString += `${content}\n\n`;
         }
@@ -84,6 +85,7 @@ ${contextString}`;
     // Prepare messages for OpenAI
     const openAiMessages = [
       { role: "system", content: systemPrompt },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ...messages.map((m: any) => ({
         role: m.role === "user" ? "user" : "assistant",
         content: m.content,
@@ -93,6 +95,7 @@ ${contextString}`;
     const response = await openai.chat.completions.create({
       model: "gpt-5.4-mini",
       max_completion_tokens: 8192,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       messages: openAiMessages as any,
       temperature: 0.5,
     });

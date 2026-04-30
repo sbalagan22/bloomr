@@ -3,9 +3,10 @@
 import { useEffect, useState, Suspense, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Text, DragControls, Grid, Billboard, Sky, Clouds, Cloud } from "@react-three/drei";
+import { OrbitControls, Text, DragControls, Grid, Billboard, Sky, Clouds, Cloud, Stars } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { FlowerModel } from "@/components/flower-3d";
@@ -14,6 +15,8 @@ import { type Rarity } from "@/lib/rarity";
 import { PiPlusBold, PiPottedPlantFill, PiPencilBold, PiCheckBold, PiListBold, PiXBold, PiCaretRightBold, PiSealCheckFill } from "react-icons/pi";
 import { ProCelebration } from "@/components/pro-celebration";
 import * as THREE from "three";
+import { useTimeOfDay, getSkyConfig } from "@/hooks/use-time-of-day";
+
 
 interface Flower {
   id: string;
@@ -42,63 +45,72 @@ const FLOWER_COLORS: Record<string, string> = {
 
 const GRID_SPACING = 3;
 
-// --- Hedge Perimeter ---
-function HedgePerimeter() {
-  const hedgeMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: "#1A6830", roughness: 0.9 }),
-    []
+// --- Beautiful White Picket Fences ---
+function WhiteFences() {
+  const woodMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#F8FBF9", roughness: 0.45, metalness: 0.0 }), []);
+  const postMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#EDF5EF", roughness: 0.4, metalness: 0.0 }), []);
+
+  const panel = (key: string, px: number, py: number, pz: number, rotY: number) => (
+    <group key={key} position={[px, py, pz]} rotation={[0, rotY, 0]}>
+      {/* Corner posts */}
+      <mesh material={postMat} castShadow receiveShadow position={[-1.45, 0.55, 0]}>
+        <boxGeometry args={[0.14, 1.55, 0.14]} />
+      </mesh>
+      <mesh material={postMat} castShadow receiveShadow position={[1.45, 0.55, 0]}>
+        <boxGeometry args={[0.14, 1.55, 0.14]} />
+      </mesh>
+      {/* Rails */}
+      <mesh material={woodMat} castShadow receiveShadow position={[0, 0.15, 0]}>
+        <boxGeometry args={[2.9, 0.1, 0.08]} />
+      </mesh>
+      <mesh material={woodMat} castShadow receiveShadow position={[0, 0.75, 0]}>
+        <boxGeometry args={[2.9, 0.1, 0.08]} />
+      </mesh>
+      {/* Picket boards with pointed caps */}
+      {[-1.08, -0.65, -0.22, 0.22, 0.65, 1.08].map((bx, j) => (
+        <group key={j} position={[bx, 0.48, 0]}>
+          <mesh material={woodMat} castShadow receiveShadow>
+            <boxGeometry args={[0.13, 1.0, 0.08]} />
+          </mesh>
+          <mesh material={woodMat} castShadow receiveShadow position={[0, 0.59, 0]} rotation={[0, 0, Math.PI / 4]}>
+            <boxGeometry args={[0.092, 0.092, 0.08]} />
+          </mesh>
+        </group>
+      ))}
+    </group>
   );
-  const side = (length: number, posX: number, posZ: number, rotY: number) =>
-    Array.from({ length }).map((_, i) => {
-      const jitter = 0.15 + (Math.sin(i * 7.3) * 0.5 + 0.5) * 0.3;
-      return (
-        <mesh
-          key={i}
-          position={[posX + (rotY === 0 ? -length + i * 2 : 0), 0.1 + jitter / 2, posZ + (rotY !== 0 ? -length + i * 2 : 0)]}
-          material={hedgeMat}
-          castShadow
-        >
-          <boxGeometry args={[1.8, 1.2 + jitter, 1.2]} />
-        </mesh>
-      );
-    });
+
+  const PANELS = 12;
+  const SPAN = 2.9;
+  const HALF = (PANELS * SPAN) / 2;
 
   return (
-    <group position={[0, -0.6, 0]}>
-      {side(16, 0, -15, 0)}
-      {side(16, 0, 15, 0)}
-      {side(16, -15, 0, 1)}
-      {side(16, 15, 0, 1)}
+    <group position={[0, 0, 0]}>
+      {Array.from({ length: PANELS }).map((_, i) => panel(`n${i}`, -HALF + SPAN / 2 + i * SPAN, 0, -HALF, 0))}
+      {Array.from({ length: PANELS }).map((_, i) => panel(`s${i}`, -HALF + SPAN / 2 + i * SPAN, 0,  HALF, 0))}
+      {Array.from({ length: PANELS }).map((_, i) => panel(`w${i}`, -HALF, 0, -HALF + SPAN / 2 + i * SPAN, Math.PI / 2))}
+      {Array.from({ length: PANELS }).map((_, i) => panel(`e${i}`,  HALF, 0, -HALF + SPAN / 2 + i * SPAN, Math.PI / 2))}
     </group>
   );
 }
 
 // --- Draggable Flower ---
 function DraggableFlower({
-  flower, isEditorMode, onSave, onNavigate, defaultX, defaultZ
+  flower, isEditorMode, onSave, onNavigate, defaultX, defaultZ, controlsRef
 }: {
-  flower: Flower; isEditorMode: boolean; onSave: (id: string, x: number, z: number) => void; onNavigate: () => void; defaultX: number; defaultZ: number
+  flower: Flower;
+  isEditorMode: boolean;
+  onSave: (id: string, x: number, z: number) => void;
+  onNavigate: () => void;
+  defaultX: number;
+  defaultZ: number;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
 }) {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Use DB positions if available, otherwise structural grid fallback
   const startX = flower.pos_x ?? defaultX;
   const startZ = flower.pos_z ?? defaultZ;
-
   const flowerColor = FLOWER_COLORS[flower.flower_type] || "#39AB54";
-
-  // Force position sync — reset matrix to identity so DragControls offset is cleared
-  useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.matrix.identity();
-      groupRef.current.matrix.setPosition(startX, 0, startZ);
-      groupRef.current.matrix.decompose(
-        groupRef.current.position,
-        groupRef.current.quaternion,
-        groupRef.current.scale
-      );
-    }
-  }, [startX, startZ]);
 
   const content = (
     <group
@@ -109,8 +121,8 @@ function DraggableFlower({
         e.stopPropagation();
         onNavigate();
       }}
-      onPointerOver={() => { if(!isEditorMode) document.body.style.cursor = 'pointer'; }}
-      onPointerOut={() => { if(!isEditorMode) document.body.style.cursor = 'auto'; }}
+      onPointerOver={() => { if (!isEditorMode) document.body.style.cursor = 'pointer'; }}
+      onPointerOut={() => { if (!isEditorMode) document.body.style.cursor = 'auto'; }}
     >
       <mesh position={[0, 1, 0]} visible={false}>
         <cylinderGeometry args={[1.5, 1.5, 4, 8]} />
@@ -138,8 +150,8 @@ function DraggableFlower({
       </Billboard>
       {isEditorMode && (
         <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-           <planeGeometry args={[2.5, 2.5]} />
-           <meshBasicMaterial color="#FFFF00" transparent opacity={0.3} />
+          <planeGeometry args={[2.5, 2.5]} />
+          <meshBasicMaterial color="#FFFF00" transparent opacity={0.3} />
         </mesh>
       )}
     </group>
@@ -149,14 +161,21 @@ function DraggableFlower({
     return (
       <DragControls
         axisLock="y"
-        dragLimits={[[-14, 14], undefined, [-14, 14]]}
-        onDragStart={() => { document.body.style.cursor = 'grabbing'; }}
+        dragLimits={[[-16, 16], undefined, [-16, 16]]}
+        onDragStart={() => {
+          document.body.style.cursor = 'grabbing';
+          if (controlsRef.current) controlsRef.current.enabled = false;
+        }}
         onDragEnd={() => {
-          document.body.style.cursor = 'auto';
+          document.body.style.cursor = 'grab';
+          if (controlsRef.current) controlsRef.current.enabled = true;
           if (groupRef.current) {
             const worldPos = new THREE.Vector3();
             groupRef.current.getWorldPosition(worldPos);
-            onSave(flower.id, worldPos.x, worldPos.z);
+            const snappedX = Math.round(worldPos.x / GRID_SPACING) * GRID_SPACING;
+            const snappedZ = Math.round(worldPos.z / GRID_SPACING) * GRID_SPACING;
+            groupRef.current.position.set(snappedX, 0, snappedZ);
+            onSave(flower.id, snappedX, snappedZ);
           }
         }}
       >
@@ -179,72 +198,112 @@ function CameraController({
   const { camera } = useThree();
   const normalPos = useMemo(() => new THREE.Vector3(0, 10, 20), []);
   const editorPos = useMemo(() => new THREE.Vector3(0, 28, 0.1), []);
+  const isLerping = useRef(false);
+
+  useEffect(() => {
+    isLerping.current = true;
+  }, [isEditorMode]);
 
   useFrame(() => {
-    const target = isEditorMode ? editorPos : normalPos;
-    const dist = camera.position.distanceTo(target);
-    if (dist > 0.01) {
-      camera.position.lerp(target, 0.06);
-      controlsRef.current?.update();
+    if (isLerping.current) {
+      const target = isEditorMode ? editorPos : normalPos;
+      const dist = camera.position.distanceTo(target);
+      if (dist > 0.05) {
+        camera.position.lerp(target, 0.08);
+        controlsRef.current?.update();
+      } else {
+        isLerping.current = false;
+      }
     }
   });
 
   return null;
 }
 
+function TerrainMesh() {
+  const timeOfDay = useTimeOfDay();
+  
+  // Slight tint: day = bright green, sunset = slightly warm, night = slightly muted (not dark)
+  const groundColor = timeOfDay === 'night'
+    ? "#3A8A44"
+    : timeOfDay === 'sunset'
+      ? "#4DB558"
+      : "#4CAF60";
+
+  const grassTexture = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = groundColor;
+    ctx.fillRect(0, 0, 512, 512);
+    // Add subtle noise
+    for (let i = 0; i < 20000; i++) {
+      // eslint-disable-next-line react-hooks/purity
+      ctx.fillStyle = Math.random() > 0.5 ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.08)";
+      // eslint-disable-next-line react-hooks/purity
+      ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(150, 150);
+    return texture;
+  }, [groundColor]);
+
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      <planeGeometry args={[1500, 1500, 1, 1]} />
+      <meshStandardMaterial map={grassTexture ?? undefined} color={grassTexture ? undefined : groundColor} roughness={1} />
+    </mesh>
+  );
+}
+
 function GardenScene({ flowers, isEditorMode, onSavePosition, controlsRef }: { flowers: Flower[], isEditorMode: boolean, onSavePosition: (id: string, x: number, z: number) => void, controlsRef: React.RefObject<OrbitControlsImpl | null> }) {
   const router = useRouter();
   const cols = 9; // Grid limits
+  const timeOfDay = useTimeOfDay();
+  const skyConfig = getSkyConfig(timeOfDay);
 
   return (
     <>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[5, 8, 5]} intensity={1.0} castShadow />
+      <ambientLight intensity={skyConfig.ambientIntensity} />
+      {/* Permanent fill light so night doesn't blacken the garden */}
+      <ambientLight intensity={0.45} color="#ffffff" />
+      <directionalLight position={[5, 8, 5]} intensity={skyConfig.dirIntensity} color={skyConfig.dirColor} castShadow />
       <pointLight position={[-3, 4, -3]} intensity={0.4} color="#C8EDCF" />
       
       {/* Sky */}
-      <Sky sunPosition={[100, 20, 100]} turbidity={8} rayleigh={2} mieCoefficient={0.005} mieDirectionalG={0.8} />
-
-      {/* Atmospheric fog */}
-      <fog attach="fog" args={["#BDE0F5", 20, 60]} />
+      {timeOfDay === 'night' && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+      <Sky 
+        sunPosition={skyConfig.sunPosition} 
+        turbidity={skyConfig.turbidity} 
+        rayleigh={skyConfig.rayleigh} 
+        mieCoefficient={skyConfig.mieCoefficient} 
+        mieDirectionalG={skyConfig.mieDirectionalG} 
+      />
 
       {/* Terrain */}
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.65, 0]}
-        receiveShadow
-        onUpdate={(mesh) => {
-          const geo = mesh.geometry as THREE.PlaneGeometry;
-          const pos = geo.attributes.position;
-          for (let i = 0; i < pos.count; i++) {
-            const x = pos.getX(i);
-            const z = pos.getY(i);
-            pos.setZ(i, Math.sin(x * 0.3) * Math.cos(z * 0.3) * 0.3);
-          }
-          pos.needsUpdate = true;
-          geo.computeVertexNormals();
-        }}
-      >
-        <planeGeometry args={[80, 80, 50, 50]} />
-        <meshStandardMaterial color="#4CAF60" roughness={1} />
-      </mesh>
+      <TerrainMesh />
 
       {/* 3D Clouds */}
-      <Clouds material={THREE.MeshLambertMaterial}>
-        <Cloud position={[-15, 14, -20]} seed={1} segments={20} volume={8} color="white" fade={30} />
-        <Cloud position={[20, 16, -15]}  seed={2} segments={15} volume={6} color="white" fade={25} />
-        <Cloud position={[0, 18, -30]}   seed={3} segments={18} volume={10} color="white" fade={35} />
-        <Cloud position={[-25, 15, 10]}  seed={4} segments={12} volume={7} color="white" fade={28} />
-      </Clouds>
-
-      {isEditorMode && (
-         <Grid position={[1.5, -0.59, 1.5]} cellColor="#ffffff" sectionColor="#ffffff" sectionSize={GRID_SPACING} cellSize={GRID_SPACING} args={[30, 30]} />
+      {timeOfDay !== 'night' && (
+        <Clouds material={THREE.MeshLambertMaterial}>
+          <Cloud position={[-15, 14, -20]} seed={1} segments={20} volume={8} color="white" fade={30} />
+          <Cloud position={[20, 16, -15]}  seed={2} segments={15} volume={6} color="white" fade={25} />
+          <Cloud position={[0, 18, -30]}   seed={3} segments={18} volume={10} color="white" fade={35} />
+          <Cloud position={[-25, 15, 10]}  seed={4} segments={12} volume={7} color="white" fade={28} />
+        </Clouds>
       )}
 
-      <HedgePerimeter />
+      {isEditorMode && (
+         <Grid position={[1.5, 0.02, 1.5]} cellColor="#39AB54" sectionColor="#39AB54" sectionSize={GRID_SPACING} cellSize={GRID_SPACING} args={[30, 30]} infiniteGrid={false} />
+      )}
+
+      <WhiteFences />
 
       {flowers.map((flower, index) => {
-        // Fallback default coordinates if pos_x/z are missing
         const row = Math.floor(index / cols);
         const col = index % cols;
         const defaultX = (col - 4) * GRID_SPACING;
@@ -259,14 +318,15 @@ function GardenScene({ flowers, isEditorMode, onSavePosition, controlsRef }: { f
             onSave={onSavePosition}
             defaultX={defaultX}
             defaultZ={defaultZ}
+            controlsRef={controlsRef}
           />
         );
       })}
 
       <OrbitControls
         ref={controlsRef}
-        enableRotate={!isEditorMode}
         enablePan={true}
+        enableRotate={!isEditorMode}
         enableZoom={!isEditorMode}
         maxPolarAngle={isEditorMode ? Math.PI / 6 : Math.PI / 2 - 0.05}
         minDistance={3}
@@ -303,6 +363,7 @@ function GardenContent() {
       const t = setTimeout(() => setShowUpgradedToast(false), 6000);
       return () => clearTimeout(t);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -325,6 +386,7 @@ function GardenContent() {
       setLoading(false);
     }
     loadGarden();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSavePosition = async (id: string, rawX: number, rawZ: number) => {
@@ -374,7 +436,7 @@ function GardenContent() {
               <circle cx="48" cy="48" r="44" fill="none" stroke="#E8F5E9" strokeWidth="3" />
               <circle cx="48" cy="48" r="44" fill="none" stroke="#3BAB55" strokeWidth="3" strokeDasharray="60 220" strokeLinecap="round" />
             </svg>
-            <img src="/bloomr_icon.svg" alt="Bloomr" className="relative z-10 h-10 w-10 drop-shadow-sm" />
+            <Image src="/bloomr_icon.svg" alt="Bloomr" width={40} height={40} className="relative z-10 h-10 w-10 drop-shadow-sm" />
           </div>
           <p className="text-[#3D2B1F] font-medium text-sm">Loading your garden...</p>
         </div>
@@ -400,10 +462,10 @@ function GardenContent() {
   }
 
   // Pass dummy state to forcefully unmount/remount DragControls on reject so it resets visually
-  const renderFlowers = dragRejectId ? flowers.map(f => ({...f, _refresh: Date.now()})) : flowers;
+  const renderFlowers = dragRejectId ? flowers.map(f => ({...f, _refresh: dragRejectId === f.id ? "rejected" : "ok"})) : flowers;
 
   return (
-    <div className="w-full h-screen relative" style={{ background: "linear-gradient(to bottom, #BDE0F5 0%, #5AB4E5 60%, #3E9FD5 100%)" }}>
+    <div className="w-full h-screen relative" style={{ background: "linear-gradient(to bottom, #3E9FD5 0%, #BDE0F5 50%, #FFFFFF 100%)" }}>
       {showCelebration && <ProCelebration onDone={() => setShowCelebration(false)} />}
       {/* Upgrade success toast */}
       {showUpgradedToast && (

@@ -372,3 +372,13 @@
   animation: border-shimmer 3s ease-in-out infinite;
 }
 
+/* ── Print / PDF export ── */
+@media print {
+  nav, header, footer, .print\:hidden { display: none !important; }
+  body { background: white !important; }
+  .fixed, .sticky { position: static !important; }
+  /* Show only the unit content area */
+  .glass-morphism, [class*="backdrop-blur"] { backdrop-filter: none !important; background: white !important; }
+  * { color: #1c1c18 !important; box-shadow: none !important; }
+}
+

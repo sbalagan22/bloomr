@@ -11,9 +11,11 @@ export default function ProtectedLayout({
   const pathname = usePathname();
   const isFlowerRoute = pathname?.startsWith("/flower");
 
+  const hideNav = isFlowerRoute || pathname === "/upgrade";
+
   return (
     <>
-      {!isFlowerRoute && <NavBar />}
+      {!hideNav && <NavBar />}
       <main className="flex-1">{children}</main>
     </>
   );

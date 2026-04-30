@@ -125,10 +125,11 @@ export default function QuizPage() {
       const supabase = createClient();
       await supabase.from("units").update({ completed: true }).eq("id", unitId);
 
-      const { data: allUnits } = await supabase.from("units").select("id, completed").eq("flower_id", flowerId);
+      const { data: allUnits } = await supabase.from("units").select("id, completed, is_custom").eq("flower_id", flowerId);
       if (allUnits) {
-        const completedCount = allUnits.filter((u) => u.completed).length;
-        const totalUnits = allUnits.length;
+        const coreUnits = allUnits.filter(u => !u.is_custom);
+        const completedCount = coreUnits.filter((u) => u.completed).length;
+        const totalUnits = coreUnits.length;
         const newStage = Math.min(3, Math.floor((completedCount / totalUnits) * 3));
         const updateData: Record<string, unknown> = { growth_stage: newStage };
         await supabase.from("flowers").update(updateData).eq("id", flowerId);
@@ -306,6 +307,9 @@ export default function QuizPage() {
           <Link href={`/flower/${flowerId}`} className="inline-flex items-center gap-2 text-sm font-semibold text-on-surface-variant hover:text-primary-deep transition-colors">
             <PiArrowLeftBold /> Exit Quiz
           </Link>
+          <button onClick={handleAutoPass} className="px-3 py-1 text-xs font-bold bg-bloom-lavender text-white rounded-full hover:bg-bloom-lavender/90 transition-colors shadow-sm">
+            ⚡ Auto-Pass (Dev)
+          </button>
         </div>
         <span className="text-sm font-bold text-on-surface-variant hidden sm:inline">{unitTitle}</span>
       </div>

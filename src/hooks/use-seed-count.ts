@@ -40,7 +40,7 @@ export function useSeedCount() {
         return () => clearTimeout(t);
       }
     }
-  }, [planLoading, refresh]);
+  }, [planLoading, refresh, usage?.nextReset]);
 
   const remaining = plan === "pro" ? Infinity : Math.max(0, 3 - (usage?.used ?? 0));
 

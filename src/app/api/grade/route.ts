@@ -75,8 +75,8 @@ CRITICAL INSTRUCTION: You MUST carefully compare the student's answer against BO
         const parsed = JSON.parse(cleaned);
         score = Math.max(0, Math.min(1, parsed.score));
         feedback = parsed.feedback || feedback;
-      } catch (parseError) {
-        console.error("Failed to parse grading response:", responseText);
+      } catch (err) {
+        console.error("Failed to parse grading response:", responseText, err);
         // Fall back to basic string matching
         const scoreMatch = responseText.match(/"score"\s*:\s*([\d.]+)/);
         if (scoreMatch) {

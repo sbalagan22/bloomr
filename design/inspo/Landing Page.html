@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bloomr — Learn it. Grow it. Own it.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green:        #39AB54;
+  --green-light:  #5CC873;
+  --green-dark:   #2A8040;
+  --green-muted:  #C8EDCF;
+  --green-deep:   #1A2318;
+  --soil:         #3D2B1F;
+  --bark:         #6B4C35;
+  --parchment:    #F7F2EA;
+  --cream:        #EDE8DE;
+  --stone:        #C4BAA8;
+  --rose:         #E8637A;
+  --tulip:        #F4A44E;
+  --sunflower:    #F5D03B;
+  --daisy:        #A8D8EA;
+  --lavender:     #B09FD8;
+  --font-display: 'Lora', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+  --font-mono:    'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--parchment);
+  color: var(--soil);
+  overflow-x: hidden;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem;
+  height: 64px;
+  background: rgba(247, 242, 234, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(196, 186, 168, 0.4);
+  transition: box-shadow .3s;
+}
+nav.scrolled { box-shadow: 0 2px 24px rgba(61,43,31,.08); }
+
+.nav-logo {
+  display: flex; align-items: center; gap: .5rem;
+  font-family: var(--font-display); font-size: 1.25rem; font-weight: 600;
+  color: var(--soil); text-decoration: none;
+}
+.nav-logo img { height: 28px; }
+
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+.nav-links a {
+  font-size: .9rem; color: var(--bark); text-decoration: none; font-weight: 400;
+  transition: color .15s;
+}
+.nav-links a:hover { color: var(--green); }
+
+.nav-cta { display: flex; gap: .75rem; align-items: center; }
+.btn-ghost {
+  background: transparent; border: 1.5px solid var(--green);
+  color: var(--green); border-radius: 999px; padding: .45rem 1.2rem;
+  font-size: .875rem; font-weight: 500; cursor: pointer;
+  font-family: var(--font-body); transition: all .15s;
+}
+.btn-ghost:hover { background: var(--green-muted); }
+.btn-primary {
+  background: var(--green); color: #fff; border: none;
+  border-radius: 999px; padding: .5rem 1.4rem;
+  font-size: .875rem; font-weight: 500; cursor: pointer;
+  font-family: var(--font-body);
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 12px rgba(57,171,84,.35);
+}
+.btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(57,171,84,.45); }
+.btn-primary.lg { padding: .75rem 2rem; font-size: 1rem; }
+.btn-primary.xl { padding: .9rem 2.4rem; font-size: 1.05rem; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 80px 5vw 60px;
+  position: relative;
+  overflow: hidden;
+  gap: 2rem;
+}
+
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 80% 60% at 70% 40%, #D4EED8 0%, transparent 65%),
+              radial-gradient(ellipse 40% 40% at 10% 80%, #EDE8DE 0%, transparent 60%);
+}
+
+/* floating dots */
+.hero-dots {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+}
+.dot {
+  position: absolute; border-radius: 50%;
+  background: var(--green); opacity: .12;
+  animation: float-dot linear infinite;
+}
+
+@keyframes float-dot {
+  0%   { transform: translateY(0)    rotate(0deg); opacity: .12; }
+  50%  { opacity: .2; }
+  100% { transform: translateY(-60px) rotate(180deg); opacity: 0; }
+}
+
+.hero-left { position: relative; z-index: 2; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: .45rem;
+  background: var(--green-muted); color: var(--green-dark);
+  border-radius: 999px; padding: .3rem .9rem;
+  font-size: .78rem; font-weight: 500; font-family: var(--font-mono);
+  margin-bottom: 1.5rem;
+  animation: fade-up .6s ease both;
+}
+.hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
+
+.hero-headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5.5vw, 4.5rem);
+  font-weight: 700; line-height: 1.1;
+  color: var(--soil);
+  animation: fade-up .7s .1s ease both;
+  text-wrap: balance;
+}
+.hero-headline em {
+  font-style: italic; color: var(--green);
+}
+
+.hero-sub {
+  margin-top: 1.25rem;
+  font-size: 1.1rem; line-height: 1.65; color: var(--bark);
+  max-width: 440px;
+  animation: fade-up .7s .2s ease both;
+}
+
+.hero-actions {
+  margin-top: 2rem;
+  display: flex; gap: 1rem; align-items: center;
+  animation: fade-up .7s .3s ease both;
+}
+.hero-actions .sign-in {
+  color: var(--bark); font-size: .9rem; text-decoration: none;
+  border-bottom: 1px solid var(--stone); padding-bottom: 1px;
+  transition: color .15s;
+}
+.hero-actions .sign-in:hover { color: var(--soil); }
+
+.hero-stats {
+  margin-top: 2.5rem;
+  display: flex; gap: 2rem;
+  animation: fade-up .7s .4s ease both;
+}
+.stat-item { display: flex; flex-direction: column; gap: .15rem; }
+.stat-num {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+  color: var(--green);
+}
+.stat-label { font-size: .78rem; color: var(--bark); font-weight: 400; }
+
+/* ── HERO FLOWER ── */
+.hero-right {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.garden-preview {
+  position: relative; width: 480px; height: 480px;
+  animation: fade-up .8s .15s ease both;
+}
+
+.garden-ground {
+  position: absolute; bottom: 0; left: 10%; right: 10%; height: 80px;
+  background: linear-gradient(180deg, #C8EDCF 0%, #A8D8B0 100%);
+  border-radius: 50% / 40%;
+  opacity: .5;
+}
+
+.flower-card {
+  position: absolute;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 32px rgba(61,43,31,.12), 0 1px 4px rgba(61,43,31,.06);
+  padding: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+  transition: transform .3s ease, box-shadow .3s;
+  cursor: pointer;
+  border: 1px solid rgba(196,186,168,.3);
+}
+.flower-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 8px 48px rgba(61,43,31,.18); }
+
+.flower-card img { width: 90px; height: 90px; object-fit: contain; }
+.flower-card .fc-name { font-size: .75rem; font-weight: 500; color: var(--bark); font-family: var(--font-mono); }
+.flower-card .fc-bar {
+  width: 70px; height: 4px; border-radius: 99px;
+  background: var(--cream);
+  overflow: hidden;
+}
+.flower-card .fc-bar-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--green-dark), var(--green), var(--green-light));
+  animation: fill-bar 1.5s 1s ease both;
+}
+@keyframes fill-bar { from { width: 0; } }
+
+.fc-1 { top: 30px; left: 20px; animation: float-card 4s ease-in-out infinite; }
+.fc-2 { top: 60px; right: 30px; animation: float-card 5s 1s ease-in-out infinite; }
+.fc-3 { bottom: 100px; left: 40px; animation: float-card 4.5s .5s ease-in-out infinite; }
+.fc-4 { bottom: 80px; right: 20px; animation: float-card 5.5s 1.5s ease-in-out infinite; }
+.fc-5 { top: 50%; left: 50%; transform: translate(-50%, -50%); animation: float-card-center 6s ease-in-out infinite; }
+
+@keyframes float-card { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes float-card-center { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-56%) scale(1.02); } }
+
+.fc-5 { width: 130px; }
+.fc-5 img { width: 110px; height: 110px; }
+
+.bloom-ring {
+  position: absolute; top: 50%; left: 50%; width: 160px; height: 160px;
+  margin: -80px;
+  border: 2px solid rgba(57,171,84,.15);
+  border-radius: 50%;
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+.bloom-ring-2 {
+  width: 220px; height: 220px; margin: -110px;
+  animation: pulse-ring 3s 1s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%,100% { transform: scale(1); opacity: .5; }
+  50% { transform: scale(1.08); opacity: .15; }
+}
+
+.flowy-bubble {
+  position: absolute; top: 8px; right: -40px;
+  background: white; border-radius: 14px;
+  padding: .6rem .9rem; font-size: .72rem;
+  color: var(--bark); font-family: var(--font-body);
+  box-shadow: 0 2px 16px rgba(61,43,31,.12);
+  border: 1px solid rgba(196,186,168,.3);
+  max-width: 150px; line-height: 1.45;
+  animation: float-card 4s 2s ease-in-out infinite;
+}
+.flowy-bubble::before {
+  content: '🌿'; margin-right: .3rem;
+}
+
+/* ── SCROLL ANIM ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0; transform: translateY(32px);
+  transition: opacity .65s ease, transform .65s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: .1s; }
+.reveal-delay-2 { transition-delay: .2s; }
+.reveal-delay-3 { transition-delay: .3s; }
+.reveal-delay-4 { transition-delay: .4s; }
+
+/* ── MARQUEE STRIP ── */
+.marquee-strip {
+  background: var(--soil); color: var(--cream);
+  padding: .8rem 0;
+  overflow: hidden; white-space: nowrap;
+  position: relative;
+}
+.marquee-inner {
+  display: inline-flex; gap: 3rem;
+  animation: marquee 25s linear infinite;
+}
+.marquee-inner span {
+  font-size: .85rem; font-weight: 400; font-family: var(--font-mono);
+  display: inline-flex; align-items: center; gap: .5rem;
+}
+.marquee-inner span::before { content: '✦'; color: var(--green-light); font-size: .6rem; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── SECTION COMMON ── */
+section { padding: 6rem 5vw; }
+.section-label {
+  font-family: var(--font-mono); font-size: .75rem; font-weight: 500;
+  color: var(--green-dark); letter-spacing: .08em; text-transform: uppercase;
+  margin-bottom: .75rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.section-label::before { content: ''; display: block; width: 20px; height: 1.5px; background: var(--green); }
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3.5vw, 2.75rem);
+  font-weight: 700; color: var(--soil); line-height: 1.2;
+}
+.section-sub {
+  margin-top: .75rem;
+  font-size: 1.05rem; color: var(--bark); max-width: 520px; line-height: 1.6;
+}
+.text-center { text-align: center; }
+.text-center .section-label { justify-content: center; }
+.text-center .section-label::before { display: none; }
+.text-center .section-sub { margin: .75rem auto 0; }
+
+/* ── GROWTH CYCLE ── */
+.cycle-section {
+  background: var(--green-deep);
+  padding: 7rem 5vw;
+}
+.cycle-section .section-label { color: var(--green-light); }
+.cycle-section .section-label::before { background: var(--green-light); }
+.cycle-section .section-title { color: #fff; }
+.cycle-section .section-sub { color: rgba(255,255,255,.55); }
+
+.cycle-track {
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  position: relative;
+}
+.cycle-track::before {
+  content: '';
+  position: absolute; top: 52px; left: calc(12.5% + 16px); right: calc(12.5% + 16px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(92,200,115,.4), var(--green), rgba(92,200,115,.4), transparent);
+  z-index: 0;
+}
+
+/* Animated dash along the line */
+.cycle-track::after {
+  content: '';
+  position: absolute; top: 48px; left: calc(12.5% + 16px);
+  width: 12px; height: 9px;
+  background: var(--green-light);
+  border-radius: 99px;
+  animation: dash-along 3s ease-in-out infinite;
+  z-index: 1;
+  box-shadow: 0 0 8px rgba(92,200,115,.8);
+}
+@keyframes dash-along {
+  0%   { left: calc(12.5% + 16px); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: calc(87.5% - 16px); opacity: 0; }
+}
+
+.cycle-step {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  position: relative; z-index: 2;
+}
+
+.cycle-icon-wrap {
+  width: 104px; height: 104px; border-radius: 20px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; margin-bottom: 1.4rem;
+  position: relative; z-index: 1;
+  transition: transform .3s, border-color .3s, box-shadow .3s, background .3s;
+  backdrop-filter: blur(4px);
+}
+.cycle-step:hover .cycle-icon-wrap {
+  transform: scale(1.06) translateY(-4px);
+  border-color: var(--green);
+  background: rgba(57,171,84,.12);
+  box-shadow: 0 8px 32px rgba(57,171,84,.3);
+}
+.cycle-icon-wrap .step-num-badge {
+  position: absolute; top: -10px; right: -10px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--green); color: white;
+  font-size: .65rem; font-weight: 700; font-family: var(--font-mono);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Mini app preview inside each step card */
+.cycle-card-preview {
+  margin-top: 1.5rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: .85rem;
+  width: 100%;
+  text-align: left;
+}
+.ccp-bar {
+  height: 4px; border-radius: 99px; margin-bottom: .5rem;
+  background: rgba(255,255,255,.08);
+  overflow: hidden;
+}
+.ccp-bar-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--green-dark), var(--green-light));
+  transition: width 1.4s ease;
+}
+.ccp-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: rgba(57,171,84,.2); color: var(--green-light);
+  border-radius: 6px; padding: .2rem .5rem;
+  font-size: .62rem; font-family: var(--font-mono);
+}
+.ccp-line {
+  height: 6px; border-radius: 99px; background: rgba(255,255,255,.07);
+  margin-top: .4rem;
+}
+
+.cycle-step-num {
+  font-family: var(--font-mono); font-size: .65rem; color: rgba(255,255,255,.3);
+  margin-bottom: .3rem; letter-spacing: .08em;
+}
+.cycle-step-title {
+  font-family: var(--font-display); font-size: 1.1rem; font-weight: 600;
+  color: #fff; margin-bottom: .4rem;
+}
+.cycle-step-desc { font-size: .85rem; color: rgba(255,255,255,.5); line-height: 1.6; }
+
+/* ── FEATURES ── */
+.features-grid {
+  margin-top: 3.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+.feature-card {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid rgba(196,186,168,.4);
+  padding: 1.75rem;
+  transition: transform .25s, box-shadow .25s;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.feature-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 40px rgba(61,43,31,.1);
+}
+.feature-card.wide { grid-column: span 2; }
+.feature-card.hero-card {
+  grid-column: span 3;
+  flex-direction: row; align-items: center; gap: 2.5rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, var(--green-deep) 0%, #243820 100%);
+  border-color: rgba(57,171,84,.2);
+}
+.feature-card.hero-card .feature-title { color: white; font-size: 1.3rem; }
+.feature-card.hero-card .feature-desc { color: rgba(255,255,255,.6); }
+.hero-card-left { flex: 1; }
+.hero-card-right {
+  flex-shrink: 0; display: flex; gap: .75rem; align-items: flex-end;
+}
+.hero-card-right img {
+  object-fit: contain; filter: drop-shadow(0 8px 20px rgba(0,0,0,.5));
+  animation: float-card 4s ease-in-out infinite;
+}
+.hero-card-right img:nth-child(2) { animation-delay: .8s; }
+.hero-card-right img:nth-child(3) { animation-delay: 1.6s; }
+
+.fc-accent {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 20px 20px 0 0;
+}
+.fc-accent.green { background: linear-gradient(90deg, var(--green-dark), var(--green-light)); }
+.fc-accent.rose { background: var(--rose); }
+.fc-accent.tulip { background: var(--tulip); }
+.fc-accent.daisy { background: var(--daisy); }
+.fc-accent.lavender { background: var(--lavender); }
+.fc-accent.sunflower { background: var(--sunflower); }
+
+.feature-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; margin-bottom: 1rem;
+}
+.feature-icon.green { background: var(--green-muted); }
+.feature-icon.rose { background: #fce8ec; }
+.feature-icon.tulip { background: #fef3e8; }
+.feature-icon.daisy { background: #e8f4f8; }
+.feature-icon.lavender { background: #ede8f8; }
+.feature-icon.sunflower { background: #fef9e0; }
+
+.feature-title {
+  font-family: var(--font-display); font-size: 1.1rem; font-weight: 600;
+  color: var(--soil); margin-bottom: .4rem;
+}
+.feature-desc { font-size: .875rem; color: var(--bark); line-height: 1.6; }
+
+/* quiz preview in wide card */
+.quiz-preview {
+  margin-top: 1.2rem; display: flex; flex-direction: column; gap: .5rem;
+}
+.qp-option {
+  padding: .6rem .9rem; border-radius: 10px; font-size: .82rem;
+  border: 1.5px solid var(--stone); cursor: pointer;
+  transition: all .2s; display: flex; align-items: center; gap: .5rem;
+}
+.qp-option.correct {
+  background: var(--green-muted); border-color: var(--green); color: var(--green-dark);
+  font-weight: 500;
+}
+.qp-option.correct::before { content: '✓'; font-weight: 700; color: var(--green); }
+.qp-option.wrong { background: #ffe8ec; border-color: var(--rose); color: #9c2f3f; }
+.qp-option.wrong::before { content: '✗'; color: var(--rose); }
+.qp-option.neutral:hover { border-color: var(--green-light); background: var(--green-muted); }
+
+/* progress preview in tall card */
+.progress-preview { margin-top: 1.2rem; display: flex; flex-direction: column; gap: .85rem; }
+.pp-row { display: flex; flex-direction: column; gap: .3rem; }
+.pp-label { font-size: .75rem; font-weight: 500; color: var(--bark); display: flex; justify-content: space-between; }
+.pp-bar { height: 6px; background: var(--cream); border-radius: 99px; overflow: hidden; }
+.pp-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--green-dark), var(--green-light));
+  transition: width 1.2s cubic-bezier(.4,0,.2,1);
+}
+
+/* flowy preview */
+.chat-preview {
+  margin-top: 1rem;
+  background: var(--cream); border-radius: 14px; padding: 1rem;
+  display: flex; flex-direction: column; gap: .65rem;
+}
+.chat-bubble {
+  max-width: 85%; padding: .55rem .85rem; border-radius: 14px;
+  font-size: .8rem; line-height: 1.5; color: var(--soil);
+}
+.chat-bubble.bot { background: white; align-self: flex-start; border: 1px solid rgba(196,186,168,.3); }
+.chat-bubble.user { background: var(--green); color: white; align-self: flex-end; }
+.chat-typing {
+  align-self: flex-start; background: white; border-radius: 14px;
+  padding: .55rem .85rem; display: flex; gap: 4px; align-items: center;
+  border: 1px solid rgba(196,186,168,.3);
+}
+.chat-typing span {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--stone);
+  animation: typing-dot .9s infinite;
+}
+.chat-typing span:nth-child(2) { animation-delay: .15s; }
+.chat-typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes typing-dot {
+  0%,80%,100% { transform: scale(1); opacity: .5; }
+  40% { transform: scale(1.2); opacity: 1; }
+}
+
+/* ── GARDEN SECTION ── */
+.garden-section {
+  background: linear-gradient(180deg, var(--parchment) 0%, #D4EED8 100%);
+  position: relative; overflow: hidden;
+}
+.garden-visual {
+  margin-top: 3rem;
+  background: var(--green-deep);
+  border-radius: 28px;
+  overflow: hidden;
+  height: 420px;
+  position: relative;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 20px 80px rgba(26,35,24,.4);
+}
+.garden-visual-header {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px; padding: .4rem 1.2rem;
+  display: flex; gap: 1.5rem; align-items: center;
+  font-size: .78rem; color: rgba(255,255,255,.7); font-family: var(--font-mono);
+  z-index: 5;
+}
+.garden-visual-header span { display: flex; align-items: center; gap: .35rem; }
+
+.gv-floor {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 160px;
+  background: linear-gradient(180deg, #2E6B3E 0%, #1F4A2B 100%);
+}
+.gv-sky {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 160px;
+  background: linear-gradient(180deg, #1A2318 0%, #243020 100%);
+}
+.gv-fence {
+  position: absolute; bottom: 155px; left: 0; right: 0;
+  height: 30px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent, transparent 18px,
+    rgba(255,255,255,.15) 18px, rgba(255,255,255,.15) 21px
+  );
+}
+
+/* Stars */
+.star {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: white; border-radius: 50%;
+  animation: twinkle 3s ease-in-out infinite;
+}
+@keyframes twinkle { 0%,100% { opacity: .2; } 50% { opacity: 1; } }
+
+.gv-flowers {
+  position: absolute; bottom: 155px;
+  width: 100%; display: flex;
+  align-items: flex-end; justify-content: center;
+  gap: 3rem; padding: 0 4rem;
+  z-index: 2;
+}
+.gv-flower {
+  display: flex; flex-direction: column; align-items: center;
+}
+.gv-flower img {
+  object-fit: contain;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,.4));
+  animation: float-card 4s ease-in-out infinite;
+}
+.gv-flower-label {
+  font-size: .65rem; color: rgba(255,255,255,.5); font-family: var(--font-mono);
+  margin-top: .3rem;
+}
+
+/* plant new button */
+.gv-plant-btn {
+  position: absolute; top: 16px; right: 20px;
+  background: var(--green); color: white; border: none; border-radius: 10px;
+  padding: .45rem .9rem; font-size: .78rem; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer; display: flex; align-items: center; gap: .35rem;
+  box-shadow: 0 2px 12px rgba(57,171,84,.4);
+  z-index: 5;
+}
+
+/* ── PRICING ── */
+.pricing-grid {
+  margin-top: 3rem;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1.5rem; max-width: 720px; margin-left: auto; margin-right: auto;
+}
+.pricing-card {
+  border-radius: 24px; padding: 2rem;
+  border: 1.5px solid var(--stone);
+  background: white;
+  position: relative; overflow: hidden;
+  transition: transform .25s, box-shadow .25s;
+}
+.pricing-card:hover { transform: translateY(-3px); }
+.pricing-card.pro {
+  background: var(--green);
+  border-color: var(--green-dark);
+  color: white;
+  box-shadow: 0 12px 48px rgba(57,171,84,.4);
+}
+.pricing-badge {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--sunflower); color: var(--soil);
+  border-radius: 99px; padding: .25rem .7rem;
+  font-size: .7rem; font-weight: 500; font-family: var(--font-mono);
+}
+.pricing-plan {
+  font-family: var(--font-mono); font-size: .78rem; color: var(--bark);
+  margin-bottom: .5rem; font-weight: 500;
+}
+.pricing-card.pro .pricing-plan { color: rgba(255,255,255,.75); }
+.pricing-price {
+  font-family: var(--font-display); font-size: 2.5rem; font-weight: 700;
+  color: var(--soil); line-height: 1;
+}
+.pricing-card.pro .pricing-price { color: white; }
+.pricing-price sup { font-size: 1.2rem; vertical-align: super; }
+.pricing-price sub { font-size: .85rem; font-weight: 400; font-family: var(--font-body); }
+.pricing-desc {
+  margin-top: .4rem; font-size: .82rem; color: var(--bark); line-height: 1.5;
+}
+.pricing-card.pro .pricing-desc { color: rgba(255,255,255,.75); }
+.pricing-divider {
+  margin: 1.25rem 0; height: 1px;
+  background: var(--stone);
+}
+.pricing-card.pro .pricing-divider { background: rgba(255,255,255,.25); }
+.pricing-features { display: flex; flex-direction: column; gap: .6rem; }
+.pf-item {
+  display: flex; align-items: flex-start; gap: .6rem;
+  font-size: .85rem; color: var(--bark); line-height: 1.45;
+}
+.pricing-card.pro .pf-item { color: rgba(255,255,255,.88); }
+.pf-check { color: var(--green); font-weight: 700; flex-shrink: 0; }
+.pricing-card.pro .pf-check { color: white; }
+.pf-x { color: var(--stone); flex-shrink: 0; }
+.pricing-cta {
+  margin-top: 1.5rem;
+}
+.btn-pricing-free {
+  width: 100%; padding: .65rem; border-radius: 999px;
+  border: 1.5px solid var(--green); color: var(--green);
+  background: transparent; font-size: .9rem; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer;
+  transition: all .15s;
+}
+.btn-pricing-free:hover { background: var(--green-muted); }
+.btn-pricing-pro {
+  width: 100%; padding: .65rem; border-radius: 999px;
+  background: white; color: var(--green-dark); border: none;
+  font-size: .9rem; font-weight: 600;
+  font-family: var(--font-body); cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 2px 12px rgba(0,0,0,.1);
+}
+.btn-pricing-pro:hover { transform: translateY(-1px); box-shadow: 0 4px 24px rgba(0,0,0,.15); }
+
+/* ── TESTIMONIALS ── */
+.testimonials-grid {
+  margin-top: 2.5rem;
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem;
+}
+.testimonial-card {
+  background: white; border-radius: 20px; padding: 1.5rem;
+  border: 1px solid rgba(196,186,168,.3);
+  transition: transform .25s, box-shadow .25s;
+}
+.testimonial-card:hover { transform: translateY(-2px); box-shadow: 0 6px 32px rgba(61,43,31,.1); }
+.t-quote { font-size: .9rem; color: var(--soil); line-height: 1.65; font-style: italic; font-family: var(--font-display); }
+.t-author { margin-top: 1rem; display: flex; align-items: center; gap: .7rem; }
+.t-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; font-weight: 600; color: white; flex-shrink: 0;
+}
+.t-name { font-size: .82rem; font-weight: 500; color: var(--soil); }
+.t-school { font-size: .72rem; color: var(--bark); font-family: var(--font-mono); }
+.t-stars { font-size: .7rem; color: var(--sunflower); margin-bottom: .15rem; letter-spacing: .05em; }
+
+/* ── CTA FOOTER ── */
+.cta-section {
+  background: var(--green-deep);
+  padding: 6rem 5vw;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.cta-section::before {
+  content: '';
+  position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(57,171,84,.2) 0%, transparent 70%);
+}
+.cta-label {
+  font-family: var(--font-mono); font-size: .75rem; color: var(--green-light);
+  letter-spacing: .1em; text-transform: uppercase; margin-bottom: 1rem;
+}
+.cta-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 700; color: white; line-height: 1.15;
+}
+.cta-title em { color: var(--green-light); font-style: italic; }
+.cta-sub { margin-top: 1rem; color: rgba(255,255,255,.6); font-size: 1rem; max-width: 400px; margin-left: auto; margin-right: auto; }
+.cta-actions { margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; align-items: center; }
+.btn-cta-primary {
+  background: var(--green); color: white; border: none; border-radius: 999px;
+  padding: .85rem 2.2rem; font-size: 1rem; font-weight: 600;
+  font-family: var(--font-body); cursor: pointer;
+  box-shadow: 0 4px 24px rgba(57,171,84,.5);
+  transition: all .2s;
+}
+.btn-cta-primary:hover { background: var(--green-light); transform: translateY(-2px); box-shadow: 0 8px 40px rgba(57,171,84,.55); }
+.btn-cta-ghost {
+  background: transparent; color: rgba(255,255,255,.7);
+  border: 1.5px solid rgba(255,255,255,.2); border-radius: 999px;
+  padding: .85rem 2rem; font-size: 1rem; font-weight: 400;
+  font-family: var(--font-body); cursor: pointer;
+  transition: all .2s;
+}
+.btn-cta-ghost:hover { border-color: rgba(255,255,255,.5); color: white; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--green-deep); border-top: 1px solid rgba(255,255,255,.06);
+  padding: 2.5rem 5vw;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-logo { display: flex; align-items: center; gap: .5rem; }
+.footer-logo img { height: 22px; opacity: .7; filter: brightness(10); }
+.footer-logo span { font-family: var(--font-display); font-size: 1rem; color: rgba(255,255,255,.5); }
+.footer-links { display: flex; gap: 1.5rem; }
+.footer-links a { font-size: .82rem; color: rgba(255,255,255,.35); text-decoration: none; transition: color .15s; }
+.footer-links a:hover { color: rgba(255,255,255,.7); }
+.footer-copy { font-size: .75rem; color: rgba(255,255,255,.25); font-family: var(--font-mono); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .hero { grid-template-columns: 1fr; padding-top: 100px; }
+  .hero-right { display: none; }
+  .cycle-track { grid-template-columns: 1fr 1fr; }
+  .cycle-track::before { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .feature-card.wide { grid-column: span 1; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  nav .nav-links { display: none; }
+  footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <a class="nav-logo" href="#">
+    <img src="assets/bloomr_logo.png" alt="Bloomr" />
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <div class="nav-cta">
+    <button class="btn-ghost" onclick="document.querySelector('.cta-section').scrollIntoView()">Sign In</button>
+    <button class="btn-primary" onclick="document.querySelector('.cta-section').scrollIntoView()">Start Free</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-dots" id="hero-dots"></div>
+
+  <div class="hero-left">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      AI-powered study companion
+    </div>
+    <h1 class="hero-headline">
+      Learn it.<br>
+      <em>Grow it.</em><br>
+      Own it.
+    </h1>
+    <p class="hero-sub">
+      Upload your lectures, PDFs, or notes — and watch them bloom into a living 3D garden. The more you study, the more it grows.
+    </p>
+    <div class="hero-actions">
+      <button class="btn-primary xl" onclick="document.querySelector('.cta-section').scrollIntoView()">🌱 Plant Your First Seed</button>
+      <a href="#how-it-works" class="sign-in">See how it works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num">12k+</span>
+        <span class="stat-label">flowers planted</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">94%</span>
+        <span class="stat-label">retention boost</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">5 min</span>
+        <span class="stat-label">avg. setup time</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="garden-preview">
+      <div class="bloom-ring"></div>
+      <div class="bloom-ring bloom-ring-2"></div>
+      <div class="garden-ground"></div>
+
+      <div class="flower-card fc-1">
+        <img src="assets/flowers/rose.png" alt="Rose" />
+        <span class="fc-name">biology</span>
+        <div class="fc-bar"><div class="fc-bar-fill" style="width:82%"></div></div>
+      </div>
+
+      <div class="flower-card fc-2">
+        <img src="assets/flowers/tulip.png" alt="Tulip" />
+        <span class="fc-name">chemistry</span>
+        <div class="fc-bar"><div class="fc-bar-fill" style="width:55%"></div></div>
+      </div>
+
+      <div class="flower-card fc-5">
+        <img src="assets/flowers/sunflower.png" alt="Sunflower" />
+        <span class="fc-name">economics</span>
+        <div class="fc-bar"><div class="fc-bar-fill" style="width:100%"></div></div>
+      </div>
+
+      <div class="flower-card fc-3">
+        <img src="assets/flowers/lilly.png" alt="Lily" />
+        <span class="fc-name">history</span>
+        <div class="fc-bar"><div class="fc-bar-fill" style="width:38%"></div></div>
+      </div>
+
+      <div class="flower-card fc-4">
+        <img src="assets/flowers/daisy.png" alt="Daisy" />
+        <span class="fc-name">psych 101</span>
+        <div class="fc-bar"><div class="fc-bar-fill" style="width:71%"></div></div>
+      </div>
+
+      <div class="flowy-bubble">
+        <em>Ask me anything about your study material!</em>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-strip">
+  <div class="marquee-inner">
+    <span>Upload PDFs</span><span>YouTube Links</span><span>Voice Notes</span>
+    <span>AI Study Notes</span><span>Custom Quizzes</span><span>3D Garden</span>
+    <span>Flowy AI Tutor</span><span>Audio Recaps</span><span>Concept Maps</span>
+    <span>Growth Tracking</span><span>Collectible Pots</span><span>Mastery Exams</span>
+    <span>Upload PDFs</span><span>YouTube Links</span><span>Voice Notes</span>
+    <span>AI Study Notes</span><span>Custom Quizzes</span><span>3D Garden</span>
+    <span>Flowy AI Tutor</span><span>Audio Recaps</span><span>Concept Maps</span>
+    <span>Growth Tracking</span><span>Collectible Pots</span><span>Mastery Exams</span>
+  </div>
+</div>
+
+<!-- GROWTH CYCLE -->
+<section class="cycle-section" id="how-it-works">
+  <div class="reveal">
+    <div class="section-label">The Growth Cycle</div>
+    <h2 class="section-title">Four steps from<br><em style="font-style:italic;color:var(--green-light)">seed to mastery.</em></h2>
+    <p class="section-sub">Your material doesn't just get summarized — it gets transformed into something you actually own.</p>
+  </div>
+  <div class="cycle-track">
+
+    <div class="cycle-step reveal reveal-delay-1">
+      <div class="cycle-icon-wrap">
+        <span>🌱</span>
+        <div class="step-num-badge">1</div>
+      </div>
+      <div class="cycle-step-num">Plant</div>
+      <div class="cycle-step-title">Drop Your Seed</div>
+      <div class="cycle-step-desc">Upload a PDF, paste a YouTube link, record your voice, or snap a photo of your notes.</div>
+    </div>
+
+    <div class="cycle-step reveal reveal-delay-2">
+      <div class="cycle-icon-wrap">
+        <span>🌿</span>
+        <div class="step-num-badge">2</div>
+      </div>
+      <div class="cycle-step-num">Germinate</div>
+      <div class="cycle-step-title">AI Does Its Thing</div>
+      <div class="cycle-step-desc">Our AI reads everything, builds study units, writes notes, highlights key terms, and creates quizzes.</div>
+    </div>
+
+    <div class="cycle-step reveal reveal-delay-3">
+      <div class="cycle-icon-wrap">
+        <span>💧</span>
+        <div class="step-num-badge">3</div>
+      </div>
+      <div class="cycle-step-num">Water</div>
+      <div class="cycle-step-title">Study &amp; Quiz</div>
+      <div class="cycle-step-desc">Work through units, take AI-generated quizzes, and chat with Flowy — your personal AI tutor who knows your material.</div>
+    </div>
+
+    <div class="cycle-step reveal reveal-delay-4">
+      <div class="cycle-icon-wrap">
+        <span>🌸</span>
+        <div class="step-num-badge">4</div>
+      </div>
+      <div class="cycle-step-num">Bloom</div>
+      <div class="cycle-step-title">Full Bloom</div>
+      <div class="cycle-step-desc">Pass your mastery exam and watch your flower permanently transform — yours forever, uniquely patterned.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="height: 1010.8px">
+  <div class="reveal">
+    <div class="section-label">What's Included</div>
+    <h2 class="section-title">Everything you need<br>to master your material.</h2>
+  </div>
+  <div class="features-grid">
+
+    <!-- wide: quiz -->
+    <div class="feature-card wide reveal reveal-delay-1">
+      <div class="fc-accent green"></div>
+      <div class="feature-icon green">🧠</div>
+      <div class="feature-title">AI-Generated Quizzes</div>
+      <div class="feature-desc">Multiple choice and short answer questions generated from your exact material — not generic textbook questions.</div>
+      <div class="quiz-preview" id="quiz-demo">
+        <div style="font-size:.78rem;color:var(--bark);margin-bottom:.5rem;font-family:var(--font-mono);">Q: What is the law of supply and demand?</div>
+        <div class="qp-option correct">Price rises when demand exceeds supply</div>
+        <div class="qp-option wrong">Supply always equals demand</div>
+        <div class="qp-option neutral">Markets never reach equilibrium</div>
+      </div>
+    </div>
+
+    <!-- regular: flowy -->
+    <div class="feature-card reveal reveal-delay-2">
+      <div class="fc-accent rose"></div>
+      <div class="feature-icon rose">💬</div>
+      <div class="feature-title">Flowy AI Tutor</div>
+      <div class="feature-desc">Context-aware chat that knows your material inside and out. Ask anything, anytime.</div>
+      <div class="chat-preview">
+        <div class="chat-bubble bot">Hi! I'm Flowy. Ask me anything about your economics notes!</div>
+        <div class="chat-bubble user">Explain comparative advantage</div>
+        <div class="chat-typing">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- regular: audio -->
+    <div class="feature-card reveal reveal-delay-1">
+      <div class="fc-accent tulip"></div>
+      <div class="feature-icon tulip">🎧</div>
+      <div class="feature-title">Audio Recaps</div>
+      <div class="feature-desc">Every unit narrated by AI — study on your commute, in the gym, anywhere.</div>
+      <div style="margin-top:1rem;background:var(--cream);border-radius:12px;padding:.9rem;display:flex;align-items:center;gap:.75rem">
+        <div style="width:36px;height:36px;background:var(--tulip);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;font-size:.85rem">▶</div>
+        <div style="flex:1">
+          <div style="font-size:.72rem;color:var(--bark);font-family:var(--font-mono);margin-bottom:.4rem">Unit 2 — Key Concepts</div>
+          <div style="height:4px;background:var(--stone);border-radius:99px;overflow:hidden"><div style="width:38%;height:100%;background:var(--tulip);border-radius:99px"></div></div>
+        </div>
+        <div style="font-size:.7rem;color:var(--bark);font-family:var(--font-mono)">2:14</div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:flex-end;margin-top:.75rem;height:28px;padding:0 .2rem" id="waveform"></div>
+    </div>
+
+    <!-- regular: concept maps -->
+    <div class="feature-card reveal reveal-delay-2">
+      <div class="fc-accent sunflower"></div>
+      <div class="feature-icon sunflower">🗺️</div>
+      <div class="feature-title">Concept Maps</div>
+      <div class="feature-desc">Auto-generated visual diagrams that show how ideas connect within each unit.</div>
+      <div style="margin-top:1rem;background:var(--cream);border-radius:12px;padding:.9rem;font-family:var(--font-mono);font-size:.7rem;color:var(--bark);line-height:1.9">
+        <div style="display:flex;align-items:center;gap:.4rem"><span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;flex-shrink:0"></span>Supply → affects → Price</div>
+        <div style="display:flex;align-items:center;gap:.4rem"><span style="width:8px;height:8px;background:var(--tulip);border-radius:50%;display:inline-block;flex-shrink:0"></span>Demand → affects → Price</div>
+        <div style="display:flex;align-items:center;gap:.4rem"><span style="width:8px;height:8px;background:var(--lavender);border-radius:50%;display:inline-block;flex-shrink:0"></span>Equilibrium → balances → Market</div>
+      </div>
+    </div>
+
+    <!-- regular: study notes -->
+    <div class="feature-card reveal reveal-delay-3">
+      <div class="fc-accent lavender"></div>
+      <div class="feature-icon lavender">📝</div>
+      <div class="feature-title">AI Study Notes</div>
+      <div class="feature-desc">Dense material condensed into clear, structured units with key terms highlighted for fast review.</div>
+      <div style="margin-top:1rem;background:var(--cream);border-radius:12px;padding:.9rem">
+        <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--bark);margin-bottom:.4rem">Chapter 1 · Overview</div>
+        <div style="font-size:.78rem;color:var(--soil);line-height:1.65">
+          The <span style="background:var(--green-muted);color:var(--green-dark);border-radius:3px;padding:0 3px;font-weight:500">law of demand</span> states that as price increases, quantity demanded <span style="background:#fef3e8;color:#a0521a;border-radius:3px;padding:0 3px;font-weight:500">decreases</span>, ceteris paribus.
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</section>
+
+<!-- GARDEN SCENE PREVIEW -->
+<section class="garden-section" style="margin: 0px 0px 10px; padding: 0px; height: 0.344px">
+  <div class="text-center reveal">
+    <div class="section-label">Your Garden</div>
+    <h2 class="section-title">A world that grows<br>with your knowledge.</h2>
+    <p class="section-sub">Watch your 3D garden fill up as you master more material. Rearrange it, revisit it, share it.</p>
+  </div>
+  <div class="garden-visual reveal reveal-delay-1">
+    <!-- Sky stars -->
+    <div class="gv-sky" id="gv-sky"></div>
+    <div class="gv-floor"></div>
+    <div class="gv-fence"></div>
+
+    <div class="garden-visual-header">
+      <span>🏡 My Garden</span>
+      <span>🌸 5 flowers</span>
+      <span>🌿 3/5 seeds used</span>
+      <span style="color:var(--green-light)">⬆ Upgrade</span>
+    </div>
+    <button class="gv-plant-btn">+ Plant New</button>
+
+    <div class="gv-flowers">
+      <div class="gv-flower" style="animation-delay:0s">
+        <img src="assets/flowers/lilly.png" style="width:70px;height:90px" alt="lily" />
+        <div class="gv-flower-label">history</div>
+      </div>
+      <div class="gv-flower" style="animation-delay:.5s">
+        <img src="assets/flowers/rose.png" style="width:80px;height:100px" alt="rose" />
+        <div class="gv-flower-label">biology</div>
+      </div>
+      <div class="gv-flower" style="animation-delay:1s">
+        <img src="assets/flowers/sunflower.png" style="width:90px;height:120px" alt="sunflower" />
+        <div class="gv-flower-label">economics</div>
+      </div>
+      <div class="gv-flower" style="animation-delay:1.5s">
+        <img src="assets/flowers/tulip.png" style="width:75px;height:95px" alt="tulip" />
+        <div class="gv-flower-label">chemistry</div>
+      </div>
+      <div class="gv-flower" style="animation-delay:2s">
+        <img src="assets/flowers/daisy.png" style="width:65px;height:80px" alt="daisy" />
+        <div class="gv-flower-label">psych 101</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="text-center reveal">
+    <div class="section-label">Student Stories</div>
+    <h2 class="section-title">Gardens growing<br>all over campus.</h2>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card reveal reveal-delay-1">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">"I uploaded my entire econ syllabus and had a full study plan in 5 minutes. My garden has 12 flowers and I've actually retained everything."</p>
+      <div class="t-author">
+        <div class="t-avatar" style="background:var(--green)">S</div>
+        <div>
+          <div class="t-name">Sofia M.</div>
+          <div class="t-school">Economics · UC Berkeley</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card reveal reveal-delay-2">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">"Flowy explained concepts that my professor couldn't in 3 lectures. Having an AI that knows *my* notes is game-changing."</p>
+      <div class="t-author">
+        <div class="t-avatar" style="background:var(--rose)">J</div>
+        <div>
+          <div class="t-name">James K.</div>
+          <div class="t-school">Pre-Med · NYU</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card reveal reveal-delay-3">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">"I'm a visual learner and the garden completely changed how I think about studying. Watching my sunflower grow is genuinely motivating."</p>
+      <div class="t-author">
+        <div class="t-avatar" style="background:var(--tulip)">A</div>
+        <div>
+          <div class="t-name">Anya R.</div>
+          <div class="t-school">Psychology · UT Austin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section style="background:var(--cream)" id="pricing">
+  <div class="text-center reveal">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Start free.<br><em style="color:var(--green);font-style:italic">Grow without limits.</em></h2>
+    <p class="section-sub">Everything you need to master your studies. One plan, no surprises.</p>
+  </div>
+  <div class="pricing-grid">
+    <div class="pricing-card reveal reveal-delay-1">
+      <div class="pricing-plan">Free</div>
+      <div class="pricing-price"><sup>$</sup>0<sub>/month</sub></div>
+      <div class="pricing-desc">Perfect for getting started. No credit card required.</div>
+      <div class="pricing-divider"></div>
+      <div class="pricing-features">
+        <div class="pf-item"><span class="pf-check">✓</span> 3 seeds (flowers) per week</div>
+        <div class="pf-item"><span class="pf-check">✓</span> PDF uploads</div>
+        <div class="pf-item"><span class="pf-check">✓</span> All study units & quizzes</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Audio recaps</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Concept maps</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Flowy — 10 msgs/day</div>
+        <div class="pf-item"><span class="pf-x">✗</span> Voice &amp; image uploads</div>
+        <div class="pf-item"><span class="pf-x">✗</span> YouTube link uploads</div>
+        <div class="pf-item"><span class="pf-x">✗</span> Export notes as PDF</div>
+      </div>
+      <div class="pricing-cta">
+        <button class="btn-pricing-free">Get Started Free</button>
+      </div>
+    </div>
+    <div class="pricing-card pro reveal reveal-delay-2">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-plan">Pro</div>
+      <div class="pricing-price"><sup>$</sup>5.99<sub>/month</sub></div>
+      <div class="pricing-desc">Unlimited growth. Your whole curriculum, fully bloomed.</div>
+      <div class="pricing-divider"></div>
+      <div class="pricing-features">
+        <div class="pf-item"><span class="pf-check">✓</span> Unlimited seeds</div>
+        <div class="pf-item"><span class="pf-check">✓</span> PDF uploads</div>
+        <div class="pf-item"><span class="pf-check">✓</span> All study units & quizzes</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Audio recaps</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Concept maps</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Flowy — unlimited</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Voice &amp; image uploads</div>
+        <div class="pf-item"><span class="pf-check">✓</span> YouTube link uploads</div>
+        <div class="pf-item"><span class="pf-check">✓</span> Export notes as PDF</div>
+      </div>
+      <div class="pricing-cta">
+        <button class="btn-pricing-pro">Start Pro — $5.99/mo</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-label">Ready to grow?</div>
+  <h2 class="cta-title reveal">Ready to plant<br>your <em>first seed?</em></h2>
+  <p class="cta-sub reveal">Join 12,000+ students who turned passive studying into active growth.</p>
+  <div class="cta-actions reveal">
+    <button class="btn-cta-primary">🌱 Get Started Free</button>
+    <button class="btn-cta-ghost">See a demo</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <img src="assets/bloomr_logo.png" alt="Bloomr" />
+  </div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Pricing</a>
+    <a href="#">Blog</a>
+  </div>
+  <div class="footer-copy">© 2026 Bloomr. All rights reserved.</div>
+</footer>
+
+<script>
+// Nav scroll
+const nav = document.getElementById('main-nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// Floating dots in hero
+const dotsContainer = document.getElementById('hero-dots');
+for (let i = 0; i < 18; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot';
+  const size = 4 + Math.random() * 8;
+  d.style.cssText = `
+    width:${size}px; height:${size}px;
+    left:${Math.random() * 100}%;
+    bottom:${Math.random() * 40}%;
+    animation-duration:${5 + Math.random() * 8}s;
+    animation-delay:${Math.random() * 8}s;
+  `;
+  dotsContainer.appendChild(d);
+}
+
+// Stars in garden scene
+const gvSky = document.getElementById('gv-sky');
+for (let i = 0; i < 40; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  s.style.cssText = `
+    left:${Math.random()*100}%;
+    top:${Math.random()*100}%;
+    animation-delay:${Math.random()*3}s;
+    animation-duration:${2+Math.random()*3}s;
+  `;
+  gvSky.appendChild(s);
+}
+
+// Waveform animation
+const wf = document.getElementById('waveform');
+for (let i = 0; i < 28; i++) {
+  const bar = document.createElement('div');
+  const h = 4 + Math.random() * 20;
+  bar.style.cssText = `
+    width:4px; height:${h}px; border-radius:2px;
+    background:var(--tulip); flex-shrink:0;
+    animation:wave-bar ${0.4 + Math.random()*0.6}s ${Math.random()*0.5}s ease-in-out infinite alternate;
+  `;
+  wf.appendChild(bar);
+}
+const wfStyle = document.createElement('style');
+wfStyle.textContent = `@keyframes wave-bar { from { transform: scaleY(0.3); opacity:.4; } to { transform: scaleY(1); opacity:1; } }`;
+document.head.appendChild(wfStyle);
+
+// Intersection Observer for reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      // Animate progress bars
+      if (e.target.contains(document.getElementById('progress-demo'))) {
+        setTimeout(() => {
+          document.querySelectorAll('.pp-fill').forEach(bar => {
+            bar.style.width = bar.dataset.width + '%';
+          });
+        }, 300);
+      }
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Progress bar trigger for standalone element
+const progressObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.pp-fill').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+      progressObserver.disconnect();
+    }
+  });
+}, { threshold: 0.5 });
+const pd = document.getElementById('progress-demo');
+if (pd) progressObserver.observe(pd);
+</script>
+
+<div id="tweaks-root"></div>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "heroTagline": "Learn it. Grow it. Own it.",
+  "ctaText": "Plant Your First Seed",
+  "accentColor": "#39AB54",
+  "showStats": true,
+  "cycleBackground": "dark"
+}/*EDITMODE-END*/;
+
+function BloomrTweaks() {
+  const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
+
+  React.useEffect(() => {
+    // Apply accent color
+    document.documentElement.style.setProperty('--green', tweaks.accentColor);
+    // Derive lighter/darker variants
+    document.documentElement.style.setProperty('--green-light', tweaks.accentColor + 'cc');
+  }, [tweaks.accentColor]);
+
+  React.useEffect(() => {
+    // Hero tagline
+    const lines = document.querySelector('.hero-headline');
+    if (lines) {
+      const parts = tweaks.heroTagline.split('.');
+      if (parts.length >= 3) {
+        lines.innerHTML = `${parts[0].trim()}.<br><em>${parts[1].trim()}.</em><br>${parts[2].trim()}.`;
+      }
+    }
+  }, [tweaks.heroTagline]);
+
+  React.useEffect(() => {
+    const btn = document.querySelector('.btn-primary.xl');
+    if (btn) btn.textContent = '🌱 ' + tweaks.ctaText;
+    const ctaBtn = document.querySelector('.btn-cta-primary');
+    if (ctaBtn) ctaBtn.textContent = '🌱 ' + tweaks.ctaText;
+  }, [tweaks.ctaText]);
+
+  React.useEffect(() => {
+    const stats = document.querySelector('.hero-stats');
+    if (stats) stats.style.display = tweaks.showStats ? 'flex' : 'none';
+  }, [tweaks.showStats]);
+
+  React.useEffect(() => {
+    const cycle = document.querySelector('.cycle-section');
+    if (!cycle) return;
+    if (tweaks.cycleBackground === 'dark') {
+      cycle.style.background = 'var(--green-deep)';
+      cycle.querySelectorAll('.cycle-step-title').forEach(el => el.style.color = '#fff');
+      cycle.querySelectorAll('.cycle-step-desc').forEach(el => el.style.color = 'rgba(255,255,255,.5)');
+    } else {
+      cycle.style.background = 'var(--cream)';
+      cycle.querySelectorAll('.cycle-step-title').forEach(el => el.style.color = 'var(--soil)');
+      cycle.querySelectorAll('.cycle-step-desc').forEach(el => el.style.color = 'var(--bark)');
+    }
+  }, [tweaks.cycleBackground]);
+
+  return (
+    <window.TweaksPanel>
+      <window.TweakSection title="Hero">
+        <window.TweakText label="Tagline" value={tweaks.heroTagline} onChange={v => setTweak('heroTagline', v)} />
+        <window.TweakText label="CTA Button" value={tweaks.ctaText} onChange={v => setTweak('ctaText', v)} />
+        <window.TweakToggle label="Show Stats Bar" value={tweaks.showStats} onChange={v => setTweak('showStats', v)} />
+      </window.TweakSection>
+      <window.TweakSection title="Brand">
+        <window.TweakColor label="Accent Green" value={tweaks.accentColor} onChange={v => setTweak('accentColor', v)} />
+      </window.TweakSection>
+      <window.TweakSection title="Growth Cycle">
+        <window.TweakRadio
+          label="Background"
+          value={tweaks.cycleBackground}
+          options={[{label:'Dark', value:'dark'},{label:'Light', value:'light'}]}
+          onChange={v => setTweak('cycleBackground', v)}
+        />
+      </window.TweakSection>
+    </window.TweaksPanel>
+  );
+}
+
+function tryMount() {
+  if (!window.TweaksPanel || !window.useTweaks) { setTimeout(tryMount, 50); return; }
+  ReactDOM.createRoot(document.getElementById('tweaks-root')).render(<BloomrTweaks />);
+}
+tryMount();
+</script>
+
+</body>
+</html>
