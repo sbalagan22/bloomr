@@ -156,7 +156,7 @@ export default function LandingPage() {
         <section id="how-it-works" className="bg-[#1A2318] py-28 px-6 lg:px-20 text-white">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center gap-2 text-xs font-medium font-mono text-[#5CC873] uppercase tracking-widest mb-3">
-              <span className="w-5 h-[1.5px] bg-[#5CC873]" /> The Growth Cycle
+              <span className="w-5 h-[1.5px] bg-[#5CC873]" />The Growth Cycle
             </div>
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.2]">
               Four steps from<br /><em className="italic text-[#5CC873] pr-2">seed to mastery.</em>
@@ -195,7 +195,7 @@ export default function LandingPage() {
         <section id="features" className="py-24 px-6 lg:px-20 bg-parchment">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center gap-2 text-xs font-medium font-mono text-[#2A8040] uppercase tracking-widest mb-3">
-              <span className="w-5 h-[1.5px] bg-[#39AB54]" /> What&apos;s Included
+              <span className="w-5 h-[1.5px] bg-[#39AB54]" />What&apos;s Included
             </div>
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.2] text-soil">
               Everything you need<br />to master your material.
